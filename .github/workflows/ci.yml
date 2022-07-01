@@ -22,12 +22,12 @@ jobs:
             package: https://github.com/ansible/ansible/archive/devel.tar.gz
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 #        with:
 #          path: 'ansible_collections/dettonville/utils'
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
 
@@ -61,8 +61,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-        with:
-          path: ansible_collections/dettonville/utils
+#        with:
+#          path: ansible_collections/dettonville/utils
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
@@ -109,13 +109,13 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-        with:
-          path: ansible_collections/dettonville/utils
+#        with:
+#          path: ansible_collections/dettonville/utils
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
-          python-version: 3.9
+          python-version: 3.10
 
       - name: Install ansible ${{ matrix.ansible.name }}
         run: |
