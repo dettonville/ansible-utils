@@ -1,0 +1,5 @@
+shippable/posix/group5
+skip/freebsd
+skip/osx
+skip/macos
+skip/rhel
