@@ -7,9 +7,6 @@ import re
 import tempfile
 from distutils.version import LooseVersion
 
-from ansible_collections.dettonville.utils.plugins.module_utils.messages import FailingMessage
-from ansible.module_utils.six import b
-
 try:
     from module_utils.messages import FailingMessage
 except ImportError:
@@ -40,7 +37,6 @@ class Git:
         self.repo_url = repo_config.get('repo_url')
         self.repo_scheme = repo_config.get('repo_scheme')
         self.repo_branch = repo_config.get('repo_branch')
-        
         self.module.debug('self.repo_url={0}'.format(self.repo_url))
 
         self.remote = repo_config.get('remote') or 'origin'
@@ -226,7 +222,6 @@ fi
 
         return result
 
-
     def clone(self, bare=False, reference=None, refspec=None):
         ''' makes a new git repo if it does not already exist '''
 
@@ -234,29 +229,29 @@ fi
             os.makedirs(os.path.dirname(self.repo_dir))
         except OSError:
             pass
-        cmd = [self.git_path, 'clone']
+        command = [self.git_path, 'clone']
 
         if bare:
-            cmd.append('--bare')
+            command.append('--bare')
         else:
-            cmd.extend(['--origin', self.remote])
+            command.extend(['--origin', self.remote])
 
         if reference:
-            cmd.extend(['--reference', str(reference)])
+            command.extend(['--reference', str(reference)])
 
         result = dict()
 
-        cmd.extend([self.repo_url, self.repo_dir])
-        rc, output, error = self.module.run_command(cmd, check_rc=True, cwd=self.repo_dir)
+        command.extend([self.repo_url, self.repo_dir])
+        rc, output, error = self.module.run_command(command, check_rc=True, cwd=self.repo_dir)
 
         if bare and self.remote != 'origin':
             self.module.run_command([self.git_path, 'remote', 'add', self.remote, self.repo_url],
                                     check_rc=True, cwd=self.repo_dir)
 
         if refspec:
-            cmd = [self.git_path, 'fetch']
-            cmd.extend([self.remote, refspec])
-            self.module.run_command(cmd, check_rc=True, cwd=self.repo_dir)
+            command = [self.git_path, 'fetch']
+            command.extend([self.remote, refspec])
+            self.module.run_command(command, check_rc=True, cwd=self.repo_dir)
 
         if rc == 0:
             if output:
@@ -265,9 +260,7 @@ fi
         else:
             FailingMessage(self.module, rc, command, output, error)
 
-
-
-    def add(self, add_files=['.']):
+    def add(self, add_files=None):
         """
         Run git add and stage changed files.
 
@@ -278,6 +271,9 @@ fi
 
         return: null
         """
+
+        if add_files is None:
+            add_files = ['.']
 
         command = [self.git_path, 'add', '--']
 
@@ -293,7 +289,6 @@ fi
             return result
         else:
             FailingMessage(self.module, rc, command, output, error)
-
 
     def status(self):
         """
@@ -374,9 +369,9 @@ fi
                     descrition: Ansible basic module utilities and module arguments.
             return: null
             """
-            command = [self.git_path, 'remote', 'get-url', '--all', self.remote]
+            cmd = [self.git_path, 'remote', 'get-url', '--all', self.remote]
 
-            rc, _output, _error = self.module.run_command(command, cwd=self.repo_dir)
+            rc, _output, _error = self.module.run_command(cmd, cwd=self.repo_dir)
 
             if rc == 0:
                 return
@@ -384,7 +379,7 @@ fi
             if rc == 128:
                 if self.repo_scheme == 'https':
                     if self.repo_url.startswith('https://'):
-                        command = [
+                        cmd = [
                             self.git_path,
                             'remote',
                             'add',
@@ -394,14 +389,14 @@ fi
                     else:
                         self.module.fail_json(msg='HTTPS scheme selected but not HTTPS URL provided')
                 else:
-                    command = [self.git_path, 'remote', 'add', self.remote, self.repo_url]
+                    cmd = [self.git_path, 'remote', 'add', self.remote, self.repo_url]
 
-                rc, output, error = self.module.run_command(command, cwd=self.repo_dir)
+                rc, output, error = self.module.run_command(cmd, cwd=self.repo_dir)
 
                 if rc == 0:
                     return
                 else:
-                    FailingMessage(self.module, rc, command, output, error)
+                    FailingMessage(self.module, rc, cmd, output, error)
 
         def push_cmd():
             """

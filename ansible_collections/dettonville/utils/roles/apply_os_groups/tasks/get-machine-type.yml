@@ -37,4 +37,3 @@
     os_family: "os_vsphere"
     os_distribution: "vsphere"
     os_distribution_version: "os_vsphere_{{ ansible_facts['distribution'] |d('Unknown') | lower | replace(' ','_') }}_v{{ ansible_facts['distribution_major_version'] |d('Unknown') }}"
-

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 TEST_TARGET=$1
 
@@ -7,11 +7,12 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 echo "PROJECT_DIR=${PROJECT_DIR}"
 
-TEST_SIZE=$(ls -1 "${SCRIPT_DIR}/${TEST_TARGET}/" | wc -l)
+#TEST_SIZE=$(ls -1 "${SCRIPT_DIR}/${TEST_TARGET}/" | wc -l)
+TEST_SIZE=$(find "${SCRIPT_DIR}/${TEST_TARGET}/" -type f | wc -l)
 
 echo "TEST_SIZE=${TEST_SIZE}"
 
-for ((i=1; i<=$TEST_SIZE; i++))
+for ((i=1; i<=TEST_SIZE; i++))
 do
   echo "Running Test $i ==> python -m library.${TEST_TARGET} ${SCRIPT_DIR}/${TEST_TARGET}/test${i}.args.json"
   python -m "library.${TEST_TARGET}" "${SCRIPT_DIR}/${TEST_TARGET}/test${i}.args.json" | jq

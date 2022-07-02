@@ -5,8 +5,8 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
-__metaclass__ = type
 
+__metaclass__ = type
 
 DOCUMENTATION = '''
 ---
@@ -172,7 +172,6 @@ options:
            - A list of trusted GPG fingerprints to compare to the fingerprint of the
              GPG-signed commit.
            - Only used when I(verify_commit=yes).
-           - Use of this feature requires Git 2.6+ due to its reliance on git's C(--raw) flag to C(verify-commit) and C(verify-tag).
         type: list
         default: []
         version_added: "2.9"
@@ -331,6 +330,7 @@ def unfrackgitpath(path):
         return None
 
     # copied from ansible.utils.path
+    # pylint: disable=E0012
     return os.path.normpath(os.path.realpath(os.path.expanduser(os.path.expandvars(path))))
 
 
@@ -397,7 +397,6 @@ fi
 
 
 def set_git_ssh(ssh_wrapper, key_file, ssh_opts):
-
     if os.environ.get("GIT_SSH"):
         del os.environ["GIT_SSH"]
     os.environ["GIT_SSH"] = ssh_wrapper
@@ -666,8 +665,8 @@ def get_repo_path(dest, bare):
         repo_path = dest
     else:
         repo_path = os.path.join(dest, '.git')
-    # Check if the .git is a file. If it is a file, it means that the repository is in external directory respective to the working copy (e.g. we are in a
-    # submodule structure).
+    # Check if the .git is a file. If it is a file, it means that the repository is in external directory respective
+    # to the working copy (e.g. we are in a submodule structure).
     if os.path.isfile(repo_path):
         with open(repo_path, 'r') as gitfile:
             data = gitfile.read()
@@ -695,22 +694,22 @@ def get_head_branch(git_path, module, dest, remote, bare=False):
     '''
     try:
         repo_path = get_repo_path(dest, bare)
+        # Read .git/HEAD for the name of the branch.
+        # If we're in a detached HEAD state, look up the branch associated with
+        # the remote HEAD in .git/refs/remotes/<remote>/HEAD
+        headfile = os.path.join(repo_path, "HEAD")
+        if is_not_a_branch(git_path, module, dest):
+            headfile = os.path.join(repo_path, 'refs', 'remotes', remote, 'HEAD')
+        branch = head_splitter(headfile, remote, module=module, fail_on_error=True)
+        return branch
     except (IOError, ValueError) as err:
         # No repo path found
         """``.git`` file does not have a valid format for detached Git dir."""
         module.fail_json(
             msg='Current repo does not have a valid reference to a '
-            'separate Git dir or it refers to the invalid path',
+                'separate Git dir or it refers to the invalid path',
             details=to_text(err),
         )
-    # Read .git/HEAD for the name of the branch.
-    # If we're in a detached HEAD state, look up the branch associated with
-    # the remote HEAD in .git/refs/remotes/<remote>/HEAD
-    headfile = os.path.join(repo_path, "HEAD")
-    if is_not_a_branch(git_path, module, dest):
-        headfile = os.path.join(repo_path, 'refs', 'remotes', remote, 'HEAD')
-    branch = head_splitter(headfile, remote, module=module, fail_on_error=True)
-    return branch
 
 
 def get_remote_url(git_path, module, dest, remote):
@@ -888,6 +887,7 @@ def set_remote_branch(git_path, module, dest, remote, version, depth):
 
 
 def switch_version(git_path, module, dest, remote, version, verify_commit, depth, gpg_whitelist):
+    global branch
     cmd = ''
     if version == 'HEAD':
         branch = get_head_branch(git_path, module, dest, remote)
@@ -938,11 +938,13 @@ def verify_commit_sign(git_path, module, dest, version, gpg_whitelist):
         cmd += " --raw"
     (rc, out, err) = module.run_command(cmd, cwd=dest)
     if rc != 0:
-        module.fail_json(msg='Failed to verify GPG signature of commit/tag "%s"' % version, stdout=out, stderr=err, rc=rc)
+        module.fail_json(msg='Failed to verify GPG signature of commit/tag "%s"'
+                             % version, stdout=out, stderr=err, rc=rc)
     if gpg_whitelist:
         fingerprint = get_gpg_fingerprint(err)
         if fingerprint not in gpg_whitelist:
-            module.fail_json(msg='The gpg_whitelist does not include the public key "%s" for this commit' % fingerprint, stdout=out, stderr=err, rc=rc)
+            module.fail_json(msg='The gpg_whitelist does not include the public key "%s" for this commit'
+                                 % fingerprint, stdout=out, stderr=err, rc=rc)
     return (rc, out, err)
 
 
@@ -995,7 +997,7 @@ def create_archive(git_path, module, dest, archive, archive_prefix, version, rep
     """ Helper function for creating archive using git_archive """
     all_archive_fmt = {'.zip': 'zip', '.gz': 'tar.gz', '.tar': 'tar',
                        '.tgz': 'tgz'}
-    _, archive_ext = os.path.splitext(archive)
+    _noop, archive_ext = os.path.splitext(archive)
     archive_fmt = all_archive_fmt.get(archive_ext, None)
     if archive_fmt is None:
         module.fail_json(msg="Unable to get file extension from "
@@ -1042,6 +1044,7 @@ def create_archive(git_path, module, dest, archive, archive_prefix, version, rep
 # ===========================================
 
 def main():
+    global repo_path, remote_head, remote_url_changed
     module = AnsibleModule(
         argument_spec=dict(
             dest=dict(type='path'),
@@ -1143,7 +1146,7 @@ def main():
             """``.git`` file does not have a valid format for detached Git dir."""
             module.fail_json(
                 msg='Current repo does not have a valid reference to a '
-                'separate Git dir or it refers to the invalid path',
+                    'separate Git dir or it refers to the invalid path',
                 details=to_text(err),
             )
         gitconfig = os.path.join(repo_path, 'config')
@@ -1158,7 +1161,8 @@ def main():
     git_version_used = git_version(git_path, module)
 
     if depth is not None and git_version_used < LooseVersion('1.9.1'):
-        result['warnings'].append("Your git version is too old to fully support the depth argument. Falling back to full checkouts.")
+        result['warnings'].append("Your git version is too old to fully support the depth argument. Falling back to "
+                                  "full checkouts.")
         depth = None
 
     recursive = module.params['recursive']
@@ -1181,7 +1185,8 @@ def main():
                     result['diff'] = diff
             module.exit_json(**result)
         # there's no git config, so clone
-        clone(git_path, module, repo, dest, remote, depth, version, bare, reference, refspec, verify_commit, separate_git_dir, result, gpg_whitelist)
+        clone(git_path, module, repo, dest, remote, depth, version, bare, reference, refspec, verify_commit,
+              separate_git_dir, result, gpg_whitelist)
     elif not update:
         # Just return having found a repo already in the dest path
         # this does no checking that the repo is the actual repo
@@ -1214,7 +1219,8 @@ def main():
         # exit if already at desired sha version
         if module.check_mode:
             remote_url = get_remote_url(git_path, module, dest, remote)
-            remote_url_changed = remote_url and remote_url != repo and unfrackgitpath(remote_url) != unfrackgitpath(repo)
+            remote_url_changed = remote_url and remote_url != repo and unfrackgitpath(remote_url) != unfrackgitpath(
+                repo)
         else:
             remote_url_changed = set_remote_url(git_path, module, repo, dest, remote)
         result.update(remote_url_changed=remote_url_changed)

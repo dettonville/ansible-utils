@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: (c) 2022, Lee Johnson (lee.james.johnson@gmail.com)
+# GNU General Public License v3.0+ (see COPYING or csv://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
@@ -8,6 +10,8 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: git_acp
+author:
+    - "Lee Johnson (@lj020326)"
 short_description: Perform git add, commit and push operations. Set git config user name and email.
 description:
     - Manage C(git add), C(git commit) C(git push), C(git config) user name and email on a local
@@ -149,7 +153,7 @@ EXAMPLES = '''
     url: "git@gitlab.com:networkAutomation/git_test_module.git"
     ssh_params:
       accept_hostkey: true
-      key_file: '{{ lookup('env', 'HOME') }}/.ssh/id_rsa'
+      key_file: '~/.ssh/id_rsa'
       ssh_opts: '-o UserKnownHostsFile={{ remote_tmp_dir }}/known_hosts'
 
 - name: LOCAL | push on local repo.
@@ -174,9 +178,6 @@ output:
 
 from ansible.module_utils.basic import AnsibleModule
 
-# from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import Git
-# from ansible_collections.dettonville.utils.plugins.module_utils.git_configuration import GitConfiguration
-
 try:
     from module_utils.git_actions import Git
 except ImportError:
@@ -192,6 +193,7 @@ except ImportError:
         from ansible.module_utils.git_configuration import GitConfiguration
     except ImportError:
         from ansible_collections.dettonville.utils.plugins.module_utils.git_configuration import GitConfiguration
+
 
 def main():
     """
