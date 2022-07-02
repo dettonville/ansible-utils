@@ -23,13 +23,11 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-#        with:
-#          path: 'ansible_collections/dettonville/utils'
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
-          python-version: 3.9
+          python-version: 3.10
 
       - name: Install ansible ${{ matrix.ansible.name }}
         run: |
@@ -57,17 +55,15 @@ jobs:
         python-version:
           - 3.8
           - 3.9
-          - "3.10"
+          - 3.10
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-#        with:
-#          path: ansible_collections/dettonville/utils
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
-          python-version: 3.9
+          python-version: 3.10
 
       - name: Install ansible ${{ matrix.ansible.name }}
         run: |
@@ -109,8 +105,6 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-#        with:
-#          path: ansible_collections/dettonville/utils
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v2

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 TEST_COLLECTIONS="
-collections/ansible_collections/dettonville/inventory
+collections/ansible_collections/dettonville/utils
 "
 
 TEST_MODULES="
-update_hosts
+export_dicts
 "
 
 #PYTHON_TEST_VERSION="3.9"
@@ -59,19 +59,19 @@ run_collection_tests() {
 
   # shellcheck disable=SC2194
   case "all sanity" in *"$TESTS"*)
-    CMD_ANSIBLE_TEST_SANITY="ansible-test sanity -v --docker --python ${PYTHON_TEST_VERSION} ${MODULE}"
+    CMD_ANSIBLE_TEST_SANITY="ansible-test sanity -v --python ${PYTHON_TEST_VERSION} ${MODULE}"
     ;;
   esac
 
   # shellcheck disable=SC2194
   case "all units" in *"$TESTS"*)
-    CMD_ANSIBLE_TEST_UNIT="ansible-test units -v --docker default --python ${PYTHON_TEST_VERSION} ${MODULE}"
+    CMD_ANSIBLE_TEST_UNIT="ansible-test units -v --python ${PYTHON_TEST_VERSION} ${MODULE}"
     ;;
   esac
 
   # shellcheck disable=SC2194
   case "all integration" in *"$TESTS"*)
-    CMD_ANSIBLE_TEST_INTEGRATION="ansible-test integration -v --docker --python ${PYTHON_TEST_VERSION} ${MODULE}"
+    CMD_ANSIBLE_TEST_INTEGRATION="ansible-test integration -v --python ${PYTHON_TEST_VERSION} ${MODULE}"
     ;;
   esac
 

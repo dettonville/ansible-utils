@@ -5,7 +5,17 @@ import os
 import tempfile
 import traceback
 
-import yaml
+# ref: https://github.com/ansible/ansible/issues/74383#issuecomment-824884558
+# ref: https://docs.ansible.com/ansible-core/devel/dev_guide/testing/sanity/import.html#import
+# import yaml
+try:
+    import yaml
+except ImportError:
+    HAS_ANOTHER_LIBRARY = False
+    ANOTHER_LIBRARY_IMPORT_ERROR = traceback.format_exc()
+else:
+    HAS_ANOTHER_LIBRARY = True
+
 
 try:
     from module_utils.messages import FailingMessage
@@ -21,8 +31,10 @@ except ImportError:
     from ansible.module_utils.six import b
 
 try:
+    # noinspection PyProtectedMember
     from module_utils._text import to_native, to_text
 except ImportError:
+    # noinspection PyProtectedMember
     from ansible.module_utils._text import to_native, to_text
 
 
@@ -35,6 +47,14 @@ class InventoryRepoPyYaml:
         destination_path = os.path.dirname(self.inventory_file_path)
         if not os.path.exists(destination_path):
             self.module.fail_json(rc=257, msg='Destination directory %s does not exist!' % destination_path)
+
+        # ref: https://docs.ansible.com/ansible-core/devel/dev_guide/testing/sanity/import.html#import
+        if not HAS_ANOTHER_LIBRARY:
+            # Needs: from ansible.module_utils.basic import missing_required_lib
+            module.fail_json(
+                msg=missing_required_lib('yaml'),
+                exception=ANOTHER_LIBRARY_IMPORT_ERROR)
+
 
     def update_hosts(self, host_list, state='merge', backup=False):
         backup_file = None
@@ -77,6 +97,7 @@ class InventoryRepoPyYaml:
             indent = 2
 
             # ref: https://stackoverflow.com/questions/44313992/how-to-keep-null-value-in-yaml-file-while-dumping-though-ruamel-yaml # noqa: E501 url size exceeds 120
+            # noinspection PyShadowingNames
             def my_represent_none(self, data):
                 return self.represent_scalar(u'tag:yaml.org,2002:null', u'null')
 
@@ -117,11 +138,8 @@ class InventoryRepoPyYaml:
 
         return result
 
-    @staticmethod
-    def update_host(inventory, host, state):
-
+    def update_host(self, inventory, host, state):
         inventory_hosts = inventory['hosts']
-        inventory_groups = inventory['children']
 
         if 'hostvars' in host:
             hostvars = host['hostvars']
@@ -134,6 +152,21 @@ class InventoryRepoPyYaml:
         else:
             inventory_hosts[host['hostname']] = hostvars
 
+        if state == 'overwrite':
+            self.remove_host_from_groups(inventory, host)
+
+        self.add_host_to_groups(inventory, host)
+
+    def remove_host(self, inventory, host):
+        inventory_hosts = inventory['hosts']
+
+        if host['hostname'] in inventory_hosts:
+            inventory_hosts.pop(host['hostname'])
+
+        self.remove_host_from_groups(inventory, host)
+
+    def add_host_to_groups(self, inventory, host):
+        inventory_groups = inventory['children']
         if 'groups' in host:
             host_groups = host['groups']
             for group in host_groups:
@@ -145,14 +178,8 @@ class InventoryRepoPyYaml:
 
                 inventory_groups[group]['hosts'][host['hostname']] = {}
 
-    @staticmethod
-    def remove_host(inventory, host):
-
-        inventory_hosts = inventory['hosts']
+    def remove_host_from_groups(self, inventory, host):
         inventory_groups = inventory['children']
-
-        if host['hostname'] in inventory_hosts:
-            inventory_hosts.pop(host['hostname'])
 
         for group in inventory_groups:
             if 'hosts' in inventory_groups[group]:
@@ -160,5 +187,3 @@ class InventoryRepoPyYaml:
 
                 if host['hostname'] in group_hosts:
                     group_hosts.pop(host['hostname'])
-
-

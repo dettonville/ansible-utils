@@ -13,14 +13,14 @@ DOCUMENTATION = r'''
 module: update_hosts
 author:
     - "Lee Johnson (@lj020326)"
-short_description: Add host to git repo inventory. 
+short_description: Add hosts to git repo inventory. 
 description:
-    - Add host to git repo inventory.
+    - Add hosts to git repo inventory.
 options:
     inventory_repo_url:
         description:
             - Git repo URL.
-        required: True
+        required: true
         type: str
     inventory_repo_branch:
         description:
@@ -31,13 +31,13 @@ options:
         description:
             - Git operations are performend either over ssh, https or local.
               Same as C(git@git...) or C(https://user:token@git...).
-        choices: ['ssh', 'https', 'local']
+        choices: [ ssh, https, local ]
         default: ssh
         type: str
     yaml_lib_mode:
-        description:
-            - YAML library to use: either 'ruamel' or 'pyyaml'.
-        choices: ['ruamel', 'pyyaml']
+        description: 
+            - specifies the YAML library - 'ruamel' or 'pyyaml'.
+        choices: [ ruamel, pyyaml ]
         default: ruamel
         type: str
     inventory_file:
@@ -60,16 +60,16 @@ options:
         default: no
     remove_repo_dir:
         description:
-          - Remove temporary repo inventory directory after completing.
+            - Remove temporary repo inventory directory after completing.
         type: bool
         default: yes
     host_list:
+        description:
+            - Specifies a list of host dicts.
         aliases: ['hosts']
         required: true
         type: list
         elements: dict
-        description:
-            - Specifies a list of host dicts.
     ssh_params:
         description:
             - Dictionary containing SSH parameters.
@@ -78,6 +78,8 @@ options:
             key_file:
                 description:
                     - Specify an optional private key file path, on the target host, to use for the checkout.
+                type: path
+                default: None
             accept_hostkey:
                 description:
                     - If C(yes), ensure that "-o StrictHostKeyChecking=no" is
@@ -100,34 +102,42 @@ requirements:
 '''  # NOQA
 
 EXAMPLES = r'''
-- name: Update inventory at hosts.yml
+- name: Add Hosts to inventory at hosts.yml
   update_hosts:
     inventory_repo_url: "ssh://git@gitea.admin.dettonville.int:2222/infra/report-inventory-facts.git"
     inventory_file: /inventory/hosts.yml
     ssh_params:
       accept_hostkey: true
-      key_file: '{{ lookup('env', 'HOME') }}/.ssh/id_rsa'
+      key_file: "~/.ssh/id_rsa"
       ssh_opts: '-o UserKnownHostsFile={{ remote_tmp_dir }}/known_hosts'
     backup: no
     host_list:
-      - hostname: admin-q1-internal-s1.example.int
+      - hostname: vmlnx123-q1-s1.example.int
         hostvars:
           provisioning_data:
             jira_id: DCC-12345
-            infra_group: DCC
+            infra_group: MIDWA
         groups:
-        - ntp_server
-        - nfs_server
-        - ldap_server
+        - ntp_client
+        - ldap_client
+      - hostname: vmlnx124-q1-s1.example.int
+        hostvars:
+          provisioning_data:
+            jira_id: DCC-12346
+            infra_group: MIDWA
+        groups:
+        - ntp_client
+        - nfs_client
+        - ldap_client
 
-- name: Update inventory at hosts.yml
+- name: Update Hosts at hosts.yml
   update_hosts:
     inventory_repo_url: "ssh://git@gitea.admin.dettonville.int:2222/infra/report-inventory-facts.git"
     inventory_file: /inventory/hosts.yml
     inventory_repo_branch: master
     ssh_params:
       accept_hostkey: true
-      key_file: '{{ lookup('env', 'HOME') }}/.ssh/id_rsa'
+      key_file: "~/.ssh/id_rsa"
     host_list:
       - hostname: admin-q1-internal-s1.example.int
         hostvars:
@@ -159,12 +169,45 @@ EXAMPLES = r'''
         - ldap_client
         - web_server
 
+- name: Overwrite Hosts at hosts.yml
+  update_hosts:
+    inventory_repo_url: "ssh://git@gitea.admin.dettonville.int:2222/infra/report-inventory-facts.git"
+    inventory_file: /inventory/hosts.yml
+    inventory_repo_branch: master
+    ssh_params:
+      key_file: "~/.ssh/id_rsa"
+    state: overwrite
+    host_list:
+      - hostname: admin-q1-internal-s1.example.int
+        hostvars:
+          provisioning_data: {}
+        groups: {}
+      - hostname: web-q1-internal-s1.example.int
+        hostvars:
+          provisioning_data:
+            jira_id: DCC-88888
+            infra_group: MIDWA
+        groups:
+        - ntp_client
+        - web_server
+      - hostname: web-q2-internal-s1.example.int
+        hostvars:
+          provisioning_data:
+            jira_id: DCC-888888
+            infra_group: MIDWA
+        groups:
+        - ntp_client
+        - nfs_client
+        - ldap_client
+        - web_server
+        - unica_proxy
+
 - name: Remove hosts from inventory at hosts.yml
   update_hosts:
     inventory_repo_url: "ssh://git@gitea.admin.dettonville.int:2222/infra/report-inventory-facts.git"
     inventory_file: /inventory/hosts.yml
     ssh_params:
-      key_file: '{{ lookup('env', 'HOME') }}/.ssh/id_rsa'
+      key_file: "~/.ssh/id_rsa"
     state: absent
     host_list:
       - hostname: admin-q1-internal-s1.example.int
@@ -210,17 +253,9 @@ from ansible_collections.dettonville.utils.plugins.module_utils.git_actions impo
 # noinspection PyUnresolvedReferences
 from ansible_collections.dettonville.utils.plugins.module_utils.git_configuration import GitConfiguration
 
-
-try:
-    from ansible_collections.dettonville.inventory.plugins.module_utils.inventory_repo_actions import InventoryRepo
-except ImportError:
-    # noinspection PyUnresolvedReferences
-    from ansible_collections.dettonville.inventory.plugins.module_utils.inventory_repo_actions_pyyaml \
-        import InventoryRepoPyYaml as InventoryRepo
-
 # noinspection PyUnresolvedReferences
-from ansible_collections.dettonville.inventory.plugins.module_utils.inventory_repo_actions_pyyaml \
-    import InventoryRepoPyYaml
+from ansible_collections.dettonville.inventory.plugins.module_utils.inventory_repo_updater \
+    import InventoryRepoFactory
 
 import datetime
 import shutil
@@ -265,13 +300,13 @@ def main():
     yaml_lib_mode = module.params.get('yaml_lib_mode')
 
     inventory_file = module.params.get('inventory_file')
-    remove_repo_dir = module.params['remove_repo_dir']
-
     inventory_repo_dir = tempfile.mkdtemp(prefix="update_hosts")
     inventory_file_path = inventory_repo_dir + '/' + inventory_file
 
-    git_commit_message = "dettonville.inventory.update_hosts(): updated inventory {0} as of {1}".format(inventory_file,
-                                                                                              datetime.datetime.now())
+    remove_repo_dir = module.params.get('remove_repo_dir')
+
+    git_commit_message = "dettonville.inventory.update_hosts(): updated inventory " + \
+                         "{0} as of {1}".format(inventory_file, datetime.datetime.now())
 
     module.debug("inventory_file_path={0}".format(inventory_file_path))
 
@@ -294,11 +329,8 @@ def main():
     result.update(git.clone())
     result.update(git.set_user_config(git_user_config))
 
-    # ref: https://stackoverflow.com/questions/47382227/python-yaml-update-preserving-order-and-comments
-    if yaml_lib_mode == "pyyaml":
-        inventory_repo = InventoryRepoPyYaml(module, inventory_file_path)
-    else:
-        inventory_repo = InventoryRepo(module, inventory_file_path)
+    # ref: https://medium.com/design-patterns-in-python/factory-pattern-in-python-2f7e1ca45d3e
+    inventory_repo = InventoryRepoFactory().get_repo_updater(yaml_lib_mode, module, inventory_file_path)
 
     host_list = module.params.get('host_list')
     state = module.params.get('state')

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2022, Lee Johnson (lee.james.johnson@gmail.com)
@@ -141,9 +141,10 @@ def get_headers_and_fields(column_list):
 
     return headers, fieldnames
 
-## ref: https://docs.python.org/3/library/csv.html
-## ref: https://realpython.com/python-csv/
-## ref: https://www.geeksforgeeks.org/writing-csv-files-in-python/
+
+# ref: https://docs.python.org/3/library/csv.html
+# ref: https://realpython.com/python-csv/
+# ref: https://www.geeksforgeeks.org/writing-csv-files-in-python/
 def write_csv(module, output_file, export_list, column_list):
     (headers, fieldnames) = get_headers_and_fields(column_list)
 

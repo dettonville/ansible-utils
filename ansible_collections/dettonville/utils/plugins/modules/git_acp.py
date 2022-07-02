@@ -18,11 +18,17 @@ options:
             - Folder path where C(.git/) is located.
         required: true
         type: path
+    action:
+        description:
+            - Git operation to perform - 'clone' or 'acp' (Add + Commit + Push)
+        choices: [ 'acp', 'clone' ]
+        default: acp
+        type: str
     comment:
         description:
             - Git commit comment. Same as C(git commit -m).
+            - Required if action == 'acp'
         type: str
-        required: true
     add:
         description:
             - List of files under C(path) to be staged. Same as C(git add .).
@@ -49,7 +55,7 @@ options:
         type: str
     mode:
         description:
-            - Git operations are performend eithr over ssh, https or local.
+            - Git operations are performend either over ssh, https or local.
               Same as C(git@git...) or C(https://user:token@git...).
         choices: ['ssh', 'https', 'local']
         default: ssh
@@ -198,9 +204,11 @@ def main():
             desription: returned output from git commands and updated changed status.
     """
     argument_spec = dict(
+        url=dict(required=True),
         path=dict(required=True, type='path'),
+        action=dict(choices=['acp', 'clone'], default='acp'),
         executable=dict(default=None, type='path'),
-        comment=dict(required=True),
+        comment=dict(default=None, type='str'),
         add=dict(type='list', elements='str', default=['.']),
         user=dict(),
         token=dict(no_log=True),
@@ -208,14 +216,14 @@ def main():
         branch=dict(default='main'),
         push_option=dict(default=None, type='str'),
         mode=dict(choices=['ssh', 'https', 'local'], default='ssh'),
-        url=dict(required=True),
         remote=dict(default='origin'),
         user_name=dict(),
         user_email=dict()
     )
 
     required_if = [
-        ('mode', 'https', ['user', 'token'])
+        ('mode', 'https', ['user', 'token']),
+        ('action', 'acp', ['comment'])
     ]
 
     required_together = [
@@ -229,6 +237,7 @@ def main():
     )
 
     url = module.params.get('url')
+    action = module.params.get('action')
     mode = module.params.get('mode')
     push_option = module.params.get('push_option')
     ssh_params = module.params.get('ssh_params') or None
@@ -237,6 +246,7 @@ def main():
 
     repo_config = {
         'repo_url': url,
+        'repo_action': action,
         'repo_scheme': mode,
         'push_option': push_option,
         'token': module.params.get('token'),
@@ -287,12 +297,14 @@ def main():
     if user_name and user_email:
         result.update(GitConfiguration(module).user_config())
 
-    changed_files = git.status()
-
-    if changed_files:
-        result.update(git.add())
-        result.update(git.commit(comment))
-        result.update(git.push())
+    if action == 'clone':
+        result.update(git.clone())
+    else:
+        changed_files = git.status()
+        if changed_files:
+            result.update(git.add())
+            result.update(git.commit(comment))
+            result.update(git.push())
 
     module.exit_json(**result)
 

@@ -13,6 +13,9 @@
 - name: "TEST {{ __test_id }} | Set test result vars"
   set_fact:
     __inventory_file_results_dir: "tests/inventory.results/test{{ __test_id }}"
+    __inventory_file_results: "{{ __inventory_file.split('.') | first }}.results.yml"
+    __inventory_file_expected: "{{ __inventory_file.split('.') | first }}.expected.yml"
+    __inventory_file_diff: "{{ __inventory_file.split('.') | first }}.diff.txt"
 
 - name: "TEST {{ __test_id }} | Update hosts in inventory file at {{ __inventory_file_path }}"
   dettonville.inventory.update_hosts:

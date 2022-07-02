@@ -1,5 +1,6 @@
 ---
 
+## Test 01 | Add Hosts
 test_host_list:
   - hostname: vmlnx123-q1-s1.example.int
     hostvars:
