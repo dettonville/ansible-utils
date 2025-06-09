@@ -1,0 +1,117 @@
+
+## ref: https://github.com/ansible-community/ansible-test-gh-action/blob/main/README.md?plain=1
+
+name: CI
+on:
+  # Run CI against all pushes (direct commits, also merged PRs), Pull Requests
+  push:
+    branches:
+      - main
+      - stable-*
+  pull_request:
+  # Run CI once every Sunday (at 06:00 UTC)
+  # This ensures that even if there haven't been commits that we are still
+  # testing against latest version of ansible-test for each ansible-core
+  # version
+  schedule:
+    - cron: '0 6 * * 0'
+  # manual
+  workflow_dispatch:
+
+jobs:
+
+  ###
+  # Integration tests (REQUIRED)
+  #
+  # https://docs.ansible.com/ansible/latest/dev_guide/testing_integration.html
+  integration:
+    name: Perform integration testing
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Ansible Support Matrix
+        # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
+        ansible:
+          - stable-2.16
+          - devel
+        python:
+          - 3.11
+        os:
+#          - ubuntu-22.04
+          - ubuntu-latest
+    steps:
+      - name: Perform integration testing with (${{ matrix.ansible }}+py${{ matrix.python }})
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible }}
+          target-python-version: ${{ matrix.python }}
+          controller-python-version: auto
+          testing-type: integration
+          test-deps: >-
+            ansible.netcommon
+            ansible.utils
+            community.general
+
+  ###
+  # Sanity tests (REQUIRED)
+  #
+  # https://docs.ansible.com/ansible/latest/dev_guide/testing_sanity.html
+  sanity:
+    name: Perform sanity testing
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Ansible Support Matrix
+        # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
+        ansible:
+          - stable-2.16
+          - devel
+        python:
+          - 3.11
+        os:
+          - ubuntu-latest
+    steps:
+      - name: Perform sanity testing with (${{ matrix.ansible }}+py${{ matrix.python }})
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible }}
+          target-python-version: ${{ matrix.python }}
+          testing-type: sanity
+          test-deps: >-
+            ansible.netcommon
+            ansible.utils
+
+#  ###
+#  # Unit tests (OPTIONAL)
+#  #
+#  # https://docs.ansible.com/ansible/latest/dev_guide/testing_units.html
+#  units:
+#    name: Perform unit testing
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        # Ansible Support matrix
+#        # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
+#        ansible:
+#          - stable-2.16
+#          - devel
+#        python:
+#          - "3.10"
+#          - "3.11"
+#          - "3.12"
+#        os:
+#          - ubuntu-latest
+#
+#    steps:
+#      - name: Perform unit testing with (${{ matrix.ansible }}+py${{ matrix.python }})
+#        uses: ansible-community/ansible-test-gh-action@release/v1
+#        with:
+#          ansible-core-version: ${{ matrix.ansible }}
+#          target-python-version: ${{ matrix.python }}
+#          testing-type: units
+#          test-deps: >-
+#            ansible.netcommon
+#            ansible.utils
