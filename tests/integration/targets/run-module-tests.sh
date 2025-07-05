@@ -12,46 +12,49 @@
 #echo "==> ENV"
 #echo "$(export -p | sed 's/declare -x //')"
 
-VERSION="2025.3.19"
+VERSION="2025.7.1"
+KEEP_TEMP_DIR=1
 
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
-SCRIPT_FILE=$(basename "$0")
-PLAYBOOK="${SCRIPT_FILE%.*}.yml"
-PROJECT_DIR="$( cd "$SCRIPT_DIR/" && git rev-parse --show-toplevel )"
-#BASE_DIR="${PROJECT_DIR}/.."
-BASE_DIR=$(dirname "${PROJECT_DIR}")
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_NAME_PREFIX="${SCRIPT_NAME%.*}"
 
-VAULTPASS_FILEPATH="~/.vault_pass"
+PLAYBOOK="${SCRIPT_NAME_PREFIX}.yml"
+PROJECT_DIR="$( cd "$SCRIPT_DIR/" && git rev-parse --show-toplevel )"
+
+#PROJECT_PARENT_DIR="${PROJECT_DIR}/.."
+PROJECT_PARENT_DIR=$(dirname "${PROJECT_DIR}")
+
+VAULTPASS_FILEPATH="${HOME}/.vault_pass"
 if [[ -f "${PROJECT_DIR}/.vault_pass" ]]; then
   VAULTPASS_FILEPATH="${PROJECT_DIR}/.vault_pass"
 fi
 VAULT_FILEPATH="./../integration_config.vault.yml"
-#VAULT_FILEPATH="integration_config.vault.yml"
-#VAULT_FILEPATH="./vars/vault.yml"
-#VAULT_FILEPATH="test-vault.yml"
 #TEST_VARS_FILE="test-vars.yml"
 
 INSTALL_GALAXY_COLLECTIONS=0
 UPGRADE_GALAXY_COLLECTIONS=0
 
 USE_SOURCE_COLLECTIONS=0
-SOURCE_COLLECTIONS_PATH="${BASE_DIR}/requirements_collections"
+SOURCE_COLLECTIONS_PATH="${PROJECT_PARENT_DIR}/requirements_collections"
 
 echo "SCRIPT_DIR=[${SCRIPT_DIR}]"
-echo "SCRIPT_FILE=[${SCRIPT_FILE}]"
+echo "SCRIPT_NAME=[${SCRIPT_NAME}]"
 echo "PLAYBOOK=[${PLAYBOOK}]"
+echo "PROJECT_PARENT_DIR=${PROJECT_PARENT_DIR}"
 echo "PROJECT_DIR=${PROJECT_DIR}"
 
 ANSIBLE_COLLECTION_REQUIREMENTS="collections/requirements.yml"
 #ANSIBLE_COLLECTION_REQUIREMENTS="collections/requirements.test.yml"
 
-export LOCAL_COLLECTIONS_PATH=${HOME}/.ansible
+export LOCAL_COLLECTIONS_PATH="${HOME}/.ansible"
 #export ANSIBLE_ROLES_PATH=./
-#export ANSIBLE_COLLECTIONS_PATH=${LOCAL_COLLECTIONS_PATH}:${PROJECT_DIR}/collections:${BASE_DIR}/requirements_collections
-#export ANSIBLE_COLLECTIONS_PATH=${PROJECT_DIR}/collections:${BASE_DIR}/requirements_collections
-#export ANSIBLE_COLLECTIONS_PATH=${BASE_DIR}/requirements_collections
-#export ANSIBLE_COLLECTIONS_PATH=${PROJECT_DIR}/collections
-export ANSIBLE_COLLECTIONS_PATH=${PROJECT_DIR}/collections:${LOCAL_COLLECTIONS_PATH}
+#export ANSIBLE_COLLECTIONS_PATH="${LOCAL_COLLECTIONS_PATH}:${PROJECT_DIR}/collections:${PROJECT_PARENT_DIR}/requirements_collections"
+#export ANSIBLE_COLLECTIONS_PATH="${PROJECT_DIR}/collections:${PROJECT_PARENT_DIR}/requirements_collections"
+#export ANSIBLE_COLLECTIONS_PATH="${PROJECT_PARENT_DIR}/requirements_collections"
+#export ANSIBLE_COLLECTIONS_PATH="${PROJECT_DIR}/collections"
+#export ANSIBLE_COLLECTIONS_PATH="${PROJECT_DIR}/collections:${LOCAL_COLLECTIONS_PATH}"
+export ANSIBLE_COLLECTIONS_PATH="${LOCAL_COLLECTIONS_PATH}"
 
 if [[ "${USE_SOURCE_COLLECTIONS}" -eq 1 ]]; then
   export ANSIBLE_COLLECTIONS_PATH=${SOURCE_COLLECTIONS_PATH}:${ANSIBLE_COLLECTIONS_PATH}
@@ -64,6 +67,10 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ## ref: https://github.com/ansible/ansible/issues/79557#issuecomment-1344168449
 #export ANSIBLE_GALAXY_IGNORE=true
 #export GALAXY_IGNORE_CERTS=true
+
+function cleanup_tmpdir() {
+  test "${KEEP_TEMP_DIR:-0}" = 1 || rm -rf "${TEMP_DIR}"
+}
 
 function pull_latest_galaxy_collections() {
 
@@ -88,7 +95,7 @@ function pull_latest_galaxy_collections() {
   GALAXY_INSTALL_CMD+=("-p ${LOCAL_COLLECTIONS_PATH}")
 
   echo "==> ${GALAXY_INSTALL_CMD[*]}"
-  eval "${GALAXY_INSTALL_CMD[@]}"
+  eval "${GALAXY_INSTALL_CMD[*]}"
 
 }
 
@@ -109,6 +116,25 @@ function main() {
   if [[ "${INSTALL_GALAXY_COLLECTIONS}" -eq 1 ]]; then
     pull_latest_galaxy_collections
   fi
+
+  COLLECTION_NAMESPACE=$(yq -r '.namespace' "${PROJECT_DIR}/galaxy.yml")
+  COLLECTION_NAME=$(yq -r '.name' "${PROJECT_DIR}/galaxy.yml")
+
+  ## ref: https://www.pixelstech.net/article/1577768087-Create-temp-file-in-Bash-using-mktemp-and-trap
+  ## ref: https://stackoverflow.com/questions/4632028/how-to-create-a-temporary-directory
+  mkdir -p "${HOME}/tmp"
+  TEMP_DIR=$(mktemp -d -p "${HOME}/tmp" "${SCRIPT_NAME_PREFIX}_XXXXXX")
+
+  trap cleanup_tmpdir INT TERM EXIT
+
+  COLLECTION_BASE_DIR="${TEMP_DIR}"
+  COLLECTION_SOURCE_DIR="${COLLECTION_BASE_DIR}/ansible_collections/${COLLECTION_NAMESPACE}/${COLLECTION_NAME}"
+  echo "COLLECTION_SOURCE_DIR=${COLLECTION_SOURCE_DIR}"
+
+  mkdir -p "$(dirname "${COLLECTION_SOURCE_DIR}")"
+  ln -s "${PROJECT_DIR}" "${COLLECTION_SOURCE_DIR}"
+  export ANSIBLE_COLLECTIONS_PATH="${COLLECTION_BASE_DIR}:${ANSIBLE_COLLECTIONS_PATH}"
+  echo "ANSIBLE_COLLECTIONS_PATH=${ANSIBLE_COLLECTIONS_PATH}"
 
   echo "==> ansible --version"
   ansible --version

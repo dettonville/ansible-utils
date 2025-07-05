@@ -1,13 +1,13 @@
 
 import os
-from os.path import join, dirname, abspath
+from os.path import join, dirname
 
 import re
 from glob import glob
 # import pathlib
 import logging
 
-from typing import List, Any, Tuple
+from typing import Any
 
 import pytest
 
@@ -62,13 +62,14 @@ def get_test_cases() -> list[tuple[str, str]]:
     test_case_list: list[tuple[str | Any, Any]] = []
     for test_component in test_components:
         component_testvars_dir = join(script_dir, "test_component", "vars", test_component)
-        logging.debug("component_testvars_dir=%s" % component_testvars_dir)
+        logging.debug("component_testvars_dir=%s", component_testvars_dir)
 
         test_var_files = list(glob(join(component_testvars_dir, "testdata_*.yml")))
+        test_var_files += list(glob(join(component_testvars_dir, "**", "testdata_*.yml")))
 
         for filename in test_var_files:
             test_case = re.findall('testdata_(.*?).yml', str(filename))[0]
-            logging.debug("test_case=%s" % test_case)
+            logging.debug("test_case=%s", test_case)
             test_input_data = (test_component, test_case)
             test_case_list.append(test_input_data)
     test_case_list.sort()
@@ -76,7 +77,7 @@ def get_test_cases() -> list[tuple[str, str]]:
 
 
 test_case_list = get_test_cases()
-# logging.debug("test_case_list=%s" % test_case_list)
+# logging.debug("test_case_list=%s", test_case_list)
 
 
 # # ref: https://pytest-with-eric.com/introduction/pytest-generate-tests/
@@ -91,7 +92,11 @@ test_case_list = get_test_cases()
 def test_components(shell, script_path, test_component, test_case):
     test_case_extra_vars = "--extra-vars \"test_case_id_list=[\'%s\']\"" % test_case
     test_command_list = [script_path, "-t", test_component, test_case_extra_vars]
-    logging.info("test_command_list=%s" % test_command_list)
+    logging.info("test_command_list=%s", test_command_list)
     # ref: https://stackoverflow.com/questions/7745952/how-to-expand-a-list-to-function-arguments-in-python#7745986
     ret = shell.run(*test_command_list)
+    if (ret.returncode != 0):
+        # ref: https://docs.python.org/3/library/subprocess.html#subprocess.Popen
+        # print(ret.stdout)
+        print(ret.stderr)
     assert ret.returncode == 0

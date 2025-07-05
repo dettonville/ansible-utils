@@ -5,9 +5,10 @@
 # MIT license (https://opensource.org/license/mit/)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: git_pacp
 author:
@@ -63,7 +64,6 @@ options:
               Same as C(git@git...) or C(https://user:token@git...).
               If not specified, the mode will be set to the scheme implied by the URL.
         choices: ['ssh', 'https', 'local']
-        default: ssh
         type: str
     url:
         description:
@@ -109,25 +109,27 @@ options:
         description:
             - Explicit git local user name. Nice to have for remote operations.
         type: str
+        default: ansible
     user_email:
         description:
             - Explicit git local email address. Nice to have for remote operations.
         type: str
+        default: ansible@example.org
     logging_level:
         description:
             - Parameter used to define the level of troubleshooting output.
         required: false
-        choices: [NOTSET, DEBUG, INFO]
+        choices: [NOTSET, DEBUG, INFO, ERROR]
         default: INFO
         type: str
 
 requirements:
     - git>=2.10.0 (the command line tool)
-'''  # NOQA
+"""  # NOQA
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: "Perform git pull/add/commit/push"
-  git_pacp:
+  dettonville.utils.git_pacp:
     url: "{{ __test_git_repo_url }}"
     path: "{{ __test_git_repo_dir }}"
     branch: "{{ __test_git_repo_branch }}"
@@ -136,7 +138,7 @@ EXAMPLES = '''
   register: git_pacp_result
 
 - name: "Perform git pull/add/commit/push"
-  git_pacp:
+  dettonville.utils.git_pacp:
     action: pacp
     url: "{{ __test_git_repo_url }}"
     path: "{{ __test_git_repo_dir }}"
@@ -146,7 +148,7 @@ EXAMPLES = '''
   register: git_pacp_result
 
 - name: "Pull latest repo changes into {{ __test_git_repo_dir }}"
-  git_pacp:
+  dettonville.utils.git_pacp:
     action: pull
     path: "{{ __test_git_repo_dir }}"
     branch: "{{ __test_git_repo_branch }}"
@@ -155,7 +157,7 @@ EXAMPLES = '''
   register: git_pull_result
 
 - name: "Perform git add/commit/push"
-  git_pacp:
+  dettonville.utils.git_pacp:
     action: acp
     url: "{{ __test_git_repo_url }}"
     path: "{{ __test_git_repo_dir }}"
@@ -165,7 +167,7 @@ EXAMPLES = '''
   register: git_pacp_result
 
 - name: SSH | add/commit/push file1.
-  git_pacp:
+  dettonville.utils.git_pacp:
     path: /Users/git/git_pacp
     branch: master
     comment: Add file1.
@@ -177,7 +179,7 @@ EXAMPLES = '''
     user_email: ansible@example.org
 
 - name: HTTPS | add/commit/push all file changes
-  git_pacp:
+  dettonville.utils.git_pacp:
     user: username
     token: mytoken
     path: /Users/git/git_pacp
@@ -188,7 +190,7 @@ EXAMPLES = '''
     url: "https://gitlab.com/networkAutomation/git_test_module.git"
 
 - name: SSH with private key | add file1.
-  git_pacp:
+  dettonville.utils.git_pacp:
     path: /Users/git/git_pacp
     branch: master
     comment: Add file1.
@@ -202,16 +204,16 @@ EXAMPLES = '''
       ssh_opts: '-o UserKnownHostsFile={{ remote_tmp_dir }}/known_hosts'
 
 - name: LOCAL | push on local repo.
-  git_pacp:
+  dettonville.utils.git_pacp:
     path: "~/test_directory/repo"
     branch: master
     comment: Add file1.
     add: [ file1 ]
     mode: local
     url: /Users/federicoolivieri/test_directory/repo.git
-'''
+"""
 
-RETURN = '''
+RETURN = """
 output:
     description: list of git cli command stdout
     type: list
@@ -219,9 +221,12 @@ output:
     sample: [
         "[master 99830f4] Remove [ test.txt, tax.txt ]\n 4 files changed, 26 insertions(+)..."
     ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
+
+import pprint
+import logging
 
 try:
     from module_utils.git_actions import Git
@@ -229,19 +234,9 @@ except ImportError:
     try:
         from ansible.module_utils.git_actions import Git
     except ImportError:
-        from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import Git
-
-try:
-    from module_utils.git_configuration import GitConfiguration
-except ImportError:
-    try:
-        from ansible.module_utils.git_configuration import GitConfiguration
-    except ImportError:
-        # noinspection PyUnresolvedReferences
-        from ansible_collections.dettonville.utils.plugins.module_utils.git_configuration import GitConfiguration
-
-import logging
-import pprint
+        from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import (
+            Git,
+        )
 
 
 def main():
@@ -256,31 +251,33 @@ def main():
     """
     argument_spec = dict(
         url=dict(required=True),
-        path=dict(required=True, type='path'),
-        action=dict(choices=['acp', 'pacp', 'pull', 'clone'], default='pacp'),
-        executable=dict(default=None, type='path'),
-        logging_level=dict(type='str', choices=["NOTSET", "DEBUG", "INFO", "ERROR"], default="INFO"),
-        comment=dict(default=None, type='str'),
-        add=dict(type='list', elements='str', default=['.']),
+        path=dict(required=True, type="path"),
+        action=dict(choices=["acp", "pacp", "pull", "clone"], default="pacp"),
+        executable=dict(default=None, type="path"),
+        logging_level=dict(
+            type="str", choices=["NOTSET", "DEBUG", "INFO", "ERROR"], default="INFO"
+        ),
+        comment=dict(default=None, type="str"),
+        add=dict(type="list", elements="str", default=["."]),
         user=dict(),
         token=dict(no_log=True),
-        ssh_params=dict(default=None, type='dict', required=False),
-        branch=dict(default='main'),
-        push_option=dict(default=None, type='str'),
-        mode=dict(choices=['ssh', 'https', 'local'], default=None),
-        remote=dict(default='origin'),
-        user_name=dict(type='str', default='ansible'),
-        user_email=dict(type='str', default='ansible@example.org')
+        ssh_params=dict(default=None, type="dict", required=False),
+        branch=dict(default="main"),
+        push_option=dict(default=None, type="str"),
+        mode=dict(choices=["ssh", "https", "local"], default=None),
+        remote=dict(default="origin"),
+        user_name=dict(type="str", default="ansible"),
+        user_email=dict(type="str", default="ansible@example.org"),
     )
 
     required_if = [
-        ('mode', 'https', ['user', 'token']),
-        ('action', 'acp', ['comment']),
-        ('action', 'pacp', ['comment'])
+        ("mode", "https", ["user", "token"]),
+        ("action", "acp", ["comment"]),
+        ("action", "pacp", ["comment"]),
     ]
 
     required_together = [
-        ['user_name', 'user_email'],
+        ["user_name", "user_email"],
     ]
 
     module = AnsibleModule(
@@ -290,92 +287,102 @@ def main():
     )
     # module._ansible_debug = True
 
-    url = module.params.get('url')
-    action = module.params.get('action')
+    url = module.params.get("url")
+    action = module.params.get("action")
     # mode = module.params.get('mode', Git.get_url_scheme(url))
-    mode = module.params.get('mode') or Git.get_url_scheme(url)
-    push_option = module.params.get('push_option')
-    ssh_params = module.params.get('ssh_params')
-    user_name = module.params.get('user_name')
-    user_email = module.params.get('user_email')
+    mode = module.params.get("mode") or Git.get_url_scheme(url)
+    push_option = module.params.get("push_option")
+    ssh_params = module.params.get("ssh_params")
+    user_name = module.params.get("user_name")
+    user_email = module.params.get("user_email")
 
     repo_config = {
-        'repo_url': url,
-        'repo_action': action,
-        'repo_scheme': mode,
-        'push_option': push_option,
-        'token': module.params.get('token'),
-        'repo_dir': module.params.get('path'),
-        'repo_branch': module.params.get('branch'),
-        'remote': module.params.get('remote'),
-        'user': module.params.get('user'),
-        'user_name': user_name,
-        'user_email': user_email,
-        'ssh_params': ssh_params
+        "repo_url": url,
+        "repo_action": action,
+        "repo_scheme": mode,
+        "push_option": push_option,
+        "token": module.params.get("token"),
+        "repo_dir": module.params.get("path"),
+        "repo_branch": module.params.get("branch"),
+        "remote": module.params.get("remote"),
+        "user": module.params.get("user"),
+        "user_name": user_name,
+        "user_email": user_email,
+        "ssh_params": ssh_params,
     }
 
-    loglevel = module.params.get('logging_level')
-    logging.basicConfig(
-        level=loglevel
-    )
-    # logging.info("repo_config => %s" % pprint.pformat(repo_config))
+    loglevel = module.params.get("logging_level")
+    logging.basicConfig(level=loglevel)
+    # logging.info("repo_config => %s", pprint.pformat(repo_config))
     module.debug("repo_config => %s" % pprint.pformat(repo_config))
 
-    comment = module.params.get('comment')
+    comment = module.params.get("comment")
 
     # We screen scrape a huge amount of git commands so use C
     # locale anytime we call run_command()
-    module.run_command_environ_update = dict(LANG='C', LC_ALL='C', LC_MESSAGES='C', LC_CTYPE='C')
+    module.run_command_environ_update = dict(
+        LANG="C", LC_ALL="C", LC_MESSAGES="C", LC_CTYPE="C"
+    )
 
-    if mode == 'local':
-        if url.startswith(('https://', 'git', 'ssh://git')):
-            module.fail_json(msg='SSH or HTTPS mode selected but repo is "local')
+    if mode == "local":
+        if url.startswith(("https://", "git", "ssh://git")):
+            module.fail_json(
+                msg='SSH or HTTPS mode selected but repo is "local')
 
         if push_option:
-            module.fail_json(msg='"--push-option" not supported with mode "local"')
+            module.fail_json(
+                msg='"--push-option" not supported with mode "local"')
 
         if ssh_params:
             module.warn('SSH Parameters will be ignored as mode "local"')
 
-    elif mode == 'https':
-        if not url.startswith('https://'):
-            module.fail_json(msg='HTTPS mode selected but url (' + url + ') not starting with "https"')
+    elif mode == "https":
+        if not url.startswith("https://"):
+            module.fail_json(
+                msg="HTTPS mode selected but url ("
+                + url
+                + ') not starting with "https"'
+            )
         if ssh_params:
             module.warn('SSH Parameters will be ignored as mode "https"')
 
-    elif mode == 'ssh':
-        if not url.startswith(('git', 'ssh://git')):
+    elif mode == "ssh":
+        if not url.startswith(("git", "ssh://git")):
             module.fail_json(
-                msg='SSH mode selected but url (' + url + ') not starting with "git" or "ssh://git"'
+                msg="SSH mode selected but url ("
+                + url
+                + ') not starting with "git" or "ssh://git"'
             )
 
-        if url.startswith('ssh://git@github.com'):
-            module.fail_json(msg='GitHub does not support "ssh://" URL. Please remove it from url')
+        if url.startswith("ssh://git@github.com"):
+            module.fail_json(
+                msg='GitHub does not support "ssh://" URL. Please remove it from url'
+            )
 
     result = dict(changed=False)
 
     git = Git(module, repo_config)
 
-    if action == 'clone':
+    if action == "clone":
         result.update(git.clone())
-    elif action == 'pull':
+    elif action == "pull":
         result.update(git.pull())
     else:  # default is in ['acp','pacp']
         changed_files = git.status()
         if changed_files:
             if user_name and user_email:
                 git_user_config = {
-                    'name': user_name,
-                    'email': user_email,
+                    "name": user_name,
+                    "email": user_email,
                 }
                 result.update(git.set_user_config(git_user_config))
-            if action == 'pacp':
+            if action == "pacp":
                 result.update(git.pull())
             result.update(git.add())
             result.update(git.commit(comment))
             result.update(git.push())
 
-    # logging.info("result => %s" % pprint.pformat(result))
+    # logging.info("result => %s", pprint.pformat(result))
     module.debug("result => %s" % pprint.pformat(result))
 
     module.exit_json(**result)

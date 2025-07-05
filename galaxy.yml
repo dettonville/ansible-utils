@@ -6,14 +6,28 @@ description:
   Ansible Collection with utilities to ease the management, manipulation,
   and validation of data within a playbook
 issues: https://github.com/dettonville/ansible-dettonville-utils/issues
-license_file: LICENSE
+license_file: LICENSE.md
 name: utils
 namespace: dettonville
 readme: README.md
-repository: https://github.com/dettonville/ansible-dettonville-utils
+repository: https://github.com/dettonville/ansible-utils
 tags:
   - linux
   - utilities
   - data
+  - junit
   - utils
-version: 2025.3.19
+version: 2025.7.2
+# https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
+manifest:
+  directives:
+    - include meta/runtime.yml
+    - include README.md LICENSE.md
+    - recursive-include docs */**.md
+    - recursive-include plugins */**.py
+    - exclude galaxy.yml MANIFEST.json FILES.json <namespace>-<name>-*.tar.gz
+    - recursive-exclude tests/output **
+    - recursive-exclude releases **
+    - recursive-exclude archive **
+    - recursive-exclude save **
+  omit_default_directives: true

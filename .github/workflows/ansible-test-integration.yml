@@ -1,0 +1,43 @@
+---
+name: Ansible Test Integration
+on: # yamllint disable-line rule:truthy
+  pull_request:
+  merge_group:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  ansible_integration_test:
+    name: Perform integration testing with ansible (${{ matrix.ansible }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Ansible Support Matrix
+        # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#ansible-core-support-matrix
+        ansible:
+          - stable-2.16
+          - devel
+        python:
+          - 3.11
+    steps:
+      - name: Update pip, git
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+
+      - name: Perform integration testing with (${{ matrix.ansible }}+py${{ matrix.python }})
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible }}
+          target-python-version: ${{ matrix.python }}
+          controller-python-version: auto
+          testing-type: integration
+          test-deps: >-
+            ansible.netcommon
+            ansible.utils
+            community.general
