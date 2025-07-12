@@ -1,5 +1,8 @@
+## library module requirements
+distlib
+pyyaml
+packaging
 pytest
-PyYAML
 Jinja2
 setuptools
 jsonschema

@@ -2,7 +2,7 @@ result:
   ansible_all_ipv4_addresses:
     - 172.20.0.1
     - 10.10.0.1
-    - 172.31.25.37
+    - 10.31.25.37
   ansible_all_ipv6_addresses: []
   ansible_apparmor:
     status: disabled
@@ -99,7 +99,7 @@ result:
       - 127.0.0.0/8
       - 127.0.0.1
       - 172.20.0.1
-      - 172.31.25.37
+      - 10.31.25.37
     ipv6: []
   ansible_lsb: {}
   ansible_lvm: N/A
@@ -216,7 +216,7 @@ result:
     - lnx_mem
     - lnx_dfw
   cyberark_platform_accounts__api_validate_certs: false
-  cyberark_platform_accounts__machine_ip: 172.31.25.37
+  cyberark_platform_accounts__machine_ip: 10.31.25.37
   cyberark_platform_accounts__os_family: linux
   cyberark_platform_accounts__pdc: pssrp1s1.example.int
   cyberark_platform_accounts__platform_type: managed_domain

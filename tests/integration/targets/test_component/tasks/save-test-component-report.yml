@@ -271,7 +271,7 @@
 
 - name: "{{ __test_component__log_save_component_report }} Save test report results to {{ 
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_csv }}"
-  ignore_errors: yes
+  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_case_id') }}"
     file: "{{ __test_component__test_base_dir }}/{{ 
@@ -280,7 +280,7 @@
 
 - name: "{{ __test_component__log_save_component_report }} Save test report results to {{ 
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_md }}"
-  ignore_errors: yes
+  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_case_id') }}"
     file: "{{ __test_component__test_base_dir }}/{{ 

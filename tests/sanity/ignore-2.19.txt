@@ -1,0 +1,14 @@
+deploy-ansible-collection.sh shellcheck:SC2034
+plugins/modules/export_dicts.py pep8!skip # leave as is
+plugins/modules/export_dicts.py validate-modules:missing-gplv3-license
+plugins/modules/git_pacp.py validate-modules:missing-gplv3-license
+plugins/modules/test_results_logger.py validate-modules:missing-gplv3-license
+regenerate-module-docs.sh shellcheck:SC2016
+regenerate-module-docs.sh shellcheck:SC2034
+sync-public-branch.sh shellcheck:SC2034
+tests/integration/targets/run-module-tests.sh shellcheck:SC2034
+tests/integration/targets/run-pytest.sh shellcheck:SC2034
+tests/integration/targets/run-role-tests.sh shellcheck:SC2034
+tests/integration/targets/runModuleTest.groovy shebang!skip
+tests/run_tests.sh shellcheck:SC2034
+tests/utils/shippable/shippable.sh shellcheck:SC2153
