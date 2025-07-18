@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function)
+from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
+    remove_keys_from_object,
+)
 
 __metaclass__ = type
 
@@ -50,18 +53,18 @@ EXAMPLES = """
       - address
       - username
     my_dict:
-      careconlocal-172.31.25.54:
-        address: 172.31.25.54
+      careconlocal-10.31.25.54:
+        address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
         platform_account_type: recon
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.31.25.54
+        platform_logon_domain: 10.31.25.54
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-      administrator-172.31.25.54:
-        address: 172.31.25.54
+      administrator-10.31.25.54:
+        address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
         groups:
@@ -70,22 +73,22 @@ EXAMPLES = """
         managed: true
         platform_account_type: platform
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.31.25.54
+        platform_logon_domain: 10.31.25.54
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-      careconlocal-172.21.33.8:
-        address: 172.21.33.8
+      careconlocal-10.21.33.8:
+        address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
         platform_account_type: recon
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.21.33.8
+        platform_logon_domain: 10.21.33.8
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-      administrator-172.21.33.8:
-        address: 172.21.33.8
+      administrator-10.21.33.8:
+        address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
         groups:
@@ -94,14 +97,14 @@ EXAMPLES = """
         managed: true
         platform_account_type: platform
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.21.33.8
+        platform_logon_domain: 10.21.33.8
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
   # Produces the dictionary:
-  # 
+  #
   #  my_dict:
-  #    administrator-172.21.33.8:
+  #    administrator-10.21.33.8:
   #      automatic_management_enabled: true
   #      domain_type: local
   #      groups:
@@ -109,7 +112,7 @@ EXAMPLES = """
   #      local_admin_username: administrator
   #      managed: true
   #      safe: Windows-Server-Local-Admin
-  #    administrator-172.31.25.54:
+  #    administrator-10.31.25.54:
   #      automatic_management_enabled: true
   #      domain_type: local
   #      groups:
@@ -117,11 +120,11 @@ EXAMPLES = """
   #      local_admin_username: administrator
   #      managed: true
   #      safe: Windows-Server-Local-Admin
-  #    careconlocal-172.21.33.8:
+  #    careconlocal-10.21.33.8:
   #      automatic_management_enabled: true
   #      domain_type: local
   #      safe: A-T-careconlocal
-  #    careconlocal-172.31.25.54:
+  #    careconlocal-10.31.25.54:
   #      automatic_management_enabled: true
   #      domain_type: local
   #      safe: A-T-careconlocal
@@ -131,16 +134,16 @@ EXAMPLES = """
     msg: "{{ my_list | dettonville.utils.remove_dict_keys(['platform_id','address','username']) }}"
   vars:
     my_list:
-      - address: 172.31.25.54
+      - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
         platform_account_type: recon
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.31.25.54
+        platform_logon_domain: 10.31.25.54
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-      - address: 172.31.25.54
+      - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
         groups:
@@ -149,20 +152,20 @@ EXAMPLES = """
         managed: true
         platform_account_type: platform
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.31.25.54
+        platform_logon_domain: 10.31.25.54
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-      - address: 172.21.33.8
+      - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
         platform_account_type: recon
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.21.33.8
+        platform_logon_domain: 10.21.33.8
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-      - address: 172.21.33.8
+      - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
         groups:
@@ -171,12 +174,12 @@ EXAMPLES = """
         managed: true
         platform_account_type: platform
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.21.33.8
+        platform_logon_domain: 10.21.33.8
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
   # Produces the sorted list:
-  # 
+  #
   #  my_list:
   #   - automatic_management_enabled: true
   #     domain_type: local
@@ -185,13 +188,13 @@ EXAMPLES = """
   #     local_admin_username: administrator
   #     managed: true
   #     platform_account_type: platform
-  #     platform_logon_domain: 172.21.33.8
+  #     platform_logon_domain: 10.21.33.8
   #     platform_notes: WINANSD1S1.example.int
   #     safe: Windows-Server-Local-Admin
   #   - automatic_management_enabled: true
   #     domain_type: local
   #     platform_account_type: recon
-  #     platform_logon_domain: 172.21.33.8
+  #     platform_logon_domain: 10.21.33.8
   #     platform_notes: WINANSD1S1.example.int
   #     safe: A-T-careconlocal
   #   - automatic_management_enabled: true
@@ -201,13 +204,13 @@ EXAMPLES = """
   #     local_admin_username: administrator
   #     managed: true
   #     platform_account_type: platform
-  #     platform_logon_domain: 172.31.25.54
+  #     platform_logon_domain: 10.31.25.54
   #     platform_notes: WINANSD1S4.example.int
   #     safe: Windows-Server-Local-Admin
   #   - automatic_management_enabled: true
   #     domain_type: local
   #     platform_account_type: recon
-  #     platform_logon_domain: 172.31.25.54
+  #     platform_logon_domain: 10.31.25.54
   #     platform_notes: WINANSD1S4.example.int
   #     safe: A-T-careconlocal
 """
@@ -223,20 +226,14 @@ RETURN = """
 # from ansible.module_utils.six import string_types, text_type
 
 # noinspection PyUnresolvedReferences
-from ansible_collections.dettonville.utils.plugins.module_utils.utils import remove_keys_from_object
 
 
 class FilterModule(object):
     def filters(self):
-        return {
-            'remove_dict_keys': self.remove_dict_keys
-        }
+        return {"remove_dict_keys": self.remove_dict_keys}
 
     def remove_dict_keys(
-            self,
-            input_object: any,
-            key_patterns: list,
-            log_level: str = "INFO"
+        self, input_object: any, key_patterns: list, log_level: str = "INFO"
     ) -> any:
         # Create copy of original object to update as needed
         # ref: https://stackoverflow.com/questions/3975376/why-updating-shallow-copy-dictionary-doesnt-update-original-dictionary/3975388#3975388

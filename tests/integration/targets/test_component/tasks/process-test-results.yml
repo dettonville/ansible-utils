@@ -25,7 +25,7 @@
 
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.changed"
   when: __test_data.test_expected.changed is defined
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_changed
   ansible.builtin.assert:
     that:
@@ -38,7 +38,7 @@
 
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.failed"
   when: __test_data.test_expected.failed is defined
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_failed
   ansible.builtin.assert:
     that:
@@ -52,7 +52,7 @@
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.message"
 #  when: __test_data.test_expected.message is defined
   when: __test_data.test_expected.message|d('')|length > 0
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_message
   ansible.builtin.assert:
     that:
@@ -67,7 +67,7 @@
 - name: "{{ __test_component__log_process_test_results }} Assert __test_component__test_result.msg"
 #  when: __test_data.test_expected.msg is defined
   when: __test_data.test_expected.msg|d('')|length > 0
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_msg
   ansible.builtin.assert:
     that:
@@ -81,7 +81,7 @@
 
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.found"
   when: __test_data.test_expected.found is defined
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_found
   ansible.builtin.assert:
     that:
@@ -94,7 +94,7 @@
 
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.result"
   when: __test_data.test_expected.result is defined
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_result
   ansible.builtin.assert:
     that:
@@ -108,7 +108,7 @@
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.results.found"
   when: __test_data.test_expected.results.found is defined
   loop: "{{ __test_component__test_result.results }}"
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_results_found
   ansible.builtin.assert:
     that:
@@ -122,7 +122,7 @@
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.results.failed"
   when: __test_data.test_expected.results.failed is defined
   loop: "{{ __test_component__test_result.results }}"
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_results_failed
   ansible.builtin.assert:
     that:
@@ -136,7 +136,7 @@
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.results.changed"
   when: __test_data.test_expected.results.changed is defined
   loop: "{{ __test_component__test_result.results }}"
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_results_changed
   ansible.builtin.assert:
     that:
@@ -150,7 +150,7 @@
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.results.message"
   when: __test_data.test_expected.results.message is defined
   loop: "{{ __test_component__test_result.results }}"
-  ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+  ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_results_message
   ansible.builtin.assert:
     that:
@@ -203,7 +203,7 @@
 
     - name: "{{ __test_component__log_process_test_results }} Assert test_results == test_expected"
       register: __test_result_validate_expected_results
-      ignore_errors: "{{ __test_component__ignore_errors|bool }}"
+      ignore_errors: "{{ __test_component__ignore_errors | bool }}"
       ansible.builtin.assert:
         that:
           - test_results == test_expected

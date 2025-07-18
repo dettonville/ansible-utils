@@ -1,9 +1,9 @@
 ---
 
-- name: "{{ __test_component__log_init_job_vars }} Display ansible_env"
-  ansible.builtin.debug:
-    var: ansible_env
-    verbosity: 1
+#- name: "{{ __test_component__log_init_job_vars }} Display ansible_env"
+#  ansible.builtin.debug:
+#    var: ansible_env
+#    verbosity: 1
 
 - name: "{{ __test_component__log_init_job_vars }} Set __test_component__job_path_awx"
   when:

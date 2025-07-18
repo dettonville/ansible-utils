@@ -26,6 +26,7 @@ id_rsa
 private/
 files/private/
 files/scripts/bashenv/.bash_env
+releases
 vars/secrets.yml
 secrets.yml
 *.secrets.yml

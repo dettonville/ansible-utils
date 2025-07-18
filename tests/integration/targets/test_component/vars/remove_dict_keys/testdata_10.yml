@@ -17,7 +17,7 @@ test_object:
   ansible_all_ipv4_addresses:
     - 172.20.0.1
     - 10.10.0.1
-    - 172.31.25.37
+    - 10.31.25.37
   ansible_all_ipv6_addresses: []
   ansible_apparmor:
     status: disabled
@@ -88,8 +88,8 @@ test_object:
     SELINUX_USE_CURRENT_RANGE: ''
     SHELL: /bin/bash
     SHLVL: '2'
-    SSH_CLIENT: 172.21.1.76 12715 22
-    SSH_CONNECTION: 172.21.1.76 12715 172.31.25.37 22
+    SSH_CLIENT: 10.21.1.76 12715 22
+    SSH_CONNECTION: 10.21.1.76 12715 10.31.25.37 22
     SSH_TTY: /dev/pts/0
     S_COLORS: auto
     TERM: xterm-256color
@@ -126,7 +126,7 @@ test_object:
       - 127.0.0.0/8
       - 127.0.0.1
       - 172.20.0.1
-      - 172.31.25.37
+      - 10.31.25.37
     ipv6: []
   ansible_lsb: {}
   ansible_lvm: N/A
@@ -249,7 +249,7 @@ test_object:
     - lnx_mem
     - lnx_dfw
   cyberark_platform_accounts__api_validate_certs: false
-  cyberark_platform_accounts__machine_ip: 172.31.25.37
+  cyberark_platform_accounts__machine_ip: 10.31.25.37
   cyberark_platform_accounts__os_family: linux
   cyberark_platform_accounts__pdc: pssrp1s1.example.int
   cyberark_platform_accounts__platform_type: managed_domain

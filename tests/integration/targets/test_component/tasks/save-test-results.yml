@@ -60,8 +60,8 @@
         paths: "{{ __test_run_path }}"
         file_type: file
         patterns: '.*'
-        recurse: yes
-        follow: yes
+        recurse: true
+        follow: true
         use_regex: true
       register: __test_component__test_results_files
 
@@ -111,8 +111,8 @@
         paths: "{{ __test_run_path }}"
         file_type: link
         patterns: '.*\.yml'
-        recurse: yes
-        follow: yes
+        recurse: true
+        follow: true
         use_regex: true
       register: __test_component__test_result_links
 
