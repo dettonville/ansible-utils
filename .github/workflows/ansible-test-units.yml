@@ -1,7 +1,13 @@
 ---
 name: Ansible Test Units
 
-on: [workflow_call]
+on:
+  workflow_call:  # allow this workflow to be called from other workflows
+  workflow_dispatch:  # allow this workflow to be called from user
+  # Schedule run (once daily)
+  schedule:
+    ## Daily Docker Image Rebuild (10:29am daily)
+    - cron: '29 10 * * *'
 
 jobs:
   ansible_test_units:
