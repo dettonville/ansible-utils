@@ -1,0 +1,7 @@
+---
+# https://ansible.readthedocs.io/projects/lint/configuring/#ansible-lint-configuration
+exclude_paths:
+  - .github/
+  - changelogs/
+  - CHANGELOG.rst
+  - tests/

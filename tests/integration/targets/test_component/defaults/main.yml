@@ -113,10 +113,10 @@ __test_component__report_columns:
 #  - name: validate_results
 #    header: validate_results
 
-__test_component__disable_cleanup_default: no
-__test_component__disable_reset_env_default: no
-__test_component__ignore_already_running_default: no
-__test_component__reset_already_running_default: yes
+__test_component__disable_cleanup_default: false
+__test_component__disable_reset_env_default: false
+__test_component__ignore_already_running_default: false
+__test_component__reset_already_running_default: true
 
 __test_component__disable_cleanup: "{{ test_component__disable_cleanup 
   | d(__test_component__disable_cleanup_default) }}"
@@ -137,7 +137,7 @@ __test_component__git_ssh_private_key: "{{ test_component__git_ssh_private_key }
 #__test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir | d('~/.ssh' | expanduser) }}"
 __test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir }}"
 __test_component__git_ssh_private_keyfile_default: "{{ 
-  __test_component__git_ssh_private_keydir }}/ansible_repo.dettonville.key"
+  __test_component__git_ssh_private_keydir }}/ansible_repo.github.key"
 __test_component__git_ssh_private_keyfile: "{{ test_component__git_ssh_private_keyfile
   | d(__test_component__git_ssh_private_keyfile_default) }}"
 __test_component__git_ssh_params:
@@ -153,7 +153,7 @@ __test_component__git_user: "{{ test_component__git_user }}"
 __test_component__git_email: "{{ test_component__git_email }}"
 __test_component__git_repo_dir: "{{ __test_component__test_base_dir }}"
 __test_component__git_comment_prefix: "{{ test_component__git_comment_prefix | d('') }}"
-__test_component__git_reset_test_dir: yes
+__test_component__git_reset_test_dir: true
 #__test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir | d(False) }}"
 __test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir 
   | d(test_component__test_case_id_list|d([])|length==0) }}"
@@ -173,7 +173,10 @@ __test_component__base_dir: "{{ test_component__base_dir | d(__test_component__b
 __test_component__component_dir: "{{ __test_component__base_dir }}/{{ __test_component }}"
 __test_component__run_dir: "{{ __test_component__component_dir }}/testrun"
 __test_component__results_dir: "test-results"
-__test_component__test_vars_dir: "vars"
+__test_component__test_base_vars_dir: "vars"
+__test_component__test_vars_dir_default: "{{ __test_component__test_base_vars_dir }}/{{ __test_component }}"
+__test_component__test_vars_dir: "{{ test_component__test_vars_dir | d(__test_component__test_vars_dir_default) }}"
+__test_component__test_common_vars: "{{ role_path }}/vars/{{ __test_component }}/common.yml"
 
 __test_component__test_file_start_dir: "{{ __test_component__component_dir }}/test.start"
 __test_component__test_file_results_base_dir: "{{ __test_component__component_dir }}/test.results"

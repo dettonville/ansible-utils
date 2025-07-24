@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import (absolute_import, division, print_function)
+from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
+    sort_single_key,
+    sort_multi_key,
+)
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -23,7 +28,7 @@ DOCUMENTATION = r"""
       required: true
 """
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Sort a list of dictionaries based on single key sort
   ansible.builtin.debug:
     msg: "{{ my_list | dettonville.utils.sort_dict_list('name') }}"
@@ -46,16 +51,16 @@ EXAMPLES = '''
     msg: "{{ my_list | dettonville.utils.sort_dict_list(['platform_id','address','username']) }}"
   vars:
     my_list:
-      - address: 172.31.25.54
+      - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
         platform_account_type: recon
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.31.25.54
+        platform_logon_domain: 10.31.25.54
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-      - address: 172.31.25.54
+      - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
         groups:
@@ -64,20 +69,20 @@ EXAMPLES = '''
         managed: true
         platform_account_type: platform
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.31.25.54
+        platform_logon_domain: 10.31.25.54
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-      - address: 172.21.33.8
+      - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
         platform_account_type: recon
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.21.33.8
+        platform_logon_domain: 10.21.33.8
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-      - address: 172.21.33.8
+      - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
         groups:
@@ -86,14 +91,14 @@ EXAMPLES = '''
         managed: true
         platform_account_type: platform
         platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 172.21.33.8
+        platform_logon_domain: 10.21.33.8
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
   # Produces the sorted list:
-  # 
+  #
   #  my_list:
-  #   - address: 172.21.33.8
+  #   - address: 10.21.33.8
   #     automatic_management_enabled: true
   #     domain_type: local
   #     groups:
@@ -102,20 +107,20 @@ EXAMPLES = '''
   #     managed: true
   #     platform_account_type: platform
   #     platform_id: WND-Local-Managed-DMZ
-  #     platform_logon_domain: 172.21.33.8
+  #     platform_logon_domain: 10.21.33.8
   #     platform_notes: WINANSD1S1.example.int
   #     safe: Windows-Server-Local-Admin
   #     username: administrator
-  #   - address: 172.21.33.8
+  #   - address: 10.21.33.8
   #     automatic_management_enabled: true
   #     domain_type: local
   #     platform_account_type: recon
   #     platform_id: WND-Local-Managed-DMZ
-  #     platform_logon_domain: 172.21.33.8
+  #     platform_logon_domain: 10.21.33.8
   #     platform_notes: WINANSD1S1.example.int
   #     safe: A-T-careconlocal
   #     username: careconlocal
-  #   - address: 172.31.25.54
+  #   - address: 10.31.25.54
   #     automatic_management_enabled: true
   #     domain_type: local
   #     groups:
@@ -124,26 +129,26 @@ EXAMPLES = '''
   #     managed: true
   #     platform_account_type: platform
   #     platform_id: WND-Local-Managed-DMZ
-  #     platform_logon_domain: 172.31.25.54
+  #     platform_logon_domain: 10.31.25.54
   #     platform_notes: WINANSD1S4.example.int
   #     safe: Windows-Server-Local-Admin
   #     username: administrator
-  #   - address: 172.31.25.54
+  #   - address: 10.31.25.54
   #     automatic_management_enabled: true
   #     domain_type: local
   #     platform_account_type: recon
   #     platform_id: WND-Local-Managed-DMZ
-  #     platform_logon_domain: 172.31.25.54
+  #     platform_logon_domain: 10.31.25.54
   #     platform_notes: WINANSD1S4.example.int
   #     safe: A-T-careconlocal
   #     username: careconlocal
-'''
+"""
 
-RETURN = '''
+RETURN = """
   _value:
     description: A sorted list containing the dictionaries from the original list.
     type: list
-'''
+"""
 
 # from ansible.errors import AnsibleFilterError
 # from ansible.module_utils.common._collections_compat import Mapping, Sequence
@@ -153,18 +158,11 @@ RETURN = '''
 # from functools import cmp_to_key
 
 # noinspection PyUnresolvedReferences
-from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
-    sort_single_key,
-    sort_multi_key
-)
 
 
 class FilterModule(object):
-
     def filters(self):
-        return {
-            'sort_dict_list': self.sort_dict_list
-        }
+        return {"sort_dict_list": self.sort_dict_list}
 
     def sort_dict_list(self, dict_list, sort_keys):
         if isinstance(sort_keys, list):
