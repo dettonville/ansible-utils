@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 import io
@@ -12,9 +13,7 @@ import logging
 
 _LOGLEVEL_DEFAULT = "INFO"
 
-logging.basicConfig(
-    level=_LOGLEVEL_DEFAULT
-)
+logging.basicConfig(level=_LOGLEVEL_DEFAULT)
 
 
 def get_headers_and_fields(column_list):
@@ -25,20 +24,34 @@ def get_headers_and_fields(column_list):
     if not headers:
         headers = fieldnames
 
+    for index, header in enumerate(headers):
+        if not header:  # This checks for falsey values like "", None, [], 0, False
+            fieldname = fieldnames[index]
+            logging.debug(
+                "Replace empty header at index %s with fieldname: %s", index, fieldname
+            )
+            headers[index] = fieldname
+
+    logging.debug("fieldnames: %s", fieldnames)
+    logging.debug("headers: %s", headers)
     return headers, fieldnames
 
 
-# ref: https://stackoverflow.com/questions/9157314/how-do-i-write-data-into-csv-format-as-string-not-file
+# ref:
+# https://stackoverflow.com/questions/9157314/how-do-i-write-data-into-csv-format-as-string-not-file
 def write_csv_string(export_list, column_list):
     (headers, fieldnames) = get_headers_and_fields(column_list)
+    logging.debug("headers: %s", headers)
 
     output = io.StringIO()
-    writer = csv.writer(output, lineterminator='\n', fieldnames=fieldnames, extrasaction='ignore')
 
     header_row_dict = dict(zip(fieldnames, headers))
 
-    # print('header_row_dict: %s' % header_row_dict)
+    logging.debug("header_row_dict: %s", header_row_dict)
 
+    writer = csv.DictWriter(
+        output, lineterminator="\n", fieldnames=fieldnames, extrasaction="ignore"
+    )
     writer.writerow(header_row_dict)
     writer.writerows(export_list)
 
@@ -56,8 +69,13 @@ def write_csv_file(module, output_file, export_list, column_list):
     (headers, fieldnames) = get_headers_and_fields(column_list)
 
     try:
-        with open(output_file, mode='w') as csv_file:
-            writer = csv.DictWriter(csv_file, lineterminator='\n', fieldnames=fieldnames, extrasaction='ignore')
+        with open(output_file, mode="w") as csv_file:
+            writer = csv.DictWriter(
+                csv_file,
+                lineterminator="\n",
+                fieldnames=fieldnames,
+                extrasaction="ignore",
+            )
 
             header_row_dict = dict(zip(fieldnames, headers))
 
@@ -71,11 +89,13 @@ def write_csv_file(module, output_file, export_list, column_list):
             #     writer.writerow(row_output)
 
     except IOError:
-        module.fail_json(msg="Unable to create file %s", traceback=traceback.format_exc())
+        module.fail_json(
+            msg="Unable to create file %s", traceback=traceback.format_exc()
+        )
 
     result = dict(
         changed=True,
-        message="The csv file has been created successfully at {0}".format(output_file)
+        message="The csv file has been created successfully at {0}".format(output_file),
     )
 
     return result
@@ -96,14 +116,14 @@ def write_markdown_string(export_list, column_list):
 
     md_string += "\n"
     for row in export_list:
-        logging.debug('row = %s' % str(row))
+        logging.debug("row = %s", str(row))
         md_string += "|"
         for column in column_list:
-            if column['name'] in row:
-                column_value = row[column['name']]
+            if column["name"] in row:
+                column_value = row[column["name"]]
             else:
-                column_value = ''
-            logging.debug('column_value = %s' % str(column_value))
+                column_value = ""
+            logging.debug("column_value = %s", str(column_value))
             md_string += " " + str(column_value) + " |"
         md_string += "\n"
 
@@ -118,16 +138,20 @@ def write_markdown_file(module, output_file, export_list, column_list):
         if sys.version_info >= (3, 6):
             file.write(md_string)
         else:
-            file.write(md_string.decode('utf-8'))
+            file.write(md_string.decode("utf-8"))
 
         file.close()
 
     except IOError:
-        module.fail_json(msg="Unable to create file %s", traceback=traceback.format_exc())
+        module.fail_json(
+            msg="Unable to create file %s", traceback=traceback.format_exc()
+        )
 
     result = dict(
         changed=True,
-        message="The markdown file has been created successfully at {0}".format(output_file)
+        message="The markdown file has been created successfully at {0}".format(
+            output_file
+        ),
     )
 
     return result

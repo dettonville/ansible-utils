@@ -2,11 +2,12 @@
 host_key_checking: no
 
 #ansible_python_interpreter: /usr/bin/env python3
-ansible_python_interpreter_default: python3
+#ansible_python_interpreter_default: python3
 #ansible_python_interpreter: "/usr/bin/python3"
-#ansible_python_interpreter: "python3"
 #ansible_python_interpreter: /usr/bin/python3.8
 #ansible_python_interpreter: "python3.8"
+#ansible_python_interpreter: "{{ '~/.pyenv/shims/python3' | expanduser }}"
+ansible_python_interpreter: "python3"
 
 #setup_remote_tmp_dir__disable_cleanup: yes
 

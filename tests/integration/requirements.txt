@@ -1,2 +1,15 @@
 ## library module requirements
+packaging
 pyyaml
+jmespath
+netaddr
+requests
+passlib
+pytest
+pytest-shell-utilities
+pytest-parallel
+python-dateutil
+ansible-lint
+ansible-lint-junit
+yamllint
+yaml-lint-to-junit-xml

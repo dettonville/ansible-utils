@@ -122,10 +122,59 @@
     var: ansible_env.AWX_HOST|d('')
     verbosity: 1
 
+- name: "init-test-vars | Display common variable information"
+  ansible.builtin.debug:
+    msg:
+      ## BEGIN ansible special/magic variables
+      ## ref: https://docs.ansible.com/ansible/latest/user_guide/playbooks_vars_facts.html#discovering-variables-facts-and-magic-variables
+      - "ansible_run_tags={{ ansible_run_tags | d([]) }}"
+      - "ansible_limit={{ ansible_limit | d('') }}"
+      - "ansible_version={{ ansible_version | d('') }}"
+      - "discovered_interpreter_python={{ discovered_interpreter_python | d('') }}"
+      - "ansible_python_interpreter={{ ansible_python_interpreter | d('') }}"
+      - "ansible_python_version={{ ansible_python_version | d('') }}"
+      - "ansible_pip_interpreter={{ ansible_pip_interpreter | d('') }}"
+      - "ansible_user={{ ansible_user|d('') }}"
+      - "inventory_hostname={{ inventory_hostname }}"
+      - "ansible_nodename={{ ansible_nodename | d('') }}"
+      - "ansible_host={{ ansible_host }}"
+      - "ansible_hostname={{ ansible_hostname | d('') }}"
+
 - name: "init-test-vars | Display collection version information"
   ansible.builtin.debug:
     msg:
       - "dettonville.utils version={{ lookup('community.general.collection_version', 'dettonville.utils') }}"
+
+- name: "init-test-vars | Get installed python module/package list from default pip"
+  no_log: true
+  community.general.pip_package_info:
+    clients: ['pip3']
+  register: __test_component__pip_package_info
+
+- name: "init-test-vars | Display __test_component__pip_package_info"
+  ansible.builtin.debug:
+    var: __test_component__pip_package_info
+    verbosity: 2
+
+#- name: "init-test-vars | Set __pip3_package_info"
+#  #    no_log: true
+#  ansible.builtin.set_fact:
+#    __pip3_package_info: "{{ __test_component__pip_package_info.packages['pip3'] |
+#      dict2items | map(attribute='value') | flatten }}"
+#
+#- name: "init-test-vars | Display __pip3_package_info"
+#  ansible.builtin.debug:
+#    var: __pip3_package_info
+
+- name: "init-test-vars | Set __test_component__pip_package_versions"
+#  no_log: true
+  ansible.builtin.set_fact:
+    __test_component__pip_package_versions: "{{ __test_component__pip_package_info.packages.pip3.values() | list |
+        community.general.json_query('[].{name: name, version: version}') }}"
+
+- name: "init-test-vars | Display __test_component__pip_package_versions"
+  ansible.builtin.debug:
+    var: __test_component__pip_package_versions
 
 #- name: "init-test-vars | Setup temp dir"
 #  ansible.builtin.import_role:
@@ -199,24 +248,6 @@
       - "__test_job__test_base_dir={{ __test_job__test_base_dir }}"
       - "__test_job__git_ssh_private_keydir={{ __test_job__git_ssh_private_keydir }}"
       - "__test_job__raise_final_excp_upon_test_failure={{ __test_job__raise_final_excp_upon_test_failure }}"
-
-- name: "init-test-vars | Display common variable information"
-  ansible.builtin.debug:
-    msg:
-      ## BEGIN ansible special/magic variables
-      ## ref: https://docs.ansible.com/ansible/latest/user_guide/playbooks_vars_facts.html#discovering-variables-facts-and-magic-variables
-      - "ansible_run_tags={{ ansible_run_tags | d([]) }}"
-      - "ansible_limit={{ ansible_limit | d('') }}"
-      - "ansible_version={{ ansible_version | d('') }}"
-      - "discovered_interpreter_python={{ discovered_interpreter_python | d('') }}"
-      - "ansible_python_interpreter={{ ansible_python_interpreter | d('') }}"
-      - "ansible_python_version={{ ansible_python_version | d('') }}"
-      - "ansible_pip_interpreter={{ ansible_pip_interpreter | d('') }}"
-      - "ansible_user={{ ansible_user|d('') }}"
-      - "inventory_hostname={{ inventory_hostname }}"
-      - "ansible_nodename={{ ansible_nodename | d('') }}"
-      - "ansible_host={{ ansible_host }}"
-      - "ansible_hostname={{ ansible_hostname | d('') }}"
 
 - name: "init-test-vars | Display vault information"
   ansible.builtin.debug:
