@@ -83,7 +83,7 @@ $ ansible -e @test-vars.yml -e @vars/vault.yml --vault-password-file ${PROJECT_D
 $ ansible -i _test_inventory/ -m debug -a \
     var=ansible_connection,ansible_port,ansible_winrm_scheme,ansible_winrm_transport \
     dc9.example.int
-$ ansible -i _test_inventory/ -m debug -a var=app123_platform_accounts__platform_type testgroup_foobar_123
+$ ansible -i _test_inventory/ -m debug -a var=app123_platform_accounts__platform_type testgroup_app123_123
 winansd3s1.example.int | SUCCESS => {
     "app123_platform_accounts__platform_type": "managed_domain_vdi"
 }

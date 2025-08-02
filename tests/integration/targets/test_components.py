@@ -1,3 +1,4 @@
+
 import os
 from os.path import join, dirname
 
@@ -70,7 +71,7 @@ def get_test_cases() -> list[tuple[str, str]]:
         )
 
         for filename in test_var_files:
-            test_case = re.findall("testdata_(.*?).yml", str(filename))[0]
+            test_case = re.findall('testdata_(.*?).yml', str(filename))[0]
             logging.debug("test_case=%s", test_case)
             test_input_data = (test_component, test_case)
             test_case_list.append(test_input_data)
@@ -92,7 +93,7 @@ test_case_list = get_test_cases()
 # ref: https://docs.pytest.org/en/latest/reference/reference.html#request
 @pytest.mark.parametrize("test_component,test_case", test_case_list)
 def test_components(shell, script_path, test_component, test_case):
-    test_case_extra_vars = "--extra-vars \"test_case_id_list=['%s']\"" % test_case
+    test_case_extra_vars = "--extra-vars \"test_case_id_list=[\'%s\']\"" % test_case
     test_command_list = [script_path, "-t", test_component, test_case_extra_vars]
     logging.info("test_command_list=%s", test_command_list)
     # ref: https://stackoverflow.com/questions/7745952/how-to-expand-a-list-to-function-arguments-in-python#7745986

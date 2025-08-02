@@ -97,7 +97,7 @@ class Git:
         ssh_params = repo_config.get("ssh_params")
         if ssh_params:
             self.ssh_key_file = ssh_params.get("key_file")
-            self.ssh_opts = ssh_params.get("ssh_opts", "")
+            self.ssh_opts = ssh_params.get("ssh_opts") or ""
             self.ssh_accept_hostkey = ssh_params.get("accept_hostkey", False)
             if self.ssh_accept_hostkey:
                 if "-o StrictHostKeyChecking=no" not in self.ssh_opts:

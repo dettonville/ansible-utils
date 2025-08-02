@@ -5,20 +5,10 @@ import jenkins.model.Jenkins
 
 import com.dettonville.pipeline.utils.logging.LogLevel
 import com.dettonville.pipeline.utils.logging.Logger
-import com.dettonville.pipeline.utils.logging.JenkinsLogger
 
 import com.dettonville.pipeline.utils.JsonUtils
 
-// import groovy.transform.Field
-// @Field String scriptName = this.class.getName()
-// @Field JenkinsLogger log = new JenkinsLogger(this, prefix: scriptName)
-// @Field JenkinsLogger log = new JenkinsLogger(this)
-// @Field Logger log = new Logger(this)
-
 Logger log = new Logger(this)
-
-//Logger log = new Logger(this, LogLevel.INFO)
-//String logPrefix="runModuleTest():"
 
 Map config = [:]
 

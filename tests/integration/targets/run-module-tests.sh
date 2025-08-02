@@ -20,7 +20,6 @@ SCRIPT_NAME="$(basename "$0")"
 SCRIPT_NAME_PREFIX="${SCRIPT_NAME%.*}"
 
 PLAYBOOK="${SCRIPT_NAME_PREFIX}.yml"
-
 PROJECT_DIR="$( cd "$SCRIPT_DIR/" && git rev-parse --show-toplevel )"
 
 ## only needed if sourcing local private collections by source instead of galaxy
@@ -85,9 +84,10 @@ function install_galaxy_collections() {
   echo "==> ansible-galaxy --version"
   ansible-galaxy --version
 
-    ## ref: https://github.com/ansible/ansible/issues/79557#issuecomment-1344168449
+  ## ref: https://github.com/ansible/ansible/issues/79557#issuecomment-1344168449
   echo "==> Install Galaxy collection requirements"
-#  GALAXY_INSTALL_CMD=("env ANSIBLE_GALAXY_IGNORE=true env GALAXY_IGNORE_CERTS=true")
+#  GALAXY_INSTALL_CMD=("env ANSIBLE_GALAXY_IGNORE=true")
+#  GALAXY_INSTALL_CMD+=("env GALAXY_IGNORE_CERTS=true")
 #  GALAXY_INSTALL_CMD+=("ansible-galaxy collection install")
 #  GALAXY_INSTALL_CMD+=("--ignore-certs")
 #  GALAXY_INSTALL_CMD+=("--force")

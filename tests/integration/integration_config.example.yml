@@ -2,7 +2,7 @@
 
 ## ref: https://github.com/ansible-collections/community.hashi_vault/blob/main/tests/integration/integration_config.yml.sample
 
-#test_repo_git_ssh_private_key: "{{ lookup('env', 'ALS_git_pacp_SSH_KEY') }}"
+#test_repo_git_ssh_private_key: "{{ lookup('env', 'GIT_PACP_SSH_KEY') }}"
 test_repo_git_ssh_private_key: |
   -----BEGIN OPENSSH PRIVATE KEY-----
   sfskdlfgjldfg sldkg
