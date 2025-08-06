@@ -247,35 +247,45 @@ class Git:
                 type: dict()
                 description: updated changed status.
         """
-        parameters = ["name", "email"]
+        log_prefix = "%s.set_user_config():" % self.__class__.__name__
+        self.log.debug("%s user_config => %s", log_prefix, PrettyLog(user_config))
+
         result = dict()
 
-        self.user_config = user_config
+        current_user_name_rc, current_user_name, _stderr = self.execute_git_command(
+            ['config', '--local', 'user.name'],
+            check_rc=False,
+            cwd=self.repo_dir
+        )
+        current_user_email_rc, current_user_email, _stderr = self.execute_git_command(
+            ['config', '--local', 'user.email'],
+            check_rc=False,
+            cwd=self.repo_dir
+        )
 
-        for parameter in parameters:
-            if self.user_config[parameter]:
-                config_parameter = self.user_config[parameter]
-            else:
-                config_parameter = self.module.params.get("user_{0}".format(parameter))
+        user_name = user_config.get("name")
+        user_email = user_config.get("email")
 
-            if config_parameter:
-                command = [
-                    "config",
-                    "--local",
-                    "user.{0}".format(parameter),
-                ]
-                _rc, stdout, _stderr = self.execute_git_command(
-                    command, check_rc=True, cwd=self.repo_dir
-                )
+        # Set user.name if it's not already configured or if it's different from the desired value
+        if current_user_name_rc != 0 or current_user_name.strip() != user_name:
+            self.execute_git_command(
+                ['config', '--local', 'user.name', user_name],
+                check_rc=True,
+                cwd=self.repo_dir
+            )
+            self.log.debug("%s Set git user.name to %s", log_prefix, user_name)
 
-                if stdout != config_parameter:
-                    command.append(config_parameter)
-                    _rc, stdout, _stderr = self.execute_git_command(
-                        command, check_rc=True, cwd=self.repo_dir
-                    )
+        # Set user.email if it's not already configured or if it's different from the desired value
+        if current_user_email_rc != 0 or current_user_email.strip() != user_email:
+            self.execute_git_command(
+                ['config', '--local', 'user.email', user_email],
+                check_rc=True,
+                cwd=self.repo_dir
+            )
+            self.log.debug("%s Set git user.email to %s", log_prefix, user_email)
 
-                    result.update({"message": stdout, "changed": True})
-
+        # result.update({"message": stdout, "changed": True})
+        result.update({"changed": True, "message": "Git user configuration updated."})
         return result
 
     def clone(self, shallow=True, bare=False, reference=None, refspec=None) -> dict:
