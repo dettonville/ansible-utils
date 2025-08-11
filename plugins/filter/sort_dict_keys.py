@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import (absolute_import, division, print_function)
+from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
+    sort_dict_keys,
+)
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -24,7 +28,7 @@ DOCUMENTATION = r"""
       required: false
 """
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Sort dictionary keys
   ansible.builtin.debug:
     msg: "{{ my_dict | dettonville.utils.sort_dict_keys }}"
@@ -77,13 +81,13 @@ EXAMPLES = '''
   #          app_abc123_qa:
   #            hosts:
   #              test123.qa.site1.example.int: {}
-'''
+"""
 
-RETURN = '''
+RETURN = """
   _value:
     description: A sorted list containing the dictionaries from the original list.
     type: list
-'''
+"""
 
 # from ansible.errors import AnsibleFilterError
 # from ansible.module_utils.common._collections_compat import Mapping, Sequence
@@ -93,15 +97,11 @@ RETURN = '''
 # from functools import cmp_to_key
 
 # noinspection PyUnresolvedReferences
-from ansible_collections.dettonville.utils.plugins.module_utils.utils import sort_dict_keys
 
 
 class FilterModule(object):
-
     def filters(self):
-        return {
-            'sort_dict_keys': self.sort_dictionary_keys
-        }
+        return {"sort_dict_keys": self.sort_dictionary_keys}
 
     def sort_dictionary_keys(self, my_dict, reverse=False):
         return sort_dict_keys(my_dict, reverse)

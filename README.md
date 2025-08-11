@@ -1,14 +1,27 @@
 
-[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE)
+[![ansible-test sanity](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-sanity.yml/badge.svg)](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-sanity.yml)
+[![ansible-test units](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-units.yml/badge.svg)](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-units.yml)
+[![ansible-lint](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-lint.yml)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 
 # Dettonville Ansible Utilities Collection
 
 The Ansible ``dettonville.utils`` collection includes plugins/filters that aid management, manipulation and visibility of data for Ansible playbooks.
 
+## Detailed test / use case examples
+
+The integration tests performed regularly on the main branch demonstrate the use case examples supported by the **module**.
+A comprehensive set of [tested use cases/examples can be found here.](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
+
+## Requirements
+
+The host running the tasks must have the python requirements described in [requirements.txt](https://github.com/dettonville/ansible-utils/blob/main/requirements.txt)
+Once the collection is installed, you can install them into a python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/dettonville/utils/requirements.txt`
+
 <!--start requires_ansible-->
 ## Ansible version compatibility
 
-This collection has been tested against following Ansible versions: **>=2.9.10**.
+This collection has been tested against following Ansible versions: **>=2.16.0**.
 
 Plugins and modules within a collection may be tested with only specific Ansible versions.
 A collection may contain metadata that identifies these versions.
@@ -21,21 +34,19 @@ PEP440 is the schema used to describe the versions of Ansible.
 ### Filter plugins
 Name | Description
 --- | ---
-[dettonville.utils.sort_dict_list](https://github.com/dettonville/ansible-dettonville-utils/blob/main/docs/dettonville.utils.sort_dict_list.md)|Parse cli output or text using a variety of parsers
-
-### Lookup plugins
-Name | Description
---- | ---
+[remove_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_dict_keys.py) | Remove key(s) with specified list of regex patterns from nested dict/array.
+[remove_sensitive_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_sensitive_keys.py) | Remove sensitive key(s) with specified list of regex patterns from nested dict/array.
+[sort_dict_list](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_list.py) | Sort a list of dicts using specified sort key(s).
+[sort_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_keys.py) | Sort dictionary keys by specified key(s).
+[to_markdown](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_markdown.py) | Converts a list of flat dictionaries to markdown format.
 
 ### Modules
-Name | Description
---- | ---
-[dettonville.utils.git_pacp](https://github.com/dettonville/ansible-dettonville-utils/blob/main/docs/dettonville.utils.git_pacp.md)|Perform git operations including: 'clone', 'pull', 'acp', and 'pacp' (pull, add, commit and push).
-[dettonville.utils.export_dicts](https://github.com/dettonville/ansible-dettonville-utils/blob/main/docs/dettonville.utils.export_dicts.md)|Write a list of flat dictionaries to a file with either csv or markdown format.
 
-### Test plugins
 Name | Description
 --- | ---
+[export_dicts](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/export_dicts.py) | Export a list of dicts to markdown or csv formatted file.
+[git_pacp](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/git_pacp.py) | Perform git actions, including, clone, add, commit, push, or combined add+commit+push(ACP).
+[test_results_logger](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/test_results_logger.py) | Renders test results specified in dict format into junit xml.
 
 <!--end collection content-->
 
@@ -54,10 +65,8 @@ collections:
 ```
 ## Using this collection
 
-The most common use case for this collection is when you want to work with the complex data structures present in an Ansible playbook, inventory, or returned from modules. See each plugin documentation page for detailed examples for how these utilities can be used in tasks.
+A comprehensive set of [tested use cases/examples can be found here.](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
 
-
-**NOTE**: For Ansible 2.9, you may not see deprecation warnings when you run your playbooks with this collection. Use this documentation to track when a module is deprecated.
 
 ### See Also:
 
@@ -67,15 +76,23 @@ The most common use case for this collection is when you want to work with the c
 
 This collection is intended for plugins that are not platform or discipline specific. Simple plugin examples should be generic in nature. More complex examples can include real world platform modules to demonstrate the utility of the plugin in a playbook.
 
-We welcome community contributions to this collection. If you find problems, please open an issue or create a PR against the [dettonville.utils collection repository](https://github.com/ansible-collections/dettonville.utils). See [Contributing to Ansible-maintained collections](https://docs.ansible.com/ansible/devel/community/contributing_maintained_collections.html#contributing-maintained-collections) for complete details.
+We welcome community contributions to this collection. If you find problems, please open an issue or create a PR against the [dettonville.utils collection repository](https://github.com/dettonville/ansible-utils). See [Contributing to Ansible-maintained collections](https://docs.ansible.com/ansible/devel/community/contributing_maintained_collections.html#contributing-maintained-collections) for complete details.
 
 See the [Ansible Community Guide](https://docs.ansible.com/ansible/latest/community/index.html) for details on contributing to Ansible.
+
+## Testing
+
+All releases will meet the following test criteria.
+
+* 100% success for [Integration](https://github.com/dettonville/ansible-utils/blob/main/tests/integration) tests.
+* 100% success for [Unit](https://github.com/dettonville/ansible-utils/blob/main/tests/unit) tests.
+* 100% success for [Sanity](https://docs.ansible.com/ansible/latest/dev_guide/testing/sanity/index.html#all-sanity-tests) tests as part of [ansible-test](https://docs.ansible.com/ansible/latest/dev_guide/testing.html#run-sanity-tests).
+* 100% success for [ansible-lint](https://ansible.readthedocs.io/projects/lint/) allowing only false positives.
 
 ### Developer notes
 
 - 100% code coverage is the goal, although it's not always possible. Please include unit and integration tests with all PRs. PRs should not cause a decrease in code coverage.
 - Filter plugins should be 1 per file, with an included DOCUMENTATION string, or reference a lookup plugin with the same name.
-- Action, filter, and lookup plugins should use argspec validation. See [AnsibleArgSpecValidator](https://github.com/dettonville/ansible-dettonville-utils/blob/main/plugins/module_utils/common/argspec_validate.py).
 - This collection should not depend on other collections for imported code
 - Use of the latest version of black is required for formatting (black -l79)
 - The README contains a table of plugins. Use the [collection_prep](https://github.com/ansible-network/collection_prep) utilities to maintain this.
@@ -89,7 +106,7 @@ Please read and familiarize yourself with this document.
 
 ## Release notes
 <!--Add a link to a changelog.md file or an external docsite to cover this information. -->
-Release notes are available [here](https://github.com/dettonville/ansible-dettonville-utils/blob/main/changelogs/CHANGELOG.rst)
+Release notes are available [here](https://github.com/dettonville/ansible-utils/blob/main/changelogs/CHANGELOG.rst)
 For automated release announcements refer [here](https://twitter.com/AnsibleContent).
 
 

@@ -4,15 +4,12 @@
 ## Test environment
 
 ```shell
-$ export TEST_PYTHON_VERSION="3.10"
+$ export TEST_PYTHON_VERSION="3.12"
 $ export ANSIBLE_KEEP_REMOTE_FILES=1
 $ export ANSIBLE_DEBUG=1
-$ PROJECT_DIR="$( git rev-parse --show-toplevel )"
-$ COLLECTION_DIR=${PROJECT_DIR}/collections/ansible_collections/dettonville/utils
-$ echo "COLLECTION_DIR=${COLLECTION_DIR}"
-$ cd ${COLLECTION_DIR}
+## is MacOS
+$ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ```
-
 
 If running on MacOS may get the following error:
 ```output
@@ -25,15 +22,6 @@ Resolved with the following setting:
 ## ref: https://github.com/ansible/ansible/issues/76322
 ## ref: https://github.com/ansible/ansible/issues/32499
 $ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-```
-
-### Testing
-
-## Sanity Testing
-
-```shell
-ansible-test sanity -v --docker --python ${TEST_PYTHON_VERSION} export_dicts
-
 ```
 
 ## Integration Testing
@@ -102,13 +90,11 @@ Run command: docker rm -f ansible-test-controller-Nl1njsLi
 
 ```
 
-* [Full detailed results here](./test-results.export_dicts.md)
-* [Full detailed colorized results here](./test-results.export_dicts.pdf)
-
 
 ## Debugging modules
 
 ```shell
+$ cd ${HOME}/.ansible/tmp/
 $ ls -Fla ../$(ls -Fla ../ | tail -16 | head -1 | cut -d':' -f2 | cut -d' ' -f2)
 $ cd ${HOME}/.ansible/tmp/ansible-tmp-1657821639.432363-21127-34939542886107
 ./AnsiballZ_export_dicts.py explode
@@ -124,7 +110,7 @@ Log onto the tower control node
 ```shell
 ## log into tower
 ## sandbox => atrsbt1s4.example.org
-ssh username@atrsbt1s4.example.org
+ssh username@awx.example.org
 sudo su
 ```
 
@@ -181,14 +167,14 @@ nano debug_dir/ansible_collections/dettonville/utils/plugins/module_utils/git_ac
 
 ```
 
-### Debugging module references
-
-* https://docs.ansible.com/ansible/latest/dev_guide/debugging.html
-* https://yaobinwen.github.io/2021/01/29/Ansible-how-to-debug-a-problematic-module.html
-
 ### Run All Tests
 
 ```shell
 tests/run_tests.sh > run_test.results.txt
 
 ```
+
+### Debugging module references
+
+* https://docs.ansible.com/ansible/latest/dev_guide/debugging.html
+* https://yaobinwen.github.io/2021/01/29/Ansible-how-to-debug-a-problematic-module.html

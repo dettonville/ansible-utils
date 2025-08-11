@@ -1,19 +1,50 @@
 ---
 authors:
   - Dettonville Development Team
-  - "Lee Johnson - ljohnson@dettonville.com"
-description:
-  Ansible Collection with utilities to ease the management, manipulation,
-  and validation of data within a playbook
+  - Lee Johnson - ljohnson@dettonville.com
+description: Ansible Collection with utilities to ease the management, manipulation, and validation of data within a playbook
 issues: https://github.com/dettonville/ansible-dettonville-utils/issues
-license_file: LICENSE
+license_file: LICENSE.md
 name: utils
 namespace: dettonville
 readme: README.md
-repository: https://github.com/dettonville/ansible-dettonville-utils
+repository: https://github.com/dettonville/ansible-utils
 tags:
   - linux
   - utilities
   - data
+  - junit
   - utils
-version: 2025.3.19
+version: 2025.8.1
+# https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
+manifest:
+  directives:
+    - include meta/runtime.yml
+    - include README.md LICENSE.md
+    - recursive-include docs */**.md
+    # avoid using 'recursive-include plugins/*.py' since it
+    # includes directories specified to be excluded if they contain *.py files
+    # this has the inconvenience/disadvantage of having to explicitly
+    # include each plugin sub-dir as seen below :`(
+    #    - recursive-include plugins */**.py
+    - include plugins/module_utils/*.py
+    - include plugins/modules/*.py
+    - include plugins/lookups/*.py
+    - include plugins/action/*.py
+    - include plugins/become/*.py
+    - include plugins/cache/*.py
+    - include plugins/callback/*.py
+    - include plugins/connection/*.py
+    - include plugins/doc_fragments/*.py
+    - include plugins/filter/*.py
+    - include plugins/inventory/*.py
+    - include plugins/lookup/*.py
+    - include plugins/module_utils/*.py
+    - include plugins/modules/*.py
+    - include plugins/plugin_utils/*.py
+    - exclude galaxy.yml MANIFEST.json FILES.json <namespace>-<name>-*.tar.gz
+    - recursive-exclude tests/output **
+    - recursive-exclude releases **
+    - recursive-exclude **/save/ **
+    - recursive-exclude **/archive/ **
+  omit_default_directives: true

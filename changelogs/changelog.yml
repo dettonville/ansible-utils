@@ -1,2 +1,10 @@
-ancestor: 2024.2.1
-releases: {}
+ancestor: null
+releases:
+  2025.7.0:
+    changes:
+      major_changes:
+      - Release 2025.7.0
+      release_summary: Initial release 2025.7.0
+    fragments:
+    - 25001-release-100.yaml
+    release_date: '2025-07-02'

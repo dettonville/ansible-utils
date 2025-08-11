@@ -1,0 +1,52 @@
+# Configuration for Probot Stale app
+# This file should be placed in .github/stale.yml
+
+# Number of days of inactivity before an issue or pull request becomes stale
+daysUntilStale: 60
+
+# Number of days before a stale issue or pull request is closed
+daysUntilClose: 7
+
+# Label to apply when an issue or pull request becomes stale
+staleLabel: stale
+
+# Comment to post when an issue or pull request becomes stale.
+# The {{daysUntilClose}} variable will be replaced with the value of daysUntilClose.
+markComment: >
+  This issue has been automatically marked as stale because it has not had
+  recent activity. It will be closed if no further activity occurs.
+  Thank you for your contributions.
+
+# Comment to post when an issue or pull request is closed.
+# Set to `false` to disable.
+closeComment: false
+
+# Issues or pull requests with these labels will never be marked stale.
+exemptLabels:
+  - pinned
+  - security
+  - bug
+  - feature
+
+# Only issues or pull requests with these labels are checked for staleness.
+# If `[]` (empty array), all issues/PRs are checked.
+onlyLabels: []
+
+# Issues or pull requests with these keywords in their title will never be marked stale.
+exemptIssueLabels: []
+exemptPrLabels: []
+
+# Issues or pull requests with these keywords in their title will never be marked stale.
+exemptIssueTitles: []
+exemptPrTitles: []
+
+# Limit to only `issues` or `pulls`
+# Set to `false` to disable.
+# If `[]` (empty array), both issues and pull requests are checked.
+# If you only want to check issues, use `only: issues`
+# If you only want to check pull requests, use `only: pulls`
+only: []
+
+# Allow the bot to close issues/PRs that were marked stale by a different bot.
+# Set to `true` to allow.
+allowCloseWithOtherStaleLabel: false

@@ -1,7 +1,3 @@
-pytest
-PyYAML
-Jinja2
-setuptools
-jsonschema
-xmltodict
-logging
+## library module requirements
+pyyaml
+packaging

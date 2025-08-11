@@ -1,9 +1,13 @@
-plugins/modules/cyberark_get_accounts.py pep8:W291
-plugins/modules/cyberark_get_accounts.py pep8:E501
-plugins/modules/git_checkout.py use-argspec-type-path # fix needed
-plugins/modules/git_checkout.py validate-modules:doc-missing-type
-plugins/modules/git_checkout.py validate-modules:doc-required-mismatch
-plugins/modules/git_checkout.py validate-modules:invalid-documentation
-plugins/modules/git_checkout.py validate-modules:option-invalid-version-added
-plugins/modules/git_checkout.py validate-modules:parameter-list-no-elements
-plugins/modules/git_checkout.py validate-modules:parameter-type-not-in-doc
+deploy-ansible-collection.sh shellcheck:SC2034
+plugins/module_utils/test_results_logger.py no-basestring!skip
+plugins/modules/export_dicts.py pep8!skip # leave as is
+plugins/modules/export_dicts.py validate-modules:missing-gplv3-license
+plugins/modules/git_pacp.py validate-modules:missing-gplv3-license
+plugins/modules/test_results_logger.py validate-modules:missing-gplv3-license
+regenerate-module-docs.sh shellcheck:SC2016
+regenerate-module-docs.sh shellcheck:SC2034
+sync-public-branch.sh shellcheck:SC2034
+tests/integration/targets/run-pytest.sh shellcheck:SC2034
+tests/integration/targets/run-role-tests.sh shellcheck:SC2034
+tests/integration/targets/runModuleTest.groovy shebang!skip
+tests/run_tests.sh shellcheck:SC2034

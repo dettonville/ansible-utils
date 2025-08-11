@@ -324,7 +324,7 @@
 
 - name: "{{ __test_component__log_save_test_summary }} Save __test_component__report_results_flattened to {{ 
     __test_component__base_dir }}/{{ __test_component__report_summary_detailed_results_csv }}"
-  ignore_errors: yes
+  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_component') }}"
     columns: "{{ __test_component__report_columns }}"
@@ -334,7 +334,7 @@
 
 - name: "{{ __test_component__log_save_test_summary }} Save __test_component__report_results_flattened to {{ 
     __test_component__base_dir }}/{{ __test_component__report_summary_detailed_results_md }}"
-  ignore_errors: yes
+  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_component') }}"
     columns: "{{ __test_component__report_columns }}"
@@ -344,7 +344,7 @@
 
 - name: "{{ __test_component__log_save_test_summary }} Save __test_component__report_summary_results_flattened to {{ 
     __test_component__base_dir }}/{{ __test_component__report_summary_results_md }}"
-  ignore_errors: yes
+  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_summary_results_flattened | dettonville.utils.sort_dict_list('test_component') }}"
     columns: "{{ __test_component__summary_report_columns }}"
@@ -422,7 +422,7 @@
   dettonville.utils.test_results_logger:
     test_results_dir: "{{ __test_component__junit_report_dir }}"
     test_junit_report_file: "{{ __test_component__junit_report_file }}"
-    test_case_base_dir: "{{ role_path }}/{{ __test_component__test_vars_dir }}"
+    test_case_base_dir: "{{ __test_component__test_base_vars_path }}"
     test_case_file_prefix: "testdata_"
     test_results: "{{ __test_junit_results }}"
   register: __test_component__test_logger_result

@@ -82,8 +82,8 @@
 - name: "{{ __test_component__log_role_test }} Process ROLE test results"
   delegate_to: localhost
   connection: local
-  run_once: yes
-  become: no
+  run_once: true
+  become: false
   block:
 
     - name: "{{ __test_component__log_role_test }} Get Test Results for {{ __test_component__collection }}.{{ __test_component }}"

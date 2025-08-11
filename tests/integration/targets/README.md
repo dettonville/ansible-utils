@@ -3,24 +3,6 @@
 
 ## Setup development env
 
-For local testing, make sure to set up a symbolic for the collection directory structure to be used/reference by the test runtime environment.
-
-This can be done in the following way:
-
-```shell
-$ COLLECTION_NAMESPACE="dettonville"
-$ COLLECTION_NAME="utils"
-$ PROJECT_DIR="$( git rev-parse --show-toplevel )"
-$ COLLECTION_SOURCE_DIR="$( basename ${PROJECT_DIR} )"
-$ WORKDIR="${PROJECT_DIR}/.."
-$ COLLECTION_DIR="${WORKDIR}/requirements_collections/ansible_collections/${COLLECTION_NAMESPACE}"
-$ mkdir -p "${COLLECTION_DIR}"
-$ cd "${COLLECTION_DIR}"
-$ ln -s "../../../${COLLECTION_SOURCE_DIR}" "${COLLECTION_NAME}"
-```
-
-A bash script `setup-dev-env.sh` is available in the `${PROJECT_DIR}/${COLLECTION_NAME}/tests/integration/targets` directory to perform the same __development environment setup__ actions.
-
 ## Run Tests Locally
 
 ## Check test inventory
@@ -28,11 +10,10 @@ A bash script `setup-dev-env.sh` is available in the `${PROJECT_DIR}/${COLLECTIO
 ### Check correct hosts appear in the test groups 
 
 ```shell
-ansible-inventory -i _test_inventory/ --graph --yaml testgroup_cyberark_platforms
-ansible-inventory -i _test_inventory/ --graph --yaml test_cyberark_platform_lnx_managed_local_dmz
-ansible-inventory -i _test_inventory/ --graph --yaml dcc_cyberark_platform_lnx_managed_local_dmz
+ansible-inventory -i _test_inventory/ --graph --yaml testgroup_app123_platforms
+ansible-inventory -i _test_inventory/ --graph --yaml test_app123_platform_lnx_managed_local_dmz
+ansible-inventory -i _test_inventory/ --graph --yaml dcc_app123_platform_lnx_managed_local_dmz
 ansible-inventory -i _test_inventory/ --graph --yaml dmz
-#ansible-inventory -i _test_inventory/ --graph --yaml dettonville_utils_network_locseg_mem_dmz
 ```
 
 ### Check the host variable values are correctly set  
@@ -41,12 +22,12 @@ Variable value/state query based on group:
 
 ```shell
 $ ansible -i _test_inventory/ -m debug -a var=group_names dmz
-$ ansible -i _test_inventory/ -m debug -a var=cyberark_platform_accounts__platform_type dcc_cyberark_platform_lnx_nondomain_dmz
-testd1s1.example.org | SUCCESS => {
-    "cyberark_platform_accounts__platform_type": "nondomain_dmz"
+$ ansible -i _test_inventory/ -m debug -a var=app123_platform_accounts__platform_type dcc_app123_platform_lnx_nondomain_dmz
+test1s1.qa.example.org | SUCCESS => {
+    "app123_platform_accounts__platform_type": "nondomain_dmz"
 }
-testd2s1.example.org | SUCCESS => {
-    "cyberark_platform_accounts__platform_type": "nondomain_dmz"
+test2s1.qa.example.org | SUCCESS => {
+    "app123_platform_accounts__platform_type": "nondomain_dmz"
 }
 
 ```
@@ -84,9 +65,9 @@ $ ansible -e @../integration_config.vault.yml -e @test-vars.yml \
     ${PROJECT_DIR}/.vault_pass \
     -i _test_inventory/ \
     -m debug \
-    -a var=test_component_cyberark_base_url \
+    -a var=test_component_app123_base_url \
     localhost
-$ ansible -e @test-vars.yml -e @../integration_config.vault.yml --vault-password-file ${PROJECT_DIR}/.vault_pass -i _test_inventory/ -m debug -a var=vault_platform testd1s4.example.org
+$ ansible -e @test-vars.yml -e @../integration_config.vault.yml --vault-password-file ${PROJECT_DIR}/.vault_pass -i _test_inventory/ -m debug -a var=vault_platform test1s4.qa.example.org
 $ ansible -e @test-vars.yml -e @../integration_config.vault.yml --vault-password-file ${PROJECT_DIR}/.vault_pass -i _test_inventory/ -m debug -a var=ansible_user app_cdata_sync_sandbox
 $ ansible -e @test-vars.yml -e @../integration_config.vault.yml --vault-password-file ${PROJECT_DIR}/.vault_pass -i _test_inventory/ -m debug -a var=ansible_user app_tableau
 ```
@@ -102,12 +83,12 @@ $ ansible -e @test-vars.yml -e @vars/vault.yml --vault-password-file ${PROJECT_D
 $ ansible -i _test_inventory/ -m debug -a \
     var=ansible_connection,ansible_port,ansible_winrm_scheme,ansible_winrm_transport \
     dc9.example.int
-$ ansible -i _test_inventory/ -m debug -a var=cyberark_platform_accounts__platform_type testgroup_cyberark_dcc_9786
+$ ansible -i _test_inventory/ -m debug -a var=app123_platform_accounts__platform_type testgroup_app123_123
 winansd3s1.example.int | SUCCESS => {
-    "cyberark_platform_accounts__platform_type": "managed_domain_vdi"
+    "app123_platform_accounts__platform_type": "managed_domain_vdi"
 }
 winansd3s4.example.int | SUCCESS => {
-    "cyberark_platform_accounts__platform_type": "managed_domain_vdi"
+    "app123_platform_accounts__platform_type": "managed_domain_vdi"
 }
 
 ```
@@ -132,9 +113,18 @@ $ run-module-tests.sh -v -t sort_dict_list
 ### Run specific test case
 
 ```shell
-$ run-module-tests.sh -v -t export_dicts --extra-vars \'{\"test_case_id_list\": [\"01\"]}\'
-$ run-module-tests.sh -v -t sort_dict_list --extra-vars \'{\"test_case_id_list\": [\"02\"]}\'
-$ run-module-tests.sh -v -t export_dicts --extra-vars \'{\"test_case_id_list\": [\"01\",\"08\"]}\'
+$ run-module-tests.sh ## runs all plugin integration tests
+$ run-module-tests.sh -t export_dicts
+$ run-module-tests.sh -t git_pacp
+$ run-module-tests.sh -t remove_dict_keys
+$ run-module-tests.sh -t remove_sensitive_keys
+$ run-module-tests.sh -t sort_dict_list
+$ run-module-tests.sh -t test_results_logger
+$ run-module-tests.sh -t to_markdown
+$ run-module-tests.sh -t export_dicts --extra-vars \'{\"test_case_id_list\": [\"02\"]}\'
+$ run-module-tests.sh -t git_pacp --extra-vars \'{\"test_case_id_list\": [\"05\"]}\'
+$ run-module-tests.sh -t sort_dict_list --extra-vars \'{\"test_case_id_list\": [\"02\"]}\'
+$ run-module-tests.sh -v -t test_results_logger --extra-vars \'{\"test_case_id_list\": [\"01\",\"04\"]}\'
 ```
 
 ### Run role test on hosts
@@ -227,15 +217,13 @@ $ ./AnsiballZ_export_dicts.py execute 2>&1 | tee test-case.log
 Define function to perform regular/repetitive debug tasks
 E.g., in ~/.bash_functions or ~/.bashrc:
 ```shell
-function explodeansibletest() {
-
+function explode_ansible_test() {
   export ANSIBLE_DEBUG=1 && \
-  recent=$(find . -name \*.py | head -n1) && \
+  recent=$(find . -name AnsiballZ_\*.py | head -n1) && \
   ${recent} explode && \
-  cat debug_dir/args | jq > debug_dir/args.json && \
+  cat debug_dir/args | jq '.ANSIBLE_MODULE_ARGS.logging_level = "DEBUG"' > debug_dir/args.json && \
   cp debug_dir/args.json debug_dir/args && \
   cp debug_dir/args.json debug_dir/args.orig.json
-
 }
 ```
 
@@ -246,7 +234,7 @@ $ ls -Fla ../$(ls -Fla ../ | tail -2 | head -1 | cut -d':' -f2 | cut -d' ' -f2)
 $ cd $(ls -Fla ../ | tail -2 | head -1 | cut -d':' -f2 | cut -d' ' -f2)
 $ export ANSIBLE_DEBUG=1
 ## perform debug_dir steps 
-$ explodeansibletest
+$ explode_ansible_test
 ```
 
 The function will perform the explode and json formatting:
@@ -255,7 +243,7 @@ The function will perform the explode and json formatting:
 $ export ANSIBLE_DEBUG=1
 $ cd $(ls -Fla ../ | tail -2 | head -1 | cut -d':' -f2 | cut -d' ' -f2)
 $ cd $(dirname $(find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 | grep export_dicts | tail -1 | cut -d' ' -f3))
-$ explodeansibletest
+$ explode_ansible_test
 $ export ANSIBLE_DEBUG=1
 $ ./AnsiballZ_export_dicts.py execute
 ## OR

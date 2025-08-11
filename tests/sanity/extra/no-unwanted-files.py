@@ -2,7 +2,8 @@
 # Copyright (c) Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 """Prevent unwanted files from being added to the source tree."""
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 import os
@@ -15,21 +16,19 @@ def main():
     paths = sys.argv[1:] or sys.stdin.read().splitlines()
 
     allowed_extensions = (
-        '.cs',
-        '.ps1',
-        '.psm1',
-        '.py',
+        ".cs",
+        ".ps1",
+        ".psm1",
+        ".py",
     )
 
-    skip_paths = set([
-    ])
+    skip_paths = set([])
 
-    skip_directories = (
-    )
+    skip_directories = ()
 
     yaml_directories = (
-        'plugins/test/',
-        'plugins/filter/',
+        "plugins/test/",
+        "plugins/filter/",
     )
 
     for path in paths:
@@ -40,18 +39,23 @@ def main():
             continue
 
         if os.path.islink(path):
-            print('%s: is a symbolic link' % (path, ))
+            print("%s: is a symbolic link" % (path,))
         elif not os.path.isfile(path):
-            print('%s: is not a regular file' % (path, ))
+            print("%s: is not a regular file" % (path,))
 
         ext = os.path.splitext(path)[1]
 
-        if ext in ('.yml', ) and any(path.startswith(yaml_directory) for yaml_directory in yaml_directories):
+        if ext in (".yml",) and any(
+            path.startswith(yaml_directory) for yaml_directory in yaml_directories
+        ):
             continue
 
         if ext not in allowed_extensions:
-            print('%s: extension must be one of: %s' % (path, ', '.join(allowed_extensions)))
+            print(
+                "%s: extension must be one of: %s"
+                % (path, ", ".join(allowed_extensions))
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -6,15 +6,15 @@
 - name: "Prepare test environment"
   ansible.builtin.include_tasks: prepare.yml
 
-- name: "Set __test_component__test_case_id_list"
+- name: "Initialize __test_component__test_case_id_list"
   ansible.builtin.set_fact:
     __test_component__test_case_id_list: "{{ test_component__test_case_id_list | d([]) }}"
 
-- name: "Initialize __test_component__test_case_id_list"
+- name: "Initialize __test_component__test_case_id_list_patterns"
   ansible.builtin.set_fact:
     __test_component__test_case_id_list_patterns: ".*"
 
-- name: "Set __test_component__test_case_id_list"
+- name: "Set __test_component__test_case_id_list_patterns"
   when: __test_component__test_case_id_list|length>0
   ansible.builtin.set_fact:
     __test_component__test_case_id_list_patterns: "{{ __test_component__test_case_id_list | join('|') }}"
@@ -27,13 +27,34 @@
   ansible.builtin.debug:
     var: __test_component__test_case_id_list_patterns
 
+- name: "Display __test_component__test_vars_dir"
+  ansible.builtin.debug:
+    var: __test_component__test_vars_dir
+
+- name: "Set __test_component__test_case_paths"
+  ansible.builtin.set_fact:
+    __test_component__test_case_paths: "{{ role_path }}/{{ __test_component__test_vars_dir }}"
+
+- name: "Display __test_component__vars.test_vars_dir_override"
+  ansible.builtin.debug:
+    var: __test_component__vars.test_vars_dir_override
+
+- name: "Set __test_component__test_case_paths"
+  when: __test_component__vars.test_vars_dir_override|d('')|length>0
+  ansible.builtin.set_fact:
+    __test_component__test_case_paths: "{{ role_path }}/{{ __test_component__vars.test_vars_dir_override }}"
+
+- name: "Display __test_component__test_case_paths"
+  ansible.builtin.debug:
+    var: __test_component__test_case_paths
+
 - name: "Find test case variable data"
   ansible.builtin.find:
-    paths: "{{ role_path }}/{{ __test_component__test_vars_dir }}/{{ __test_component }}"
+    paths: "{{ __test_component__test_case_paths }}"
     file_type: "file"
     patterns: 'testdata.*({{ __test_component__test_case_id_list_patterns }}).*\.yml'
-    recurse: yes
-    follow: yes
+    recurse: true
+    follow: true
     use_regex: true
   register: __test_component__test_var_files
 

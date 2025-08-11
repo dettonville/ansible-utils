@@ -11,11 +11,20 @@
 
 - name: "{{ __test_component__log_component_test }} Set __test_component__test_vars_path"
   ansible.builtin.set_fact:
+    __test_component__test_base_vars_path: "{{ role_path }}/{{ __test_component__test_base_vars_dir }}/"
     __test_component__test_vars_path: "{{ role_path }}/{{ __test_component__test_vars_dir }}/"
+
+- name: "{{ __test_component__log_component_test }} Display __test_component__test_base_vars_path"
+  ansible.builtin.debug:
+    var: __test_component__test_base_vars_path
+
+- name: "{{ __test_component__log_component_test }} Display __test_component__test_vars_path"
+  ansible.builtin.debug:
+    var: __test_component__test_vars_path
 
 - name: "{{ __test_component__log_component_test }} Set __test_component__test_case_group_dir"
   ansible.builtin.set_fact:
-    __test_component__test_case_dir: "{{ __test_component__test_case_var_file | dirname | replace(__test_component__test_vars_path, '') }}"
+    __test_component__test_case_dir: "{{ __test_component__test_case_var_file | dirname | replace(__test_component__test_base_vars_path, '') }}"
 
 - name: "{{ __test_component__log_component_test }} Display __test_component__test_case_dir"
   ansible.builtin.debug:
@@ -57,7 +66,7 @@
 
 - name: "{{ __test_component__log_component_test }} Display __test_component__type"
   ansible.builtin.debug:
-    var: __test_case_id
+    var: __test_component__type
 
 - name: "{{ __test_component__log_component_test }} Set __test_component__run_count"
   ansible.builtin.set_fact:
@@ -98,6 +107,14 @@
       ansible.builtin.debug:
         var: __test_component__run_count_total
 
+- name: "{{ __test_component__log_component_test }} Init __test_filter_module_result"
+  ansible.builtin.set_fact:
+    __test_filter_module_result: {}
+
+- name: "{{ __test_component__log_component_test }} Init __test_component__test_case_args"
+  ansible.builtin.set_fact:
+    __test_component__test_case_args: {}
+
 ## Known issue : "junit.CallbackModule: Duplicate host callback"
 ## https://github.com/ansible/ansible/issues/50168
 ## https://github.com/ansible/ansible/commit/8f1b48714113538ae71eaf7c12199a788a00738a
@@ -134,10 +151,6 @@
     - name: "{{ __test_component__log_component_test }} Reset test data to start"
       when: __test_data.reset_required|d(__test_component__data_reset_required)|d(True)|bool
       ansible.builtin.include_tasks: reset-test-data.yml
-
-    - name: "{{ __test_component__log_component_test }} Init __test_filter_module_result"
-      ansible.builtin.set_fact:
-        __test_filter_module_result: {}
 
     - name: "{{ __test_component__log_component_test }} Init __test_component__test_case_args"
       ansible.builtin.set_fact:

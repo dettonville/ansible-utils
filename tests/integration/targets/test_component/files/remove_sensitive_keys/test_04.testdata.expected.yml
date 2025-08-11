@@ -16,7 +16,7 @@ result:
   ansible_all_ipv4_addresses:
     - 172.20.0.1
     - 10.10.0.1
-    - 172.31.25.37
+    - 10.31.25.37
   ansible_all_ipv6_addresses: []
   ansible_apparmor:
     status: disabled
@@ -65,15 +65,15 @@ result:
     weeknumber: '03'
     year: '2024'
   ansible_default_ipv4:
-    address: 172.31.25.37
+    address: 10.31.25.37
     alias: ens192
-    broadcast: 172.31.25.255
-    gateway: 172.31.25.1
+    broadcast: 10.31.25.255
+    gateway: 10.31.25.1
     interface: ens192
     macaddress: 00:50:56:94:50:bc
     mtu: 1500
     netmask: 255.255.255.0
-    network: 172.31.25.0
+    network: 10.31.25.0
     prefix: '24'
     type: ether
   ansible_default_ipv6: {}
@@ -471,8 +471,8 @@ result:
     SELINUX_USE_CURRENT_RANGE: ''
     SHELL: /bin/bash
     SHLVL: '2'
-    SSH_CLIENT: 172.21.1.76 12715 22
-    SSH_CONNECTION: 172.21.1.76 12715 172.31.25.37 22
+    SSH_CLIENT: 10.21.1.76 12715 22
+    SSH_CONNECTION: 10.21.1.76 12715 10.31.25.37 22
     SSH_TTY: /dev/pts/0
     S_COLORS: auto
     TERM: xterm-256color
@@ -507,7 +507,7 @@ result:
       - 127.0.0.0/8
       - 127.0.0.1
       - 172.20.0.1
-      - 172.31.25.37
+      - 10.31.25.37
     ipv6: []
   ansible_lsb: {}
   ansible_lvm: N/A
@@ -623,7 +623,7 @@ result:
     - lnx_mem
     - lnx_dfw
   cyberark_platform_accounts__api_validate_certs: false
-  cyberark_platform_accounts__machine_ip: 172.31.25.37
+  cyberark_platform_accounts__machine_ip: 10.31.25.37
   cyberark_platform_accounts__os_family: linux
   cyberark_platform_accounts__pdc: pssrp1s1.example.int
   cyberark_platform_accounts__platform_type: managed_domain
