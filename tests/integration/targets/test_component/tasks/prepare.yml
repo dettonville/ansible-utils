@@ -67,18 +67,25 @@
   ansible.builtin.debug:
     var: __test_component__vars
 
+- name: "{{ __test_component__log_pretest }} Display test git vars"
+  ansible.builtin.debug:
+#    verbosity: 1
+    msg:
+      - "__test_component__git_branch={{ __test_component__git_branch }}"
+      - "__test_component__git_branch_abbrev={{ __test_component__git_branch_abbrev }}"
+      - "__test_component__git_test_results_enabled={{ __test_component__git_test_results_enabled }}"
+      - "__test_component__git_ssh_private_keydir={{ __test_component__git_ssh_private_keydir }}"
+      - "__test_component__git_repo_url={{ __test_component__git_repo_url }}"
+
 - name: "{{ __test_component__log_pretest }} Display test directory/file info"
   ansible.builtin.debug:
 #    verbosity: 1
     msg:
       - "__test_component__base_dir={{ __test_component__base_dir }}"
-      - "__test_component__test_base_dir={{ __test_component__test_base_dir }}"
+      - "__test_component__test_base_path={{ __test_component__test_base_path }}"
 #      - "__test_component__test_run_base_dir={{ __test_component__test_run_base_dir }}"
       - "__test_component__run_dir={{ __test_component__run_dir }}"
       - "__test_component__component_dir={{ __test_component__component_dir }}"
-      - "__test_component__git_test_results_enabled={{ __test_component__git_test_results_enabled }}"
-      - "__test_component__git_ssh_private_keydir={{ __test_component__git_ssh_private_keydir }}"
-      - "__test_component__git_repo_url={{ __test_component__git_repo_url }}"
       - "__test_component__test_file_start_dir={{ __test_component__test_file_start_dir }}"
       - "__test_component__test_file_path={{ __test_component__test_file_path }}"
       - "__test_component__test_file_results_base_dir={{ __test_component__test_file_results_base_dir }}"

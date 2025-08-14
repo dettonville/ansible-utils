@@ -35,7 +35,7 @@
     suffix: .test
   register: remote_tmp_dir_result
   notify:
-    - delete temporary directory
+    - Delete temporary directory
 
 - name: "create-tmpdir | Record temporary directory"
   ansible.builtin.set_fact:

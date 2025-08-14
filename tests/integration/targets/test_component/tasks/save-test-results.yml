@@ -1,11 +1,11 @@
 ---
 
-- name: "{{ __test_component__log_save_test_results }} Pull latest repo changes into {{ __test_component__test_base_dir }}"
+- name: "{{ __test_component__log_save_test_results }} Pull latest repo changes into {{ __test_component__test_base_path }}"
   when: (__test_component__git_test_results_enabled|bool) or __test_component == 'git_pacp'
   dettonville.utils.git_pacp:
     action: pull
     url: "{{ __test_component__git_repo_url }}"
-    path: "{{ __test_component__test_base_dir }}"
+    path: "{{ __test_component__test_base_path }}"
     branch: "{{ __test_component__git_repo_branch }}"
     ssh_params: "{{ __test_component__git_ssh_params }}"
   register: __test_component__git_pull_result
@@ -13,12 +13,12 @@
 - name: "{{ __test_component__log_save_test_results }} Reset test results dir {{ 
     __test_component__test_file_results_dir }}"
   ansible.builtin.file:
-    path: "{{ __test_component__test_base_dir }}/{{ __test_component__test_file_results_dir }}"
+    path: "{{ __test_component__test_base_path }}/{{ __test_component__test_file_results_dir }}"
     state: absent
 
 - name: "{{ __test_component__log_save_test_results }} Ensure {{ __test_component__test_file_results_dir }} exists"
   ansible.builtin.file:
-    path: "{{ __test_component__test_base_dir }}/{{ __test_component__test_file_results_dir }}"
+    path: "{{ __test_component__test_base_path }}/{{ __test_component__test_file_results_dir }}"
     state: directory
     mode: "0755"
 
@@ -26,7 +26,7 @@
     __test_component__test_file_results_dir }}/{{ __test_component__test_file_test_data }}"
   ansible.builtin.copy:
     content: "{{ {'test_data': __test_data} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_dir }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{ 
       __test_component__test_file_results_dir }}/{{ __test_component__test_file_test_data }}"
     mode: "0644"
 
@@ -38,8 +38,8 @@
 #    __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
 #  when: __test_component__vars.test_result_output_file|d(False)|bool
 #  ansible.builtin.copy:
-#    src: "{{ __test_component__test_base_dir }}/{{ __test_component__test_file_path }}"
-#    dest: "{{ __test_component__test_base_dir }}/{{
+#    src: "{{ __test_component__test_base_path }}/{{ __test_component__test_file_path }}"
+#    dest: "{{ __test_component__test_base_path }}/{{
 #      __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
 #    mode: "0644"
 #  no_log: true
@@ -52,7 +52,7 @@
 
     - name: "{{ __test_component__log_save_test_results }} Set __test_run_path"
       ansible.builtin.set_fact:
-        __test_run_path: "{{__test_component__test_base_dir }}/{{ __test_dir }}/"
+        __test_run_path: "{{__test_component__test_base_path }}/{{ __test_dir }}/"
 
     - name: "{{ __test_component__log_save_test_results }} Find test results data"
       no_log: true
@@ -149,7 +149,7 @@
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       ansible.builtin.template:
         src: "test_actual_results.yml.j2"
-        dest: "{{ __test_component__test_base_dir }}/{{ 
+        dest: "{{ __test_component__test_base_path }}/{{ 
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
         mode: "0644"
 
@@ -188,7 +188,7 @@
   #  no_log: true
   ansible.builtin.template:
     src: "test_expected_results.yml.j2"
-    dest: "{{ __test_component__test_base_dir }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{ 
       __test_component__test_file_results_dir }}/{{ __test_component__test_file_expected }}"
     mode: "0644"
 
@@ -196,7 +196,7 @@
     __test_component__test_file_results_dir }}/{{ __test_component__use_case_example_file }}"
   ansible.builtin.template:
     src: "test_use_case_example.md.j2"
-    dest: "{{ __test_component__test_base_dir }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{ 
       __test_component__test_file_results_dir }}/{{ __test_component__use_case_example_file }}"
     mode: "0644"
 
@@ -208,7 +208,7 @@
 #  no_log: true
   ansible.builtin.copy:
     src: "{{ __test_component }}/test_{{ __test_case_id }}.{{ __test_component__test_file_expected }}"
-    dest: "{{ __test_component__test_base_dir }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{ 
       __test_component__test_file_results_dir }}/{{ __test_component__test_file_expected }}"
     mode: "0644"
 
@@ -225,7 +225,7 @@
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       ansible.builtin.copy:
         src: "{{ __test_output_file_path }}"
-        dest: "{{ __test_component__test_base_dir }}/{{ 
+        dest: "{{ __test_component__test_base_path }}/{{ 
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
         mode: "0644"
 
@@ -250,7 +250,7 @@
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       ansible.builtin.template:
         src: "test_actual_filter_results.yml.j2"
-        dest: "{{ __test_component__test_base_dir }}/{{ 
+        dest: "{{ __test_component__test_base_path }}/{{ 
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
         mode: "0644"
 
@@ -260,7 +260,7 @@
 #        content: "{{ __test_filter_module_result.result | to_nice_yaml(indent=2) }}"
 ##        content: "{{ __test_filter_module_result.result | to_nice_yaml(indent=2) }}"
 ##        content: "{{ __test_filter_module_result | to_nice_yaml(indent=2) }}"
-#        dest: "{{ __test_component__test_base_dir }}/{{
+#        dest: "{{ __test_component__test_base_path }}/{{
 #          __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
 #        mode: "0644"
 
@@ -272,7 +272,7 @@
 - name: "{{ __test_component__log_save_test_results }} Set __test_component__git_comment"
   ansible.builtin.set_fact:
     __test_component__git_comment: "{{ 
-      __test_component__git_comment_prefix }} - {{ __test_component__log_save_test_results }} {{ 
+      __test_component__git_comment_prefix }}{{ __test_component__log_save_test_results }} {{ 
       __test_component__git_comment_test_description }}"
 
 - name: "{{ __test_component__log_save_test_results }} Display __test_component__git_comment"
@@ -283,8 +283,10 @@
   when: __test_component__git_test_results_enabled|bool
   dettonville.utils.git_pacp:
     url: "{{ __test_component__git_repo_url }}"
-    path: "{{ __test_component__test_base_dir }}"
+    path: "{{ __test_component__test_base_path }}"
     branch: "{{ __test_component__git_repo_branch }}"
     comment: "{{ __test_component__git_comment }}"
     ssh_params: "{{ __test_component__git_ssh_params }}"
+    user_name: "{{ __test_component__git_user }}"
+    user_email: "{{ __test_component__git_email }}"
   register: __test_component__git_pacp_result

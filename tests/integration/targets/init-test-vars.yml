@@ -3,10 +3,7 @@
 - name: "init-test-vars | Display ansible_env.USER"
   ansible.builtin.debug:
     var: ansible_env.USER
-
-- name: "init-test-vars | Display test_component__git_test_results_enabled"
-  ansible.builtin.debug:
-    var: test_component__git_test_results_enabled
+    verbosity: 1
 
 - name: "init-test-vars | Display test_case_id_list_string"
   ansible.builtin.debug:
@@ -145,17 +142,17 @@
     msg:
       - "dettonville.utils version={{ lookup('community.general.collection_version', 'dettonville.utils') }}"
 
-- name: "init-test-vars | Get installed python module/package list from default pip"
-  no_log: true
-  community.general.pip_package_info:
-    clients: ['pip3']
-  register: __test_component__pip_package_info
-
-- name: "init-test-vars | Display __test_component__pip_package_info"
-  ansible.builtin.debug:
-    var: __test_component__pip_package_info
-    verbosity: 2
-
+#- name: "init-test-vars | Get installed python module/package list from default pip"
+#  no_log: true
+#  community.general.pip_package_info:
+#    clients: ['pip3']
+#  register: __test_component__pip_package_info
+#
+#- name: "init-test-vars | Display __test_component__pip_package_info"
+#  ansible.builtin.debug:
+#    var: __test_component__pip_package_info
+#    verbosity: 2
+#
 #- name: "init-test-vars | Set __pip3_package_info"
 #  #    no_log: true
 #  ansible.builtin.set_fact:
@@ -165,17 +162,18 @@
 #- name: "init-test-vars | Display __pip3_package_info"
 #  ansible.builtin.debug:
 #    var: __pip3_package_info
-
-- name: "init-test-vars | Set __test_component__pip_package_versions"
+#
+#- name: "init-test-vars | Set __test_component__pip_package_versions"
 #  no_log: true
-  ansible.builtin.set_fact:
-    __test_component__pip_package_versions: "{{ __test_component__pip_package_info.packages.pip3.values() | list |
-        community.general.json_query('[].{name: name, version: version}') }}"
-
-- name: "init-test-vars | Display __test_component__pip_package_versions"
-  ansible.builtin.debug:
-    var: __test_component__pip_package_versions
-
+#  ansible.builtin.set_fact:
+#    __test_component__pip_package_versions: "{{ __test_component__pip_package_info.packages.pip3.values() | list |
+#        community.general.json_query('[].{name: name, version: version}') }}"
+#
+#- name: "init-test-vars | Display __test_component__pip_package_versions"
+#  ansible.builtin.debug:
+#    var: __test_component__pip_package_versions
+#    verbosity: 1
+#
 #- name: "init-test-vars | Setup temp dir"
 #  ansible.builtin.import_role:
 #    name: setup_remote_tmp_dir

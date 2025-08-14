@@ -32,7 +32,7 @@ Use Case [{{ __test_case_id }}]: {{ __test_data.test_description }}
 
 ## Playbook Example
 
-{{ lookup('template', __test_component__use_case_run_file) }}
+{{ lookup('template', __test_component__use_case_run_file, errors='ignore') }}
 
 {% set _expected_results_files = {} %}
 {% set _expected_files = __test_data.test_start_data|d([]) + __test_data.test_files|d([]) -%}
@@ -62,7 +62,7 @@ Use Case [{{ __test_case_id }}]: {{ __test_data.test_description }}
 ## Playbook Run Results
 
 The test example playbook run results:
-{{ lookup('template', __test_component__use_case_results_file) }}
+{{ lookup('template', __test_component__use_case_results_file, errors='ignore') }}
 
 {% if __test_component__type == 'module' -%}
 ### Resulting file content after running the playbook

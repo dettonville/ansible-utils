@@ -16,7 +16,7 @@
 
 - name: "{{ __test_component__log_run_test }} Set __test_component__test_dir_default"
   ansible.builtin.set_fact:
-    __test_component__test_dir_default: "{{ __test_component__test_base_dir }}/{{ __test_component__run_dir }}"
+    __test_component__test_dir_default: "{{ __test_component__test_base_path }}/{{ __test_component__run_dir }}"
 
 - name: "{{ __test_component__log_run_test }} Set __test_component__test_dir"
   ansible.builtin.set_fact:

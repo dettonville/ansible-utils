@@ -19,7 +19,7 @@
         name: test_component
       vars:
         test_component: export_dicts
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"
@@ -32,7 +32,7 @@
         name: test_component
       vars:
         test_component: git_pacp
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"
@@ -45,7 +45,7 @@
         name: test_component
       vars:
         test_component: remove_dict_keys
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"
@@ -58,7 +58,7 @@
         name: test_component
       vars:
         test_component: remove_sensitive_keys
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"
@@ -71,7 +71,7 @@
         name: test_component
       vars:
         test_component: sort_dict_list
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"
@@ -84,7 +84,7 @@
         name: test_component
       vars:
         test_component: to_markdown
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"
@@ -97,7 +97,7 @@
         name: test_component
       vars:
         test_component: test_results_logger
-        test_component__test_base_dir: "{{ __test_job__test_base_dir }}"
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
         test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
         test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
         test_component__git_branch: "{{ __test_git_branch }}"

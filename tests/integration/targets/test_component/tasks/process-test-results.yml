@@ -169,7 +169,7 @@
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_expected }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_dir }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{ 
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_expected }}"
       register: __test_expected_results_content
 
@@ -182,7 +182,7 @@
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_dir }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{ 
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       register: __test_actual_results_content
 

@@ -11,7 +11,10 @@ The Ansible ``dettonville.utils`` collection includes plugins/filters that aid m
 ## Detailed test / use case examples
 
 The integration tests performed regularly on the main branch demonstrate the use case examples supported by the **module**.
-A comprehensive set of [tested use cases/examples can be found here.](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
+
+A short/brief description overview of the [tested use cases can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
+
+A summary table summary of test results for [each module/filter can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/test-results.md).
 
 ## Requirements
 

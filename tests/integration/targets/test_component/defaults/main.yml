@@ -10,7 +10,14 @@ __test_component__type: "{{ test_component__type | d(__test_component__type_defa
 __test_component__job_url: "{{ test_component__job_url | d('') }}"
 __test_component__job_markdown_link: "{{ test_component__job_markdown_link | d('') }}"
 
-__test_component__git_branch: "{{ test_component__git_branch | d('') }}"
+#__test_component__git_branch: "{{ test_component__git_branch | d('') }}"
+__test_component__git_branch: "{{ test_component__git_branch
+    | d(tower_job_scm_branch) 
+    | d(awx_job_scm_branch) 
+    | d(tower_project_scm_branch) 
+    | d(awx_project_scm_branch) 
+    | d('') }}"
+
 __test_component__git_branch_abbrev: "{{ (__test_component__git_branch 
   | regex_replace('^(.*)-(\\d+)-(.*)$', '\\1-\\2') | replace('/','-')) | d('unknown') }}"
 __test_component__git_commit_hash_default: "{{ controller_project_revision 
@@ -144,15 +151,15 @@ __test_component__git_ssh_params:
   accept_hostkey: true
   key_file: "{{ __test_component__git_ssh_private_keyfile }}"
 
-__test_component__test_base_dir: "{{ test_component__test_base_dir }}"
-#__test_component__test_run_base_dir_default: "{{ __test_component__test_base_dir }}"
+__test_component__test_base_path: "{{ test_component__test_base_path }}"
+#__test_component__test_run_base_dir_default: "{{ __test_component__test_base_path }}"
 #__test_component__test_run_base_dir: "{{ test_component__test_run_base_dir
 #  | d(__test_component__test_run_base_dir_default) }}"
 
 __test_component__git_user: "{{ test_component__git_user }}"
 __test_component__git_email: "{{ test_component__git_email }}"
-__test_component__git_repo_dir: "{{ __test_component__test_base_dir }}"
-__test_component__git_comment_prefix: "{{ test_component__git_comment_prefix | d('') }}"
+__test_component__git_repo_dir: "{{ __test_component__test_base_path }}"
+__test_component__git_comment_prefix: "{{ test_component__git_comment_prefix | d('TEST-1001') }} - "
 __test_component__git_reset_test_dir: true
 #__test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir | d(False) }}"
 __test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir 
@@ -205,7 +212,7 @@ __test_component__report_results_detailed_file: "test-results.detailed.yml"
 __test_component__report_results_csv: "{{ __test_component__report_results_file.split('.') | first }}.csv"
 __test_component__report_results_md: "{{ __test_component__report_results_file.split('.') | first }}.md"
 
-__test_component__junit_report_dir_default: "{{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}"
+__test_component__junit_report_dir_default: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}"
 __test_component__junit_report_dir: "{{ test_component__junit_report_dir 
   | d(__test_component__junit_report_dir_default) }}"
 

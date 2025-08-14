@@ -1,13 +1,12 @@
 ---
 
 - name: "{{ __test_component__log_save_test_summary }} Pull latest repo changes into {{ 
-    __test_component__test_base_dir }}"
-#  when: (__test_component__git_test_results_enabled|bool) or __test_component == 'git_pacp'
+    __test_component__test_base_path }}"
   when: __test_component__git_test_results_enabled|bool
   dettonville.utils.git_pacp:
     action: pull
     url: "{{ __test_component__git_repo_url }}"
-    path: "{{ __test_component__test_base_dir }}"
+    path: "{{ __test_component__test_base_path }}"
     branch: "{{ __test_component__git_repo_branch }}"
     ssh_params: "{{ __test_component__git_ssh_params }}"
   register: __test_component__git_pull_result
@@ -20,7 +19,7 @@
     __test_component__base_dir }}/{{ __test_component__report_results_file }} exists"
   no_log: true
   ansible.builtin.stat:
-    path: "{{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}/{{ __test_component__report_results_file }}"
+    path: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}/{{ __test_component__report_results_file }}"
   register: file_result
 
 - name: "{{ __test_component__log_save_test_summary 
@@ -39,7 +38,7 @@
         __test_component__base_dir }}/{{ __test_component__report_results_file }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}/{{ __test_component__report_results_file }}"
+        src: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}/{{ __test_component__report_results_file }}"
       register: __test_component__report_content
 
     - name: "{{ __test_component__log_save_test_summary }} Set __test_component__report_results_file_content"
@@ -104,7 +103,7 @@
     __test_component__base_dir }}/{{ __test_component__report_results_detailed_file }} exists"
   no_log: true
   ansible.builtin.stat:
-    path: "{{ __test_component__test_base_dir }}/{{ 
+    path: "{{ __test_component__test_base_path }}/{{ 
       __test_component__base_dir }}/{{ __test_component__report_results_detailed_file }}"
   register: file_detailed_result
 
@@ -124,7 +123,7 @@
         __test_component__base_dir }}/{{ __test_component__report_results_detailed_file }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_dir }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{ 
           __test_component__base_dir }}/{{ __test_component__report_results_detailed_file }}"
       register: __test_component__report_content_detailed
 
@@ -311,14 +310,14 @@
     __test_component__base_dir }}/{{ __test_component__report_results_file }}"
   ansible.builtin.copy:
     content: "{{ {'test_results': __test_component__summary_results} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}/{{ __test_component__report_results_file }}"
+    dest: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}/{{ __test_component__report_results_file }}"
     mode: "0644"
 
 - name: "{{ __test_component__log_save_test_summary }} Save test report detailed results to {{ 
     __test_component__base_dir }}/{{ __test_component__report_results_detailed_file }}"
   ansible.builtin.copy:
     content: "{{ {'test_results': __test_component__summary_results_detailed} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_dir }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{ 
       __test_component__base_dir }}/{{ __test_component__report_results_detailed_file }}"
     mode: "0644"
 
@@ -328,7 +327,7 @@
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_component') }}"
     columns: "{{ __test_component__report_columns }}"
-    file: "{{ __test_component__test_base_dir }}/{{ 
+    file: "{{ __test_component__test_base_path }}/{{ 
       __test_component__base_dir }}/{{ __test_component__report_summary_detailed_results_csv }}"
     format: "csv"
 
@@ -338,7 +337,7 @@
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_component') }}"
     columns: "{{ __test_component__report_columns }}"
-    file: "{{ __test_component__test_base_dir }}/{{ 
+    file: "{{ __test_component__test_base_path }}/{{ 
       __test_component__base_dir }}/{{ __test_component__report_summary_detailed_results_md }}"
     format: "md"
 
@@ -348,7 +347,7 @@
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_summary_results_flattened | dettonville.utils.sort_dict_list('test_component') }}"
     columns: "{{ __test_component__summary_report_columns }}"
-    file: "{{ __test_component__test_base_dir }}/{{ 
+    file: "{{ __test_component__test_base_path }}/{{ 
       __test_component__base_dir }}/{{ __test_component__report_summary_results_md }}"
     format: "md"
 
@@ -386,10 +385,10 @@
     verbosity: 1
 
 - name: "{{ __test_component__log_save_test_summary }} Save test run report results to {{ 
-    __test_component__test_base_dir }}/{{ __test_component__last_run_results_file }}"
+    __test_component__test_base_path }}/{{ __test_component__last_run_results_file }}"
   ansible.builtin.copy:
     content: "{{ {'last_run_test_results': __test_run_results} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_dir }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{ 
       __test_component__base_dir }}/{{ __test_component__last_run_results_file }}"
     mode: "0644"
 
@@ -432,20 +431,20 @@
     var: __test_component__test_logger_result
 
 - name: "{{ __test_component__log_save_test_summary }} Save summary README.md to {{ 
-    __test_component__test_base_dir }}/{{ __test_component__base_dir }}/README.md"
+    __test_component__test_base_path }}/{{ __test_component__base_dir }}/README.md"
   ansible.builtin.template:
     src: "readme-summary-results.md.j2"
-    dest: "{{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}/README.md"
+    dest: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}/README.md"
     mode: "0644"
 
-- name: "{{ __test_component__log_save_test_summary }} Remove test in progress file at {{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}/{{ __test_component__test_in_progress_file }}"
+- name: "{{ __test_component__log_save_test_summary }} Remove test in progress file at {{ __test_component__test_base_path }}/{{ __test_component__base_dir }}/{{ __test_component__test_in_progress_file }}"
   ansible.builtin.file:
-    path: "{{ __test_component__test_base_dir }}/{{ __test_component__base_dir }}/{{ __test_component__test_in_progress_file }}"
+    path: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}/{{ __test_component__test_in_progress_file }}"
     state: absent
 
 - name: "{{ __test_component__log_save_test_summary }} Set __test_component__git_comment"
   ansible.builtin.set_fact:
-    __test_component__git_comment: "{{ __test_component__git_comment_prefix }} - update test summary reports"
+    __test_component__git_comment: "{{ __test_component__git_comment_prefix }}update test summary reports"
 
 - name: "{{ __test_component__log_save_test_summary }} Display __test_component__git_comment"
   ansible.builtin.debug:
@@ -455,8 +454,10 @@
   when: __test_component__git_test_results_enabled|bool
   dettonville.utils.git_pacp:
     url: "{{ __test_component__git_repo_url }}"
-    path: "{{ __test_component__test_base_dir }}"
+    path: "{{ __test_component__test_base_path }}"
     branch: "{{ __test_component__git_repo_branch }}"
     comment: "{{ __test_component__git_comment }}"
     ssh_params: "{{ __test_component__git_ssh_params }}"
+    user_name: "{{ __test_component__git_user }}"
+    user_email: "{{ __test_component__git_email }}"
   register: __test_component__git_pacp_result
