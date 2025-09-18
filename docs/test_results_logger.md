@@ -16,23 +16,24 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.test_results_logger | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/test_results_logger.md
-> MODULE dettonville.utils.test_results_logger (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/modules/test_results_logger.py)
+> MODULE dettonville.utils.test_results_logger (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/modules/test_results_logger.py)
 
   Renders test results specified in dict format into junit xml.
 
 OPTIONS (= indicates it is required):
 
-- logging_level  Parameter used to define the level of troubleshooting output.
+- logging_level  Parameter used to define the level of
+                  troubleshooting output.
         choices: [NOTSET, DEBUG, INFO, ERROR]
         default: INFO
         type: str
 
-= test_case_base_dir  Base directory that test case files are located as specified in the
-                       `test_case_file_prefix'.
+= test_case_base_dir  Base directory that test case files are located
+                       as specified in the `test_case_file_prefix'.
         type: path
 
-- test_case_file_prefix  finds list of test case files where file names match specified
-                          prefix.
+- test_case_file_prefix  finds list of test case files where file
+                          names match specified prefix.
                           must define a prefix to set/derived the
                           test_case_id (e.g.,
                           '(prefix)(test_case_id)\.yml').
@@ -46,22 +47,24 @@ OPTIONS (= indicates it is required):
         default: testcase_
         type: str
 
-- test_case_file_regex  defines the pattern regex to find the list of test case var files.
+- test_case_file_regex  defines the pattern regex to find the list of
+                         test case var files.
                          See examples for more details.
                          if not set the derived value is set to
                          '(test_case_file_prefix)*.yml'
         default: null
         type: str
 
-- test_case_id_capture_regex  defines the regex group capture pattern used to find the test case
-                               identifiers.
+- test_case_id_capture_regex  defines the regex group capture pattern
+                               used to find the test case identifiers.
                                See examples for more details.
                                if not set the derived value is set to
                                '(test_case_file_prefix)(.*?).yml'
         default: null
         type: str
 
-- test_junit_report_file  path where the test junit report file will be written/saved.
+- test_junit_report_file  path where the test junit report file will
+                           be written/saved.
         default: junit-report.xml
         type: path
 
@@ -72,15 +75,17 @@ OPTIONS (= indicates it is required):
         default: null
         type: dict
 
-= test_results_dir  Directory where the `test_results_file' and `test_junit_report_file'
-                     test results are stored.
+= test_results_dir  Directory where the `test_results_file' and
+                     `test_junit_report_file' test results are stored.
         type: path
 
-- test_results_file  Path to store test suite test results using internal YAML format.
+- test_results_file  Path to store test suite test results using
+                      internal YAML format.
         default: test-logger-results.yml
         type: path
 
-- test_suite_list  List of test suite directories located in the `test_case_base_dir'.
+- test_suite_list  List of test suite directories located in the
+                    `test_case_base_dir'.
                     Each test suite directory is set as the
                     test_suite_id in the results dictionary
         default: []

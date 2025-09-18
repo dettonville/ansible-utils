@@ -18,7 +18,7 @@ DEST_FILE_LIST+=("ignore-2.20.txt")
 IFS=$'\n'
 for DEST_FILE in "${DEST_FILE_LIST[@]}"; do
   [[ "${DEST_FILE}" ]] || continue # Ignore empty lines
-  COPY_CMD="cp -p ${SOURCE_FILE} ${DEST_FILE}"
+  COPY_CMD="cp -p ${SOURCE_FILE} ./tests/sanity/${DEST_FILE}"
   echo "${COPY_CMD}"
   eval "${COPY_CMD}"
 done

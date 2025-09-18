@@ -16,7 +16,7 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.sort_dict_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/sort_dict_keys.md
-> FILTER dettonville.utils.sort_dict_keys (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/filter/sort_dict_keys.py)
+> FILTER dettonville.utils.sort_dict_keys (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/filter/sort_dict_keys.py)
 
   Sort dictionary keys.
 
@@ -92,7 +92,8 @@ EXAMPLES:
 
 RETURN VALUES:
 
-- _value  A sorted list containing the dictionaries from the original list.
+- _value  A sorted list containing the dictionaries from the original
+           list.
         type: list
 
 ```

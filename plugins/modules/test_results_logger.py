@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Copyright: (c) 2025, Lee Johnson (ljohnson@dettonville.com)
+# MIT license (https://opensource.org/license/mit/)
 
 from __future__ import (absolute_import, division, print_function)
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""

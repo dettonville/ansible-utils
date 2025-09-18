@@ -6,12 +6,27 @@
 ```shell
 ansible-test units --python 3.12
 ansible-test units --python 3.12 export_dicts
+ansible-test units --python 3.12 x509_certificate_verify | tee -a ansible-test-unit-results.log
 ansible-test units --python 3.12 --containers '{}' --color yes
 ansible-test units --python 3.12 --containers '{}' --truncate 0 --color yes
 ansible-test units -v --python 3.12 --containers '{}' --coverage --truncate 0 --color yes
 ansible-test units --docker -v --python 3.12 export_dicts
 ansible-test units --docker -v --python 3.12 git_pacp
 ```
+
+Create test coverage results
+```shell
+ansible-test units --python 3.12 x509_certificate_verify --coverage --verbose
+```
+
+Generate a new coverage report
+```shell
+ansible-test coverage report
+ansible-test coverage html
+open tests/output/reports/coverage/index.html
+```
+
+Check if the coverage for x509_certificate_verify.py improves (e.g., closer to 90–95%). If missed lines remain, review the HTML report to identify them.
 
 ```shell
 ## ref: https://github.com/ansible/ansible/issues/27446#issuecomment-318777441
@@ -83,6 +98,7 @@ cd ${PROJECT_DIR}/tests/unit/plugins/modules
 
 # Run all tests
 python -m unittest test_export_dicts.py -v
+python -m unittest test_x509_certificate_verify -v
 
 # Run specific test class
 python -m unittest test_export_dicts.TestExportDicts -v

@@ -25,23 +25,84 @@ jobs:
           - { python: "3.11", ansible: stable-2.19 }
           - { python: "3.12", ansible: stable-2.16 }
           - { python: "3.10", ansible: stable-2.16 }
-#          - { python: "3.13", ansible: devel }
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full repository checkout
+
+      - name: Debug - List repository structure
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Listing repository contents:"
+          ls -la
+          echo "Checking for galaxy.yml:"
+          find . -name galaxy.yml -type f || echo "galaxy.yml not found"
+          echo "Repository root contents:"
+          ls -la ./
+          echo "Checking if ansible_collections exists:"
+          ls -la ansible_collections/ || echo "ansible_collections directory not found"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --user \
+            cryptography>=43.0.3 \
+            pyOpenSSL>=24.0.0 \
+            coverage>=7.0.0 \
+            pytest-xdist>=3.0.0
+
       - name: >-
           Perform unit testing against
           Ansible version ${{ matrix.versions.ansible }}
           under Python ${{ matrix.versions.python }}
-        # See the documentation for the following GitHub action on
-        # https://github.com/ansible-community/ansible-test-gh-action/blob/main/README.md
+        id: ansible_test
         uses: ansible-community/ansible-test-gh-action@release/v1
         with:
           ansible-core-version: ${{ matrix.versions.ansible }}
           target-python-version: ${{ matrix.versions.python }}
           testing-type: units
           pull-request-change-detection: false
+          collection-root: .
           pre-test-cmd: >-
             ansible-test --version
+
+      - name: Debug - List test output files
+        run: |
+          echo "Listing files in ansible_collections/dettonville/utils/tests/output/"
+          find ansible_collections/dettonville/utils/tests/output/ -type f || echo "No files found in ansible_collections/dettonville/utils/tests/output/"
+          echo "ansible-test-gh-action outputs:"
+          echo "test-result-files: ${{ steps.ansible_test.outputs.test-result-files }}"
+          echo "coverage-report-files: ${{ steps.ansible_test.outputs.coverage-report-files }}"
+
+      - name: Archive Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.versions.ansible }}-python-${{ matrix.versions.python }}
+          path: |
+            ansible_collections/dettonville/utils/tests/output/junit/
+            ansible_collections/dettonville/utils/tests/output/coverage/
+            ansible_collections/dettonville/utils/tests/output/reports/
+          retention-days: 7
+
+      - name: Publish Unit Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            ansible_collections/dettonville/utils/tests/output/junit/*.xml
+
+#      # Optional: Upload coverage to Codecov
+#      - name: Upload coverage to Codecov
+#        if: always()
+#        uses: codecov/codecov-action@v4
+#        with:
+#          files: |
+#            ansible_collections/dettonville/utils/tests/output/reports/coverage=units.xml
+#            ansible_collections/dettonville/utils/tests/output/reports/coverage=units=python-${{ matrix.versions.python }}.xml
+#          token: ${{ secrets.CODECOV_TOKEN }}
 
   # This job does nothing and is only used for the branch protection
   # or multi-stage CI jobs, like making sure that all tests pass before

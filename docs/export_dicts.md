@@ -16,7 +16,7 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.export_dicts | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/export_dicts.md
-> MODULE dettonville.utils.export_dicts (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/modules/export_dicts.py)
+> MODULE dettonville.utils.export_dicts (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/modules/export_dicts.py)
 
   Write a list of flat dictionaries (a dictionary mapping fieldnames
   to strings or numbers) to a flat file using a specified format
@@ -25,11 +25,12 @@ $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.export_dicts 
 
 OPTIONS (= indicates it is required):
 
-- column_list  List of column dictionary specifications for each column in the
-                file. Each column element should contain a dict
-                specifying values for the 'name' and 'header' keys. If
-                the 'column_list' is not specified, it will be derived
-                from the keys of the first row in the export_list.
+- column_list  List of column dictionary specifications for each
+                column in the file. Each column element should contain
+                a dict specifying values for the 'name' and 'header'
+                keys. If the 'column_list' is not specified, it will
+                be derived from the keys of the first row in the
+                export_list.
         aliases: [columns]
         default: []
         elements: dict
@@ -43,14 +44,15 @@ OPTIONS (= indicates it is required):
 = file    File path where file will be written/saved.
         type: path
 
-- format  `csv' write to csv formatted file. `md'  write to markdown formatted
-           file. If the 'format' is not specified, it will be derived
-           from the file extension (e.g., *.md, *.csv).
+- format  `csv' write to csv formatted file. `md'  write to markdown
+           formatted file. If the 'format' is not specified, it will
+           be derived from the file extension (e.g., *.md, *.csv).
         choices: [csv, md]
         default: null
         type: str
 
-- logging_level  Parameter used to define the level of troubleshooting output.
+- logging_level  Parameter used to define the level of
+                  troubleshooting output.
         choices: [NOTSET, DEBUG, INFO, ERROR]
         default: INFO
         type: str

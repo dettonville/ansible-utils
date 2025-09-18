@@ -16,14 +16,14 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.to_markdown | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/to_markdown.md
-> FILTER dettonville.utils.to_markdown (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/filter/to_markdown.py)
+> FILTER dettonville.utils.to_markdown (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/filter/to_markdown.py)
 
   Converts a list of flat dictionaries to markdown format.
 
 OPTIONS (= indicates it is required):
 
-= _input  The list of dictionaries that should be converted to the markdown
-           format.
+= _input  The list of dictionaries that should be converted to the
+           markdown format.
         type: list
 
 AUTHOR: Lee Johnson

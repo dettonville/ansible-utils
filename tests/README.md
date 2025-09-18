@@ -96,6 +96,8 @@ ansible-test sanity --python 3.12 --test pylint
 ansible-test sanity -vv --python 3.12 --test pep8
 ansible-test sanity --python 3.12 --python-interpreter ~/.pyenv/versions/3.12.3/bin/python3.12 --local --venv-system-site-packages
 ansible-test sanity -v --docker --python ${TEST_PYTHON_VERSION} export_dicts
+ansible-test sanity -v --docker --python ${TEST_PYTHON_VERSION} x509_certificate_verify
+ansible-test sanity --python 3.12 x509_certificate_verify | tee -a ansible-test-sanity-results.log
 ansible-test sanity -v --color --coverage --junit --docker default --python ${TEST_PYTHON_VERSION}
 ansible-test sanity -v --color --coverage --junit --docker default --python ${TEST_PYTHON_VERSION} export_dicts
 ```

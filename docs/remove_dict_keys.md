@@ -16,7 +16,7 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_dict_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_dict_keys.md
-> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
+> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.
@@ -225,8 +225,8 @@ EXAMPLES:
 
 RETURN VALUES:
 
-- _value  A dict or list containing the results of removing the specified key
-           patterns.
+- _value  A dict or list containing the results of removing the
+           specified key patterns.
         type: any
 
 ```

@@ -16,21 +16,21 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.git_pacp | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/git_pacp.md
-> MODULE dettonville.utils.git_pacp (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/modules/git_pacp.py)
+> MODULE dettonville.utils.git_pacp (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/modules/git_pacp.py)
 
   Manage git `clone', `pull', `acp', `pacp', `config' user name and
   email on a local or remote git repository.
 
 OPTIONS (= indicates it is required):
 
-- action  Git operation to perform - 'clone', 'pull', 'pacp'(Pull + Add +
-           Commit + Push), or 'acp' (Add + Commit + Push)
+- action  Git operation to perform - 'clone', 'pull', 'pacp'(Pull +
+           Add + Commit + Push), or 'acp' (Add + Commit + Push)
         choices: [clone, pull, pacp, acp]
         default: pacp
         type: str
 
-- add     List of files under `path' to be staged. Same as `git add .'.
-           File globs not accepted, such as `./*' or `*'.
+- add     List of files under `path' to be staged. Same as `git add
+           .'. File globs not accepted, such as `./*' or `*'.
         default: [.]
         elements: str
         type: list
@@ -45,20 +45,22 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
-- executable  Path to git executable to use. If not supplied, the normal mechanism
-               for resolving binary paths will be used.
+- executable  Path to git executable to use. If not supplied, the
+               normal mechanism for resolving binary paths will be
+               used.
         default: null
         type: path
 
-- logging_level  Parameter used to define the level of troubleshooting output.
+- logging_level  Parameter used to define the level of
+                  troubleshooting output.
         choices: [NOTSET, DEBUG, INFO, ERROR]
         default: INFO
         type: str
 
-- mode    Git operations are performend either over ssh, https or local.
-           Same as `git@git...' or `https://user:token@git...'. If not
-           specified, the mode will be set to the scheme implied by
-           the URL.
+- mode    Git operations are performend either over ssh, https or
+           local. Same as `git@git...' or `https://user:token@git...'.
+           If not specified, the mode will be set to the scheme
+           implied by the URL.
         choices: [ssh, https, local]
         default: null
         type: str
@@ -80,20 +82,21 @@ OPTIONS (= indicates it is required):
         type: dict
         suboptions:
 
-        - accept_hostkey          If `yes', ensure that "-o StrictHostKeyChecking=no" is
-                           present as an ssh option.
+        - accept_hostkey  If `yes', ensure that "-o
+                           StrictHostKeyChecking=no" is present as an
+                           ssh option.
           default: false
           type: bool
 
-        - key_file          Specify an optional private key file path, on the target
-                     host, to use for the checkout.
+        - key_file  Specify an optional private key file path, on the
+                     target host, to use for the checkout.
           default: null
           type: path
 
-        - ssh_opts          Creates a wrapper script and exports the path as GIT_SSH
-                     which git then automatically uses to override ssh
-                     arguments. An example value could be "-o
-                     StrictHostKeyChecking=no" (although this
+        - ssh_opts  Creates a wrapper script and exports the path as
+                     GIT_SSH which git then automatically uses to
+                     override ssh arguments. An example value could be
+                     "-o StrictHostKeyChecking=no" (although this
                      particular option is better set via
                      `accept_hostkey').
           default: null
@@ -110,12 +113,13 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
-- user_email  Explicit git local email address. Nice to have for remote
-               operations.
+- user_email  Explicit git local email address. Nice to have for
+               remote operations.
         default: ansible@example.org
         type: str
 
-- user_name  Explicit git local user name. Nice to have for remote operations.
+- user_name  Explicit git local user name. Nice to have for remote
+              operations.
         default: ansible
         type: str
 
