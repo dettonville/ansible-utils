@@ -15,7 +15,7 @@ tags:
   - data
   - junit
   - utils
-version: 2025.8.1
+version: 2025.9.19
 # https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
 manifest:
   directives:

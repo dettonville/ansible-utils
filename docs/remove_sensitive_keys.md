@@ -16,7 +16,7 @@ $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${PROJECT_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_sensitive_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_sensitive_keys.md
-> FILTER dettonville.utils.remove_sensitive_keys (/Users/ljohnson/tmp/_br9sbp/ansible_collections/dettonville/utils/plugins/filter/remove_sensitive_keys.py)
+> FILTER dettonville.utils.remove_sensitive_keys (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/filter/remove_sensitive_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.
@@ -27,7 +27,8 @@ OPTIONS (= indicates it is required):
         elements: dictionary
         type: any
 
-- additional_key_patterns  List of additional key patterns to use to remove keys.
+- additional_key_patterns  List of additional key patterns to use to
+                            remove keys.
         default: null
         type: list
 
@@ -255,8 +256,8 @@ EXAMPLES:
 
 RETURN VALUES:
 
-- _value  A dict or list containing the results of removing the specified key
-           patterns.
+- _value  A dict or list containing the results of removing the
+           specified key patterns.
         type: any
 
 ```

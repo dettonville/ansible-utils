@@ -52,6 +52,7 @@ To run automated resolve of unused imports/variables issues using autoflake (htt
 pip install autoflake
 autoflake plugins/
 autoflake -r --in-place --remove-unused-variables plugins/
+autoflake -r --in-place --remove-all-unused-imports tests/
 autoflake -r --in-place --remove-unused-variables --remove-all-unused-imports plugins/
 ansible-test sanity --python 3.12 --test pylint
 ```

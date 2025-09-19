@@ -23,11 +23,11 @@ COLLECTION_NAME=$(yq -r '.name' "${PROJECT_DIR}/galaxy.yml")
 ##
 
 #PLUGIN_CONFIG_LIST=""
-PLUGIN_CONFIG_LIST=$( (find . -type f -wholename "./plugins/modules/*.py" | sed 's|./||' \
+PLUGIN_CONFIG_LIST=$( (find . -maxdepth 3 -type f -wholename "./plugins/modules/*.py" | sed 's|./||' \
   | sed "s|\(.*\)/\(.*\)/\(.*\).py|${COLLECTION_NAMESPACE}.${COLLECTION_NAME}.\3:\3:module|" && \
-  find . -type f -wholename "./plugins/lookup/*.py" | sed 's|./||' \
+  find . -maxdepth 3 -type f -wholename "./plugins/lookup/*.py" | sed 's|./||' \
   | sed "s|\(.*\)/\(.*\)/\(.*\).py|${COLLECTION_NAMESPACE}.${COLLECTION_NAME}.\3:\3:lookup|" && \
-  find . -type f -wholename "./plugins/filter/*.py" | sed 's|./||' \
+  find . -maxdepth 3 -type f -wholename "./plugins/filter/*.py" | sed 's|./||' \
   | sed "s|\(.*\)/\(.*\)/\(.*\).py|${COLLECTION_NAMESPACE}.${COLLECTION_NAME}.\3:\3:filter|" ) \
   | sort)
 
