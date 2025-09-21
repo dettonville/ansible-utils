@@ -2,21 +2,21 @@
 
 ```shell
 $ ansible --version
-ansible [core 2.18.4]
-  config file = /Users/ljohnson/repos/ansible/ansible_collections/dettonville.utils/ansible.cfg
+ansible [core 2.19.2]
+  config file = None
   configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
-  ansible python module location = /Users/ljohnson/.pyenv/versions/3.12.3/lib/python3.12/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections:/Users/ljohnson/repos/ansible/ansible_collections/dettonville.utils/collections
-  executable location = /Users/ljohnson/.pyenv/versions/3.12.3/bin/ansible
-  python version = 3.12.3 (main, Oct 16 2024, 14:24:42) [Clang 15.0.0 (clang-1500.0.40.1)] (/Users/ljohnson/.pyenv/versions/3.12.3/bin/python3.12)
-  jinja version = 3.1.4
-  libyaml = True
+  ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
+  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
+  python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
+  jinja version = 3.1.6
+  pyyaml version = 6.0.2 (with libyaml v0.2.5)
 $
-$ PROJECT_DIR="$( git rev-parse --show-toplevel )"
-$ cd ${PROJECT_DIR}
+$ REPO_DIR="$( git rev-parse --show-toplevel )"
+$ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_dict_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_dict_keys.md
-> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_RyJAnp/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
+> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_0iIScH/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.

@@ -97,6 +97,7 @@ In `create_root_ca.yml`, the root CA certificate is validated to check if it mat
 
 - name: "Validate existing Root CA properties"
   when: __root_ca_pem_stat.stat.exists
+  ignore_errors: true
   dettonville.utils.x509_certificate_verify:
     path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__root_ca_configs.output_basename }}.pem"
     common_name: "{{ bootstrap_pki__root_ca_configs.common_name }}"
@@ -144,6 +145,7 @@ In `openbao_intermediate_ca.yml`, the intermediate CA (managed by OpenBao) is va
 
 - name: "Validate existing Intermediate CA properties"
   when: __intermediate_ca_pem_stat.stat.exists
+  ignore_errors: true
   dettonville.utils.x509_certificate_verify:
     path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__openbao_cert_configs.output_basename }}.pem"
     issuer_path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__root_ca_configs.output_basename }}.pem"

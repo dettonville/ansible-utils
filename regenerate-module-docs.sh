@@ -4,19 +4,19 @@
 # exit when any command fails
 #set -e
 
-VERSION="2025.7.2"
+VERSION="2025.9.20"
 
 #SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_DIR="$(dirname "$0")"
 SCRIPT_NAME="$(basename "$0")"
 
-PROJECT_DIR=$( git rev-parse --show-toplevel )
-COLLECTIONS_DIR="${PROJECT_DIR}/."
-#DOCS_DIR="${PROJECT_DIR}/docs/plugins"
-DOCS_DIR="${PROJECT_DIR}/docs"
+REPO_DIR=$( git rev-parse --show-toplevel )
+COLLECTIONS_DIR="${REPO_DIR}/."
+#DOCS_DIR="${REPO_DIR}/docs/plugins"
+DOCS_DIR="${REPO_DIR}/docs"
 
-COLLECTION_NAMESPACE=$(yq -r '.namespace' "${PROJECT_DIR}/galaxy.yml")
-COLLECTION_NAME=$(yq -r '.name' "${PROJECT_DIR}/galaxy.yml")
+COLLECTION_NAMESPACE=$(yq -r '.namespace' "${REPO_DIR}/galaxy.yml")
+COLLECTION_NAME=$(yq -r '.name' "${REPO_DIR}/galaxy.yml")
 
 ## For `PLUGIN_CONFIG_LIST` use the following format to specify any special PLUGIN_NAMEs
 ## [plugin_name]:[plugin_type]
@@ -35,18 +35,18 @@ DOC_PREFIX='
 
 ```shell
 $ ansible --version
-ansible [core 2.18.4]
-  config file = /Users/ljohnson/repos/ansible/ansible_collections/dettonville.utils/ansible.cfg
+ansible [core 2.19.2]
+  config file = None
   configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
-  ansible python module location = /Users/ljohnson/.pyenv/versions/3.12.3/lib/python3.12/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections:/Users/ljohnson/repos/ansible/ansible_collections/dettonville.utils/collections
-  executable location = /Users/ljohnson/.pyenv/versions/3.12.3/bin/ansible
-  python version = 3.12.3 (main, Oct 16 2024, 14:24:42) [Clang 15.0.0 (clang-1500.0.40.1)] (/Users/ljohnson/.pyenv/versions/3.12.3/bin/python3.12)
-  jinja version = 3.1.4
-  libyaml = True
+  ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
+  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
+  python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
+  jinja version = 3.1.6
+  pyyaml version = 6.0.2 (with libyaml v0.2.5)
 $
-$ PROJECT_DIR="$( git rev-parse --show-toplevel )"
-$ cd ${PROJECT_DIR}
+$ REPO_DIR="$( git rev-parse --show-toplevel )"
+$ cd ${REPO_DIR}
 $'
 
 
@@ -296,8 +296,8 @@ create_plugin_docs() {
   local COLLECTIONS_DIR=$2
   local PLUGIN_CONFIG_LIST=$3
 
-  COLLECTION_NAMESPACE=$(yq -r '.namespace' "${PROJECT_DIR}/galaxy.yml")
-  COLLECTION_NAME=$(yq -r '.name' "${PROJECT_DIR}/galaxy.yml")
+  COLLECTION_NAMESPACE=$(yq -r '.namespace' "${REPO_DIR}/galaxy.yml")
+  COLLECTION_NAME=$(yq -r '.name' "${REPO_DIR}/galaxy.yml")
 
   ## ref: https://www.pixelstech.net/article/1577768087-Create-temp-file-in-Bash-using-mktemp-and-trap
   ## ref: https://stackoverflow.com/questions/4632028/how-to-create-a-temporary-directory
@@ -311,7 +311,7 @@ create_plugin_docs() {
   echo "COLLECTION_SOURCE_DIR=${COLLECTION_SOURCE_DIR}"
 
   mkdir -p "$(dirname "${COLLECTION_SOURCE_DIR}")"
-  ln -s "${PROJECT_DIR}" "${COLLECTION_SOURCE_DIR}"
+  ln -s "${REPO_DIR}" "${COLLECTION_SOURCE_DIR}"
   export ANSIBLE_COLLECTIONS_PATH="${COLLECTION_BASE_DIR}:${ANSIBLE_COLLECTIONS_PATH}"
   echo "ANSIBLE_COLLECTIONS_PATH=${ANSIBLE_COLLECTIONS_PATH}"
 
@@ -400,11 +400,11 @@ function main() {
   done
   shift $((OPTIND-1))
 
-  log_debug "PROJECT_DIR=${PROJECT_DIR}"
+  log_debug "REPO_DIR=${REPO_DIR}"
 
   log_debug "DOC_PREFIX=${DOC_PREFIX}"
   #log_debug "SCRIPT_DIR=${SCRIPT_DIR}"
-  log_debug "PROJECT_DIR=${PROJECT_DIR}"
+  log_debug "REPO_DIR=${REPO_DIR}"
   log_debug "DOCS_DIR=${DOCS_DIR}"
   log_debug "PLUGIN_CONFIG_LIST=${PLUGIN_CONFIG_LIST}"
 
