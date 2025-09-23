@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.test_results_logger | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/test_results_logger.md
-> MODULE dettonville.utils.test_results_logger (/Users/ljohnson/tmp/_0iIScH/ansible_collections/dettonville/utils/plugins/modules/test_results_logger.py)
+> MODULE dettonville.utils.test_results_logger (/Users/ljohnson/tmp/_A85VRe/ansible_collections/dettonville/utils/plugins/modules/test_results_logger.py)
 
   Renders test results specified in dict format into junit xml.
 

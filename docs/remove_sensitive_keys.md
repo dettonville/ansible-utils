@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_sensitive_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_sensitive_keys.md
-> FILTER dettonville.utils.remove_sensitive_keys (/Users/ljohnson/tmp/_0iIScH/ansible_collections/dettonville/utils/plugins/filter/remove_sensitive_keys.py)
+> FILTER dettonville.utils.remove_sensitive_keys (/Users/ljohnson/tmp/_A85VRe/ansible_collections/dettonville/utils/plugins/filter/remove_sensitive_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.

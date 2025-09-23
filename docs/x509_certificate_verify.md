@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_0iIScH/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_A85VRe/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   Verifies that a certificate is cryptographically signed by an issuer
   certificate and validates specified properties.
@@ -25,10 +25,20 @@ $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certific
   Validates certificate expiration and proximity to expiration using a
   checkend threshold.
   Validates public key algorithm and size if provided.
+  Compares the modulus of RSA public keys between the certificate and
+  issuer certificate (if provided and both are RSA).
   Uses OpenSSL for cryptographic signature verification and Python's
   cryptography library for property validation.
 
 OPTIONS (= indicates it is required):
+
+- chain_path  Path to a file containing intermediate certificates
+               (PEM or DER format) to build the certificate chain for
+               verification.
+               If provided, these certificates are added to the trust
+               store for signature validation.
+        default: null
+        type: path
 
 - checkend_value  The number of seconds before expiration to fail.
                    Only effective if `validate_checkend' is true.
@@ -43,7 +53,8 @@ OPTIONS (= indicates it is required):
 - issuer_path  Path to the issuer (CA) certificate file (PEM or DER
                 format) used to verify the certificate's signature.
                 If this argument is provided, the module will
-                automatically perform signature validation.
+                automatically perform signature validation and modulus
+                comparison (for RSA keys).
         default: null
         type: path
 
@@ -57,6 +68,12 @@ OPTIONS (= indicates it is required):
              size is not validated.
         default: null
         type: int
+
+- logging_level  Parameter used to define the level of
+                  troubleshooting output.
+        choices: [NOTSET, DEBUG, INFO, ERROR]
+        default: INFO
+        type: str
 
 - organization  Expected Organization (O) in the certificate's
                  subject. If not provided, O is not validated.
@@ -86,6 +103,11 @@ NOTES:
       * The module works with both PEM and DER encoded
         certificates and keys.
       * At least one verification property must be provided.
+      * Modulus comparison is performed only for RSA keys when
+        issuer_path is provided.
+      * Use chain_path to include intermediate certificates when
+        verifying certificates not directly signed by the root
+        CA.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -97,11 +119,12 @@ EXAMPLES:
   dettonville.utils.x509_certificate_verify:
     path: /etc/pki/intermediate_ca.pem
     issuer_path: /etc/pki/ca-root.pem
+    chain_path: /etc/pki/chain.pem
     common_name: foobar.example.int
     organization: MyOrg
     organizational_unit: IT
-    key_algo: rsa
-    key_size: 2048
+    key_algo: ec
+    key_size: 256
     validate_expired: true
   register: cert_verify_result
 
@@ -128,6 +151,12 @@ EXAMPLES:
 
 RETURN VALUES:
 
+- cert_modulus  The modulus of the certificate's public key
+                 (hexadecimal string, only for RSA keys).
+        returned: when issuer_path is provided and the certificate has an RSA key
+        sample: a1b2c3...
+        type: str
+
 - details  A dictionary containing the validated certificate
             properties.
         returned: always
@@ -145,6 +174,19 @@ RETURN VALUES:
         sample: false
         type: bool
 
+- issuer_modulus  The modulus of the issuer certificate's public key
+                   (hexadecimal string, only for RSA keys).
+        returned: when issuer_path is provided and the issuer certificate has an RSA key
+        sample: a1b2c3...
+        type: str
+
+- modulus_match  A boolean indicating if the modulus of the
+                  certificate and issuer certificate match (only for
+                  RSA keys).
+        returned: when issuer_path is provided and both certificates have RSA keys
+        sample: false
+        type: bool
+
 - msg     A message indicating the result of the validation.
         returned: always
         sample: All certificate validations passed successfully
@@ -153,6 +195,13 @@ RETURN VALUES:
 - valid   A boolean indicating if the certificate passed all
            validation checks.
         returned: always
+        sample: true
+        type: bool
+
+- valid_signature  A boolean indicating if the certificate's
+                    signature was successfully verified against the
+                    issuer.
+        returned: when issuer_path is provided
         sample: true
         type: bool
 

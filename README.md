@@ -15,7 +15,7 @@ A short/brief description overview of the [tested use cases can be found here](h
 
 A summary table of test results for [each module/filter can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/test-results.md).
 
-For a detailed motivational case study on the `x509_certificate_verify` module, including before-and-after comparisons for PKI workflows, see [docs/x509_certificate_verify_detailed.md](docs/x509_certificate_verify_detailed.md).
+The [`x509_certificate_verify` module README.md](docs/readme.x509_certificate_verify.md) can be found at [docs/readme.x509_certificate_verify.md](docs/readme.x509_certificate_verify.md).
 
 ## Requirements
 
