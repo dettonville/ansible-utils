@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.sort_dict_list | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/sort_dict_list.md
-> FILTER dettonville.utils.sort_dict_list (/Users/ljohnson/tmp/_A85VRe/ansible_collections/dettonville/utils/plugins/filter/sort_dict_list.py)
+> FILTER dettonville.utils.sort_dict_list (/Users/ljohnson/tmp/_lRlHig/ansible_collections/dettonville/utils/plugins/filter/sort_dict_list.py)
 
   Sort list of dictionaries by a specified key(s).
 

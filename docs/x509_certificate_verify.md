@@ -16,12 +16,15 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_A85VRe/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_lRlHig/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   Verifies that a certificate is cryptographically signed by an issuer
   certificate and validates specified properties.
-  Checks certificate attributes like common name, organization, and
-  organizational unit.
+  Checks certificate attributes like common name, organization,
+  organizational unit, country, state or province, locality, and email
+  address.
+  Validates certificate serial number, version, and signature
+  algorithm if provided.
   Validates certificate expiration and proximity to expiration using a
   checkend threshold.
   Validates public key algorithm and size if provided.
@@ -50,6 +53,16 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
+- country  Expected Country (C) in the certificate's subject. If not
+            provided, Country is not validated.
+        default: null
+        type: str
+
+- email_address  Expected Email Address in the certificate's subject.
+                  If not provided, Email Address is not validated.
+        default: null
+        type: str
+
 - issuer_path  Path to the issuer (CA) certificate file (PEM or DER
                 format) used to verify the certificate's signature.
                 If this argument is provided, the module will
@@ -65,13 +78,18 @@ OPTIONS (= indicates it is required):
         type: str
 
 - key_size  Expected public key size in bits. If not provided, key
-             size is not validated.
+             size is not validated. (e.g., 2048 for RSA, 256 for EC).
         default: null
         type: int
 
+- locality  Expected Locality (L) in the certificate's subject. If
+             not provided, Locality is not validated.
+        default: null
+        type: str
+
 - logging_level  Parameter used to define the level of
                   troubleshooting output.
-        choices: [NOTSET, DEBUG, INFO, ERROR]
+        choices: [DEBUG, INFO, WARNING, ERROR, CRITICAL]
         default: INFO
         type: str
 
@@ -89,6 +107,24 @@ OPTIONS (= indicates it is required):
 = path    Path to the certificate file to verify (PEM or DER format).
         type: path
 
+- serial_number  Expected serial number of the certificate (decimal
+                  or hex string). If not provided, serial number is
+                  not validated.
+        default: null
+        type: str
+
+- signature_algorithm  Expected signature algorithm (e.g.,
+                        sha256WithRSAEncryption). If not provided,
+                        signature algorithm is not validated.
+        default: null
+        type: str
+
+- state_or_province  Expected State or Province (ST) in the
+                      certificate's subject. If not provided, State or
+                      Province is not validated.
+        default: null
+        type: str
+
 - validate_checkend  If set to true, the module will fail if the
                       certificate expires within the checkend_value.
         default: false
@@ -99,6 +135,11 @@ OPTIONS (= indicates it is required):
         default: true
         type: bool
 
+- version  Expected version of the certificate (1 or 3). If not
+            provided, version is not validated.
+        default: null
+        type: int
+
 NOTES:
       * The module works with both PEM and DER encoded
         certificates and keys.
@@ -108,6 +149,9 @@ NOTES:
       * Use chain_path to include intermediate certificates when
         verifying certificates not directly signed by the root
         CA.
+      * For serial_number, provide as a decimal or hex string
+        (with or without '0x').
+      * For version, specify 1 for v1 or 3 for v3 certificates.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -123,16 +167,25 @@ EXAMPLES:
     common_name: foobar.example.int
     organization: MyOrg
     organizational_unit: IT
+    country: US
+    state_or_province: California
+    locality: San Francisco
+    email_address: admin@example.com
+    serial_number: '12345'
+    version: 3
+    signature_algorithm: 'sha256WithRSAEncryption'
     key_algo: ec
     key_size: 256
     validate_expired: true
+    validate_checkend: true
+    checkend_value: 86400
+    logging_level: INFO
   register: cert_verify_result
 
-- name: Verify an unexpired certificate with specific properties
+- name: Verify that a certificate has not expired
   dettonville.utils.x509_certificate_verify:
     path: /etc/pki/certs/mycert.pem
-    common_name: 'www.example.com'
-    validate_expired: true
+    validate_checkend: true
   register: verify_result
 
 - name: Verify that a certificate will not expire in the next 30 days
@@ -142,12 +195,12 @@ EXAMPLES:
     checkend_value: 2592000
   register: verify_result
 
-- name: Verify a certificate's public key algorithm and size
+- name: Validate public key details
   dettonville.utils.x509_certificate_verify:
-    path: /etc/pki/certs/mycert.pem
-    key_algo: 'rsa'
-    key_size: 2048
-  register: verify_result
+    path: /etc/ssl/certs/service.pem
+    key_algo: 'ec'
+    key_size: 256
+  register: key_validation
 
 RETURN VALUES:
 
@@ -157,19 +210,16 @@ RETURN VALUES:
         sample: a1b2c3...
         type: str
 
-- details  A dictionary containing the validated certificate
-            properties.
+- details  Dictionary of validated certificate properties.
         returned: always
         sample:
           common_name: my.example.com
           key_algo: rsa
           key_size: 2048
           organization: My Company
-          valid_from: '2025-01-01T00:00:00Z'
-          valid_until: '2026-01-01T00:00:00Z'
         type: dict
 
-- failed  A boolean indicating if the module task failed.
+- failed  Indicates if the module task failed.
         returned: always
         sample: false
         type: bool
@@ -180,29 +230,39 @@ RETURN VALUES:
         sample: a1b2c3...
         type: str
 
-- modulus_match  A boolean indicating if the modulus of the
-                  certificate and issuer certificate match (only for
-                  RSA keys).
+- modulus_match  Indicates if the modulus of the certificate and
+                  issuer certificate match (only for RSA keys).
         returned: when issuer_path is provided and both certificates have RSA keys
         sample: false
         type: bool
 
-- msg     A message indicating the result of the validation.
+- msg     Message indicating the result of the validation.
         returned: always
         sample: All certificate validations passed successfully
         type: str
 
-- valid   A boolean indicating if the certificate passed all
-           validation checks.
+- valid   Indicates if the certificate passed all validation checks.
         returned: always
         sample: true
         type: bool
 
-- valid_signature  A boolean indicating if the certificate's
-                    signature was successfully verified against the
-                    issuer.
+- valid_signature  Indicates if the certificate's signature was
+                    successfully verified against the issuer.
         returned: when issuer_path is provided
         sample: true
         type: bool
+
+- verify_failed  Whether any verification checks failed.
+        returned: always
+        sample: false
+        type: bool
+
+- verify_results  Dictionary of verification results with boolean
+                   values for each check.
+        returned: always
+        sample:
+          common_name: true
+          key_size: false
+        type: dict
 
 ```

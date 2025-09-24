@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright: (c) 2025, Lee Johnson (ljohnson@dettonville.com)
-# MIT license[](https://opensource.org/license/mit/)
+# MIT license
 
 from __future__ import absolute_import, division, print_function
 
@@ -17,6 +17,7 @@ version_added: "2025.9.0"
 description:
   - Verifies that a certificate is cryptographically signed by an issuer certificate and validates specified properties.
   - Checks certificate attributes like common name, organization, organizational unit, country, state or province, locality, and email address.
+  - Validates certificate serial number, version, and signature algorithm if provided.
   - Validates certificate expiration and proximity to expiration using a checkend threshold.
   - Validates public key algorithm and size if provided.
   - Compares the modulus of RSA public keys between the certificate and issuer certificate (if provided and both are RSA).
@@ -65,6 +66,18 @@ options:
     description:
       - Expected Email Address in the certificate's subject. If not provided, Email Address is not validated.
     type: str
+  serial_number:
+    description:
+      - Expected serial number of the certificate (decimal or hex string). If not provided, serial number is not validated.
+    type: str
+  version:
+    description:
+      - Expected version of the certificate (1 or 3). If not provided, version is not validated.
+    type: int
+  signature_algorithm:
+    description:
+      - Expected signature algorithm (e.g., sha256WithRSAEncryption). If not provided, signature algorithm is not validated.
+    type: str
   key_algo:
     description:
       - Expected public key algorithm. If not provided, key algorithm is not validated.
@@ -76,7 +89,7 @@ options:
       - ed25519
   key_size:
     description:
-      - Expected public key size in bits. If not provided, key size is not validated.
+      - Expected public key size in bits. If not provided, key size is not validated. (e.g., 2048 for RSA, 256 for EC).
     type: int
   validate_expired:
     description:
@@ -97,7 +110,7 @@ options:
       description:
           - Parameter used to define the level of troubleshooting output.
       required: false
-      choices: [NOTSET, DEBUG, INFO, ERROR]
+      choices: ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
       default: INFO
       type: str
 requirements:
@@ -108,6 +121,8 @@ notes:
   - At least one verification property must be provided.
   - Modulus comparison is performed only for RSA keys when issuer_path is provided.
   - Use chain_path to include intermediate certificates when verifying certificates not directly signed by the root CA.
+  - For serial_number, provide as a decimal or hex string (with or without '0x').
+  - For version, specify 1 for v1 or 3 for v3 certificates.
 """
 
 EXAMPLES = r"""
@@ -123,16 +138,21 @@ EXAMPLES = r"""
     state_or_province: California
     locality: San Francisco
     email_address: admin@example.com
+    serial_number: '12345'
+    version: 3
+    signature_algorithm: 'sha256WithRSAEncryption'
     key_algo: ec
     key_size: 256
     validate_expired: true
+    validate_checkend: true
+    checkend_value: 86400
+    logging_level: INFO
   register: cert_verify_result
 
-- name: Verify an unexpired certificate with specific properties
+- name: Verify that a certificate has not expired
   dettonville.utils.x509_certificate_verify:
     path: /etc/pki/certs/mycert.pem
-    common_name: 'www.example.com'
-    validate_expired: true
+    validate_checkend: true
   register: verify_result
 
 - name: Verify that a certificate will not expire in the next 30 days
@@ -142,54 +162,52 @@ EXAMPLES = r"""
     checkend_value: 2592000
   register: verify_result
 
-- name: Verify a certificate's public key algorithm and size
+- name: Validate public key details
   dettonville.utils.x509_certificate_verify:
-    path: /etc/pki/certs/mycert.pem
-    key_algo: 'rsa'
-    key_size: 2048
-  register: verify_result
+    path: /etc/ssl/certs/service.pem
+    key_algo: 'ec'
+    key_size: 256
+  register: key_validation
 """
 
 RETURN = r"""
 valid:
-  description: A boolean indicating if the certificate passed all validation checks.
+  description: Indicates if the certificate passed all validation checks.
   type: bool
   returned: always
   sample: true
 failed:
-  description: A boolean indicating if the module task failed.
+  description: Indicates if the module task failed.
   type: bool
   returned: always
   sample: false
 msg:
-  description: A message indicating the result of the validation.
+  description: Message indicating the result of the validation.
   type: str
   returned: always
   sample: "All certificate validations passed successfully"
 details:
-  description: A dictionary containing the validated certificate properties.
+  description: Dictionary of validated certificate properties.
   type: dict
   returned: always
-  sample: {
-    "common_name": "my.example.com",
-    "organization": "My Company",
-    "organizational_unit": "IT",
-    "country": "US",
-    "state_or_province": "California",
-    "locality": "San Francisco",
-    "email_address": "admin@example.com",
-    "key_algo": "rsa",
-    "key_size": 2048,
-    "valid_from": "2025-01-01T00:00:00Z",
-    "valid_until": "2026-01-01T00:00:00Z"
-  }
+  sample: {"common_name": "my.example.com", "organization": "My Company", "key_algo": "rsa", "key_size": 2048}
+verify_failed:
+  description: Whether any verification checks failed.
+  type: bool
+  returned: always
+  sample: false
+verify_results:
+  description: Dictionary of verification results with boolean values for each check.
+  type: dict
+  returned: always
+  sample: {"common_name": true, "key_size": false}
 valid_signature:
-  description: A boolean indicating if the certificate's signature was successfully verified against the issuer.
+  description: Indicates if the certificate's signature was successfully verified against the issuer.
   type: bool
   returned: when issuer_path is provided
   sample: true
 modulus_match:
-  description: A boolean indicating if the modulus of the certificate and issuer certificate match (only for RSA keys).
+  description: Indicates if the modulus of the certificate and issuer certificate match (only for RSA keys).
   type: bool
   returned: when issuer_path is provided and both certificates have RSA keys
   sample: false
@@ -205,35 +223,51 @@ issuer_modulus:
   sample: "a1b2c3..."
 """
 
-import traceback
-import pprint
-import logging
-
-from datetime import datetime, timezone, timedelta
 from ansible.module_utils.basic import AnsibleModule
+from datetime import datetime, timezone, timedelta
+import logging
+# import pprint
+import traceback
 
-# Handle cryptography import
+# Handle cryptography imports
 try:
     from cryptography import x509
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519
     from cryptography.hazmat.primitives.serialization import Encoding
     from cryptography.hazmat.backends import default_backend
-    from OpenSSL import crypto
     import cryptography
 
-    HAS_LIBS = True
+    HAS_CRYPTOGRAPHY = True
 except ImportError:
-    HAS_LIBS = False
+    HAS_CRYPTOGRAPHY = False
 
+# Handle pyOpenSSL imports
+try:
+    from OpenSSL import crypto
+
+    HAS_PYOPENSSL = True
+except ImportError:
+    HAS_PYOPENSSL = False
+
+HAS_LIBS = HAS_CRYPTOGRAPHY and HAS_PYOPENSSL
+
+
+def _setup_logging(level):
+    """Set up logging with the specified level."""
+    logging.basicConfig(level=getattr(logging, level, logging.INFO))
+    return logging.getLogger(__name__)
 
 # Function to read certificate content
+
+
 def _read_cert_file(path, module):
     """Read certificate file content."""
     try:
         with open(path, 'rb') as f:
             return f.read()
     except Exception as e:
-        module.fail_json(msg=f"Failed to read certificate file at {path}: {str(e)}")
+        module.fail_json(
+            msg=f"Failed to read certificate file at {path}: {str(e)}")
 
 
 # Function to parse certificate
@@ -243,12 +277,13 @@ def _parse_certificate(cert_content, module):
         return x509.load_pem_x509_certificate(cert_content, default_backend())
     except ValueError:
         try:
-            return x509.load_der_x509_certificate(
-                cert_content, default_backend())
+            return x509.load_der_x509_certificate(cert_content, default_backend())
         except ValueError as e:
-            module.fail_json(msg=f"Could not parse certificate. Must be PEM or DER format. Error: {e}")
+            module.fail_json(
+                msg=f"Could not parse certificate. Must be PEM or DER format. Error: {e}")
 
 
+# Function to load chain certificates
 def _load_chain_certs(chain_content, module):
     """Load multiple certificates from a chain file (PEM or DER)."""
     chain_certs = []
@@ -281,6 +316,38 @@ def _load_chain_certs(chain_content, module):
     return chain_certs
 
 
+# Function to verify certificate signature
+def _verify_signature(cert, issuer_cert, chain_certs, module):
+    """Verify certificate signature using issuer and chain."""
+    if not HAS_PYOPENSSL:
+        module.fail_json(
+            msg="OpenSSL.crypto is required for signature verification but is not available. Ensure pyOpenSSL is installed.")
+    try:
+        store = crypto.X509Store()
+        if issuer_cert:
+            issuer_openssl = crypto.load_certificate(
+                crypto.FILETYPE_PEM, issuer_cert.public_bytes(Encoding.PEM))
+            store.add_cert(issuer_openssl)
+        for chain_cert in chain_certs or []:
+            chain_openssl = crypto.load_certificate(
+                crypto.FILETYPE_PEM, chain_cert.public_bytes(Encoding.PEM))
+            store.add_cert(chain_openssl)
+        cert_openssl = crypto.load_certificate(
+            crypto.FILETYPE_PEM, cert.public_bytes(Encoding.PEM))
+        store_ctx = crypto.X509StoreContext(store, cert_openssl)
+        store_ctx.verify_certificate()
+        module.log.debug("Issuer signature valid!")
+        return True
+    except Exception as e:
+        module.log.error(
+            "Issuer signature invalid: %s (type: %s)", str(e), type(e).__name__)
+        module.log.debug("Exception traceback: %s", traceback.format_exc())
+        module.log.debug("Certificate issuer: %s", cert.issuer)
+        module.log.debug("Issuer subject: %s",
+                         issuer_cert.subject if issuer_cert else 'None')
+        return False
+
+
 def _get_modulus(public_key):
     """Extract modulus from an RSA public key, return None for non-RSA keys."""
     if isinstance(public_key, rsa.RSAPublicKey):
@@ -288,13 +355,29 @@ def _get_modulus(public_key):
     return None
 
 
+def parse_serial_number(serial_str):
+    """Parse serial number string to integer, handling decimal or hex."""
+    if serial_str.lower().startswith('0x'):
+        serial_str = serial_str[2:]
+        base = 16
+    else:
+        try:
+            return int(serial_str)
+        except ValueError:
+            base = 16
+    try:
+        return int(serial_str, base)
+    except ValueError:
+        raise ValueError(f"Invalid serial number: {serial_str}")
+
+
 # Main function
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             path=dict(type="path", required=True),
-            issuer_path=dict(type="path", required=False),
-            chain_path=dict(type="path", required=False),
+            issuer_path=dict(type="path", required=False, default=None),
+            chain_path=dict(type="path", required=False, default=None),
             common_name=dict(type="str", required=False, default=None),
             organization=dict(type="str", required=False, default=None),
             organizational_unit=dict(type="str", required=False, default=None),
@@ -302,6 +385,9 @@ def main():
             state_or_province=dict(type="str", required=False, default=None),
             locality=dict(type="str", required=False, default=None),
             email_address=dict(type="str", required=False, default=None),
+            serial_number=dict(type="str", required=False, default=None),
+            version=dict(type="int", required=False, default=None),
+            signature_algorithm=dict(type="str", required=False, default=None),
             key_algo=dict(
                 type="str",
                 required=False,
@@ -313,7 +399,9 @@ def main():
             validate_checkend=dict(type="bool", default=False),
             checkend_value=dict(type="int", default=86400),
             logging_level=dict(
-                type="str", choices=["NOTSET", "DEBUG", "INFO", "ERROR"], default="INFO"
+                type="str",
+                choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                default="INFO"
             ),
         ),
         supports_check_mode=True,
@@ -324,174 +412,103 @@ def main():
             msg="The 'pyopenssl' and 'cryptography' Python libraries are required."
         )
 
-    loglevel = module.params.get("logging_level")
-    logging.basicConfig(level=loglevel)
+    log = _setup_logging(module.params['logging_level'])
 
     # Log cryptography version for debugging
     module.log(f"cryptography version: {cryptography.__version__}")
-    logging.info("cryptography version: %s", cryptography.__version__)
+    log.info("cryptography version: %s", cryptography.__version__)
 
     # Warn if cryptography version is below 36.0.0
     version_parts = [int(part)
                      for part in cryptography.__version__.split(".")[:3]]
     if version_parts < [36, 0, 0]:
         module.warn(
-            f"Cryptography version {cryptography.__version__} is below 36.0.0, consider updating for latest features and security fixes.")
+            f"Cryptography version {cryptography.__version__} is below 36.0.0. Some features may not work correctly.")
 
-    # Enforce at least one verification property
-    verification_params = [
-        module.params["issuer_path"],
-        module.params["chain_path"],
-        module.params["common_name"],
-        module.params["organization"],
-        module.params["organizational_unit"],
-        module.params["country"],
-        module.params["state_or_province"],
-        module.params["locality"],
-        module.params["email_address"],
-        module.params["key_algo"],
-        module.params["key_size"],
+    # Check if at least one verification property is provided
+    verification_properties = [
+        module.params.get('issuer_path'),
+        module.params.get('chain_path'),
+        module.params.get('common_name'),
+        module.params.get('organization'),
+        module.params.get('organizational_unit'),
+        module.params.get('country'),
+        module.params.get('state_or_province'),
+        module.params.get('locality'),
+        module.params.get('email_address'),
+        module.params.get('serial_number'),
+        module.params.get('version'),
+        module.params.get('signature_algorithm'),
+        module.params.get('key_algo'),
+        module.params.get('key_size'),
     ]
-    verification_booleans = [
-        module.params["validate_expired"],
-        module.params["validate_checkend"],
-    ]
-    if not (any(verification_params) or any(verification_booleans)):
+    if module.params.get('validate_expired'):
+        verification_properties.append(True)
+    if module.params.get('validate_checkend'):
+        verification_properties.append(True)
+    if not any(verification_properties):
         module.fail_json(
-            msg="At least one verification property must be provided."
-        )
+            msg="At least one verification property must be provided.")
 
     if module.check_mode:
         module.exit_json(
-            valid=True,
-            failed=False,
-            msg="Check mode: All validations passed successfully",
-        )
+            changed=False, msg="Check mode: All validations passed successfully")
 
-    path = module.params["path"]
-    issuer_path = module.params["issuer_path"]
-    chain_path = module.params["chain_path"]
+    result = {
+        'valid': True,
+        'failed': False,
+        'verify_failed': False,
+        'msg': "All certificate validations passed successfully",
+        'details': {},
+    }
+    verify_results = {}
 
-    # Read and parse certificate
+    path = module.params['path']
     cert_content = _read_cert_file(path, module)
     cert = _parse_certificate(cert_content, module)
 
-    result = dict(
-        valid=True,
-        changed=False,
-        failed=False,
-        msg="All certificate validations passed successfully",
-        details={},
-    )
-    result["details"]["common_name"] = None
-    result["details"]["organization"] = None
-    result["details"]["organizational_unit"] = None
-    result["details"]["country"] = None
-    result["details"]["state_or_province"] = None
-    result["details"]["locality"] = None
-    result["details"]["email_address"] = None
-    result["details"]["key_algo"] = None
-    result["details"]["key_size"] = None
+    issuer_path = module.params.get('issuer_path')
+    chain_path = module.params.get('chain_path')
 
-    # Issuer validation if issuer_path provided
+    issuer_crypto = None
+    chain_certs = []
     if issuer_path:
-        result["details"]["valid_signature"] = False
-        logging.debug("issuer_path: %s", issuer_path)
-        # Load and verify certificate signature using pyopenssl
+        # Load issuer certificate
         issuer_content = _read_cert_file(issuer_path, module)
-        logging.debug("issuer_content => %s", pprint.pformat(issuer_content))
         issuer_crypto = _parse_certificate(issuer_content, module)
-        cert_openssl = crypto.load_certificate(
-            crypto.FILETYPE_ASN1, cert.public_bytes(Encoding.DER))
-        logging.debug("cert_openssl => %s", pprint.pformat(cert_openssl))
-        try:
-            issuer_cert = crypto.load_certificate(
-                crypto.FILETYPE_PEM, issuer_content
-            )
-            logging.debug("issuer_cert => %s", pprint.pformat(issuer_cert))
-        except crypto.Error as e:
-            # Retry with ASN1 format if PEM fails
-            try:
-                issuer_cert = crypto.load_certificate(
-                    crypto.FILETYPE_ASN1, issuer_content
-                )
-                logging.debug(
-                    "issuer_cert* => %s",
-                    pprint.pformat(issuer_cert))
-            except crypto.Error as e:
-                logging.error("could not load cert content!")
-                module.fail_json(
-                    msg=f"Failed to load certificate or issuer. Ensure files are PEM or DER format. Error: {e}")
 
-        logging.debug("validating issuer signature...")
-        logging.debug("Certificate issuer: %s", cert.issuer)
-        logging.debug("Issuer subject: %s", issuer_crypto.subject)
-        try:
-            store = crypto.X509Store()
-            store.add_cert(issuer_cert)
-            # Add intermediate certificates if chain_path is provided
-            if chain_path:
-                logging.debug("chain_path: %s", chain_path)
-                chain_content = _read_cert_file(chain_path, module)
-                logging.debug(
-                    "chain_content => %s",
-                    pprint.pformat(chain_content))
-                chain_certs = _load_chain_certs(chain_content, module)
-                for chain_cert in chain_certs:
-                    logging.debug(
-                        "Adding chain certificate: %s",
-                        chain_cert.get_subject())
-                    store.add_cert(chain_cert)
-            store_ctx = crypto.X509StoreContext(store, cert_openssl)
-            logging.debug("verify issuer signature...")
-            store_ctx.verify_certificate()
-            result["valid_signature"] = True
-            logging.debug("issuer signature valid!")
-        except Exception as e:
+        if chain_path:
+            chain_content = _read_cert_file(chain_path, module)
+            chain_certs = _load_chain_certs(chain_content, module)
+
+        # Verify certificate signature
+        signature_valid = _verify_signature(
+            cert, issuer_crypto, chain_certs, module)
+        verify_results['signature_valid'] = signature_valid
+        result["valid_signature"] = signature_valid
+        if not signature_valid:
             result["valid"] = False
-            result["failed"] = True
-            result["msg"] = f"Certificate signature validation failed: {str(e)}. Certificate issuer: {cert.issuer}, Issuer subject: {issuer_crypto.subject}"
-            logging.error(
-                "issuer signature invalid: %s (type: %s)",
-                str(e),
-                type(e).__name__)
-            logging.debug("Exception traceback: %s", traceback.format_exc())
-            module.fail_json(**result)
+            result["verify_failed"] = True
 
         # Modulus comparison for RSA keys
-        # _get_modulus checks if cert has RSA key before attempting modulus comparison
         cert_modulus = _get_modulus(cert.public_key())
         issuer_modulus = _get_modulus(issuer_crypto.public_key())
         if cert_modulus is not None and issuer_modulus is not None:
             result['cert_modulus'] = cert_modulus
             result['issuer_modulus'] = issuer_modulus
-            modulus_match = (cert_modulus == issuer_modulus)
-            result['modulus_match'] = modulus_match
-            logging.debug("modulus_match => %s", modulus_match)
-            if not modulus_match:
+            match = (cert_modulus == issuer_modulus)
+            verify_results['modulus_match'] = match
+            result['modulus_match'] = match
+            log.debug("modulus_match => %s", match)
+            if not match:
                 result["valid"] = False
-                result["failed"] = True
-                result["msg"] = "Modulus comparison mismatch."
-                result["msg"] = (
-                    f"Modulus mismatch. Expected modulus '{issuer_modulus}', "
-                    f"found '{cert_modulus}'"
-                )
-                module.fail_json(**result)
+                result["verify_failed"] = True
         else:
             result['modulus_match'] = None
             result['cert_modulus'] = cert_modulus
             result['issuer_modulus'] = issuer_modulus
-            if cert_modulus is None and issuer_modulus is None:
-                logging.debug(
-                    "Modulus comparison skipped: both keys are not RSA")
-            elif cert_modulus is None:
-                logging.debug(
-                    "Modulus comparison skipped: certificate key is not RSA")
-            else:  # issuer_modulus is None
-                logging.debug(
-                    "Modulus comparison skipped: issuer key is not RSA")
 
-    logging.debug("set timezone-aware validity dates")
+    log.debug("set timezone-aware validity dates")
     # Safely get timezone-aware validity dates
     try:
         valid_from = cert.not_valid_before_utc
@@ -511,77 +528,73 @@ def main():
         for attr in subject
     }
 
-    # Common Name validation
-    if module.params.get('common_name'):
-        common_name = subject_dict.get(x509.NameOID.COMMON_NAME)
-        result['details']['common_name'] = common_name
-        if common_name is None or common_name != module.params['common_name']:
+    subject_fields = {
+        'common_name': x509.NameOID.COMMON_NAME,
+        'organization': x509.NameOID.ORGANIZATION_NAME,
+        'organizational_unit': x509.NameOID.ORGANIZATIONAL_UNIT_NAME,
+        'country': x509.NameOID.COUNTRY_NAME,
+        'state_or_province': x509.NameOID.STATE_OR_PROVINCE_NAME,
+        'locality': x509.NameOID.LOCALITY_NAME,
+        'email_address': x509.NameOID.EMAIL_ADDRESS,
+    }
+
+    for field, oid in subject_fields.items():
+        expected = module.params.get(field)
+        if expected is not None:
+            actual = subject_dict.get(oid)
+            match = (actual == expected)
+            verify_results[field] = match
+            result['details'][field] = actual
+            if not match:
+                result['valid'] = False
+                result['verify_failed'] = True
+
+    # Serial number validation
+    expected_serial_str = module.params.get('serial_number')
+    actual_serial = cert.serial_number
+    result['details']['serial_number'] = str(actual_serial)
+    if expected_serial_str is not None:
+        try:
+            expected_serial = parse_serial_number(expected_serial_str)
+            match = (actual_serial == expected_serial)
+            verify_results['serial_number'] = match
+            if not match:
+                result['valid'] = False
+                result['verify_failed'] = True
+        except ValueError as e:
             result['valid'] = False
             result['failed'] = True
-            result['msg'] = f"Common name mismatch. Expected '{module.params['common_name']}', found '{common_name}'"
+            result['msg'] = str(e)
             module.fail_json(**result)
 
-    # Organization validation
-    if module.params.get('organization'):
-        organization = subject_dict.get(x509.NameOID.ORGANIZATION_NAME)
-        result['details']['organization'] = organization
-        if organization is None or organization != module.params['organization']:
+    # Version validation
+    cert_version_internal = cert.version.value
+    cert_version_user = 1 if cert_version_internal == 0 else 3 if cert_version_internal == 2 else cert_version_internal
+    result['details']['version'] = cert_version_user
+    expected_version = module.params.get('version')
+    if expected_version is not None:
+        if expected_version not in [1, 3]:
             result['valid'] = False
             result['failed'] = True
-            result['msg'] = f"Organization mismatch. Expected '{module.params['organization']}', found '{organization}'"
+            result['msg'] = f"Invalid version. Expected 1 or 3, found '{expected_version}'"
             module.fail_json(**result)
+        expected_internal = 0 if expected_version == 1 else 2
+        match = (cert_version_internal == expected_internal)
+        verify_results['version'] = match
+        if not match:
+            result['valid'] = False
+            result['verify_failed'] = True
 
-    # Organizational Unit validation
-    if module.params.get('organizational_unit'):
-        organizational_unit = subject_dict.get(
-            x509.NameOID.ORGANIZATIONAL_UNIT_NAME)
-        result['details']['organizational_unit'] = organizational_unit
-        if organizational_unit is None or organizational_unit != module.params['organizational_unit']:
+    # Signature algorithm validation
+    actual_sig_algo = cert.signature_algorithm_oid._name
+    result['details']['signature_algorithm'] = actual_sig_algo
+    expected_sig_algo = module.params.get('signature_algorithm')
+    if expected_sig_algo is not None:
+        match = (actual_sig_algo.lower() == expected_sig_algo.lower())
+        verify_results['signature_algorithm'] = match
+        if not match:
             result['valid'] = False
-            result['failed'] = True
-            result[
-                'msg'] = f"Organizational unit mismatch. Expected '{module.params['organizational_unit']}', found '{organizational_unit}'"
-            module.fail_json(**result)
-
-    # Country validation
-    if module.params.get('country'):
-        country = subject_dict.get(x509.NameOID.COUNTRY_NAME)
-        result['details']['country'] = country
-        if country is None or country != module.params['country']:
-            result['valid'] = False
-            result['failed'] = True
-            result['msg'] = f"Country mismatch. Expected '{module.params['country']}', found '{country}'"
-            module.fail_json(**result)
-
-    # State or Province validation
-    if module.params.get('state_or_province'):
-        state_or_province = subject_dict.get(x509.NameOID.STATE_OR_PROVINCE_NAME)
-        result['details']['state_or_province'] = state_or_province
-        if state_or_province is None or state_or_province != module.params['state_or_province']:
-            result['valid'] = False
-            result['failed'] = True
-            result['msg'] = f"State or Province mismatch. Expected '{module.params['state_or_province']}', found '{state_or_province}'"
-            module.fail_json(**result)
-
-    # Locality validation
-    if module.params.get('locality'):
-        locality = subject_dict.get(x509.NameOID.LOCALITY_NAME)
-        result['details']['locality'] = locality
-        if locality is None or locality != module.params['locality']:
-            result['valid'] = False
-            result['failed'] = True
-            result['msg'] = f"Locality mismatch. Expected '{module.params['locality']}', found '{locality}'"
-            module.fail_json(**result)
-
-    # Email Address validation
-    if module.params.get('email_address'):
-        email_address = subject_dict.get(x509.NameOID.EMAIL_ADDRESS)
-        result['details']['email_address'] = email_address
-        if email_address is None or email_address != module.params['email_address']:
-            result['valid'] = False
-            result['failed'] = True
-            result['msg'] = f"Email Address mismatch. Expected '{module.params['email_address']}', found '{email_address}'"
-            module.fail_json(**result)
+            result['verify_failed'] = True
 
     # Key algorithm and size validation
     public_key = cert.public_key()
@@ -604,52 +617,50 @@ def main():
     result['details']['key_size'] = key_size
 
     # Validate key algorithm
-    if module.params.get('key_algo'):
-        if key_algo is None or key_algo.upper() != module.params['key_algo'].upper():
+    expected_key_algo = module.params.get('key_algo')
+    if expected_key_algo is not None:
+        match = (key_algo is not None and key_algo.lower()
+                 == expected_key_algo.lower())
+        verify_results['key_algo'] = match
+        if not match:
             result['valid'] = False
-            result['failed'] = True
-            result['msg'] = (
-                f"Key algorithm mismatch. Expected '{module.params['key_algo']}', "
-                f"found '{key_algo}'"
-            )
-            module.fail_json(**result)
+            result['verify_failed'] = True
 
     # Validate key size
-    if module.params.get("key_size"):
-        if key_size is None or key_size != module.params["key_size"]:
-            result["valid"] = False
-            result["failed"] = True
-            result["msg"] = (
-                f"Key size mismatch. Expected '{module.params['key_size']}', "
-                f"found '{key_size}'"
-            )
-            module.fail_json(**result)
+    expected_key_size = module.params.get('key_size')
+    if expected_key_size is not None:
+        match = (key_size is not None and key_size == expected_key_size)
+        verify_results['key_size'] = match
+        if not match:
+            result['valid'] = False
+            result['verify_failed'] = True
 
     # Validate expiration
     if module.params["validate_expired"]:
         now = datetime.now(timezone.utc)
         module.log(f"now: {now}, not_valid_after: {valid_until}")
-        if valid_until <= now:
+        expiry_valid = (valid_until > now)
+        verify_results['expiry_valid'] = expiry_valid
+        if not expiry_valid:
             result["valid"] = False
-            result["failed"] = True
-            result["msg"] = "Certificate has expired"
-            module.fail_json(**result)
+            result["verify_failed"] = True
 
     # Validate checkend (expiration proximity)
     if module.params["validate_checkend"]:
-        checkend_time = datetime.now(timezone.utc) + timedelta(
-            seconds=module.params["checkend_value"]
-        )
+        checkend_time = now + \
+            timedelta(seconds=module.params["checkend_value"])
         module.log(
             f"checkend_time: {checkend_time}, not_valid_after: {valid_until}")
-        if valid_until <= checkend_time:
+        checkend_valid = (valid_until > checkend_time)
+        verify_results['checkend_valid'] = checkend_valid
+        if not checkend_valid:
             result["valid"] = False
-            result["failed"] = True
-            result["msg"] = (
-                f"Certificate will expire within {module.params['checkend_value']} seconds "
-                f"(expires at {valid_until})"
-            )
-            module.fail_json(**result)
+            result["verify_failed"] = True
+
+    if not result['valid']:
+        result['msg'] = "Some certificate validations failed"
+
+    result['verify_results'] = verify_results
 
     # If all validations pass
     module.exit_json(**result)
