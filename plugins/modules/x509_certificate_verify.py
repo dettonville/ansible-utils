@@ -124,12 +124,12 @@ options:
     type: int
     default: 86400
   logging_level:
-      description:
-          - Parameter used to define the level of troubleshooting output.
-      required: false
-      choices: ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-      default: INFO
-      type: str
+    description:
+        - Parameter used to define the level of troubleshooting output.
+    required: false
+    choices: ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+    default: INFO
+    type: str
 requirements:
   - cryptography>=1.5
   - pyopenssl
@@ -141,6 +141,11 @@ notes:
   - For serial_number, provide as a decimal or hex string (with or without '0x').
   - For version, specify 1 for v1 or 3 for v3 certificates.
   - The issuer_path and chain_path parameters are deprecated in favor of issuer_ca_path.
+  - When logging_level is set to DEBUG, a full stack trace is logged for any exceptions.
+  - When logging_level is set to DEBUG, additional certificate metadata and environment details are included.
+  - If not_valid_after_utc is unavailable in cryptography >= 41.0.0, an error is logged, indicating a potential library or environment issue.
+  - If cryptography is loaded from a system-wide path in a virtual environment, a warning is logged to indicate potential version mismatches.
+  - The module modifies sys.path to prioritize the virtual environment's cryptography installation over system-wide paths.
 """
 
 EXAMPLES = r"""
@@ -168,12 +173,13 @@ EXAMPLES = r"""
     path: /etc/pki/certs/mycert.pem
     validate_checkend: true
     checkend_value: 2592000
+    logging_level: DEBUG
   register: verify_result
 
 - name: Validate public key details
   dettonville.utils.x509_certificate_verify:
     path: /etc/ssl/certs/service.pem
-    key_algo: 'ec'
+    key_algo: ec
     key_size: 256
   register: key_validation
 """
@@ -291,7 +297,7 @@ verify_results:
     modulus_match:
       description: Whether the certificate and issuer CA moduli match (if applicable).
       type: bool
-  sample: {"common_name": true, "key_size": false, "modulus_match": false}
+  sample: {"common_name": true, "key_size": false, "expiry_valid": true, "checkend_valid": true, "signature_valid": true, "modulus_match": true}
 cert_modulus:
   description: Modulus of the certificate's public key (hexadecimal, if applicable).
   type: str
@@ -306,12 +312,14 @@ issuer_modulus:
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 from datetime import datetime, timezone, timedelta
+import os
+import sys
+import traceback
 import logging
-# import pprint
-# import traceback
 
 # Handle cryptography imports
 try:
+    from cryptography import x509
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519
     from cryptography.x509.oid import NameOID
     from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
@@ -345,18 +353,28 @@ def _read_cert_file(path):
         with open(path, 'rb') as f:
             return f.read()
     except Exception as e:
-        raise Exception("Failed to read certificate file {}: {}".format(path, str(e)))
+        raise Exception(
+            "Failed to read certificate file {}: {}".format(path, str(e)))
 
 
 def _parse_certificate(data):
     """Parse certificate data (PEM or DER format)."""
     try:
-        return load_pem_x509_certificate(data)
+        cert = load_pem_x509_certificate(data)
+        if not isinstance(cert, x509.Certificate):
+            raise ValueError(
+                f"Parsed certificate is not a valid x509.Certificate object, got {type(cert)}")
+        return cert
     except ValueError:
         try:
-            return load_der_x509_certificate(data)
+            cert = load_der_x509_certificate(data)
+            if not isinstance(cert, x509.Certificate):
+                raise ValueError(
+                    f"Parsed certificate is not a valid x509.Certificate object, got {type(cert)}")
+            return cert
         except ValueError as e:
-            raise ValueError("Could not parse certificate. Must be PEM or DER format. Error: {}".format(str(e)))
+            raise ValueError(
+                "Could not parse certificate. Must be PEM or DER format. Error: {}".format(str(e)))
 
 
 def _load_ca_certs(path):
@@ -369,23 +387,28 @@ def _load_ca_certs(path):
             pem_certs = data.decode('utf-8').split('-----END CERTIFICATE-----')
             for pem_cert in pem_certs:
                 if '-----BEGIN CERTIFICATE-----' in pem_cert:
-                    cert_data = (pem_cert + '-----END CERTIFICATE-----').encode('utf-8')
-                    certs.append(_parse_certificate(cert_data))
+                    cert_data = (
+                        pem_cert + '-----END CERTIFICATE-----').encode('utf-8')
+                    cert = _parse_certificate(cert_data)
+                    certs.append(cert)
         else:
             # Handle single DER or PEM certificate
             certs.append(_parse_certificate(data))
         return certs
     except Exception as e:
-        raise Exception("Failed to load CA certificates from {}: {}".format(path, str(e)))
+        raise Exception(
+            "Failed to load CA certificates from {}: {}".format(path, str(e)))
 
 
 # Function to verify certificate signature
 def _verify_signature(cert, ca_certs):
     """Verify certificate signature against CA certificates."""
     store = crypto.X509Store()
-    cert_openssl = crypto.load_certificate(crypto.FILETYPE_PEM, cert.public_bytes())
+    cert_openssl = crypto.load_certificate(
+        crypto.FILETYPE_PEM, cert.public_bytes())
     for ca_cert in ca_certs:
-        ca_openssl = crypto.load_certificate(crypto.FILETYPE_PEM, ca_cert.public_bytes())
+        ca_openssl = crypto.load_certificate(
+            crypto.FILETYPE_PEM, ca_cert.public_bytes())
         store.add_cert(ca_openssl)
     store_ctx = crypto.X509StoreContext(store, cert_openssl)
     try:
@@ -442,10 +465,41 @@ def main():
     )
 
     if not HAS_LIBS:
-        module.fail_json(msg=missing_required_lib("'pyopenssl' and 'cryptography' Python libraries are required."))
+        module.fail_json(msg=missing_required_lib(
+            "'pyopenssl' and 'cryptography' Python libraries are required."))
 
     # Set up logging
     log = _setup_logging(module.params['logging_level'])
+
+    # Prioritize virtual environment by removing system-wide paths
+    if module.params.get('logging_level') == 'DEBUG':
+        sys_path_removed = False
+        for path in sys.path[:]:
+            if path.startswith('/usr/lib/python3/dist-packages'):
+                sys.path.remove(path)
+                sys_path_removed = True
+        if sys_path_removed:
+            log.debug(
+                "Removed system-wide path /usr/lib/python3/dist-packages from sys.path to prioritize virtual environment")
+
+    # # Re-import cryptography to ensure virtual environment version is used
+    # try:
+    #     from cryptography import x509
+    #     from cryptography import __version__ as cryptography_version
+    #     HAS_CRYPTOGRAPHY = True
+    # except ImportError:
+    #     HAS_CRYPTOGRAPHY = False
+    #     module.fail_json(msg=missing_required_lib(
+    #         "cryptography Python library is required after sys.path adjustment."))
+
+    # Log environment details for debugging
+    if module.params.get('logging_level') == 'DEBUG':
+        log.debug("Python version: %s", sys.version)
+        log.debug("Python executable: %s", sys.executable)
+        log.debug("cryptography module path: %s",
+                  os.path.dirname(x509.__file__))
+        log.debug("cryptography runtime version: %s",
+                  getattr(x509, '__version__', 'Unknown'))
 
     # Log cryptography version for debugging
     module.log(f"cryptography version: {cryptography_version}")
@@ -482,7 +536,8 @@ def main():
         ca_path is not None
     )
     if not has_verification:
-        module.fail_json(msg="At least one verification property must be provided.")
+        module.fail_json(
+            msg="At least one verification property must be provided.")
 
     result = {
         'failed': False,
@@ -502,8 +557,24 @@ def main():
     try:
         # Read and parse the certificate
         cert_data = _read_cert_file(module.params.get('path'))
+        log.debug("Certificate data read from %s: %s bytes",
+                  module.params.get('path'), len(cert_data))
         cert = _parse_certificate(cert_data)
+        log.debug("Parsed certificate type: %s", type(cert))
         public_key = cert.public_key()
+
+        # Log certificate validity dates in debug mode
+        if module.params.get('logging_level') == 'DEBUG':
+            try:
+                log.debug("Certificate not_before: %s", cert.not_valid_before)
+                log.debug("Certificate not_after: %s", cert.not_valid_after)
+                log.debug("Certificate not_before_utc: %s", getattr(
+                    cert, 'not_valid_before_utc', 'Not available'))
+                log.debug("Certificate not_after_utc: %s", getattr(
+                    cert, 'not_valid_after_utc', 'Not available'))
+            except Exception as e:
+                log.debug(
+                    "Failed to log certificate validity dates: %s", str(e))
 
         # Extract certificate details
         result['details'] = {
@@ -515,7 +586,8 @@ def main():
             'locality': None,
             'email_address': None,
             'serial_number': str(cert.serial_number),
-            'version': cert.version.value + 1,  # cryptography uses 0-based, X.509 uses 1-based
+            # cryptography uses 0-based, X.509 uses 1-based
+            'version': cert.version.value + 1,
             'signature_algorithm': cert.signature_algorithm_oid._name,
             'key_algo': None,
             'key_size': None,
@@ -560,15 +632,18 @@ def main():
         # Perform property verifications
         if module.params.get('common_name'):
             result['verify_results']['common_name'] = (
-                result['details']['common_name'] == module.params.get('common_name')
+                result['details']['common_name'] == module.params.get(
+                    'common_name')
             )
         if module.params.get('organization'):
             result['verify_results']['organization'] = (
-                result['details']['organization'] == module.params.get('organization')
+                result['details']['organization'] == module.params.get(
+                    'organization')
             )
         if module.params.get('organizational_unit'):
             result['verify_results']['organizational_unit'] = (
-                result['details']['organizational_unit'] == module.params.get('organizational_unit')
+                result['details']['organizational_unit'] == module.params.get(
+                    'organizational_unit')
             )
         if module.params.get('country'):
             result['verify_results']['country'] = (
@@ -576,7 +651,8 @@ def main():
             )
         if module.params.get('state_or_province'):
             result['verify_results']['state_or_province'] = (
-                result['details']['state_or_province'] == module.params.get('state_or_province')
+                result['details']['state_or_province'] == module.params.get(
+                    'state_or_province')
             )
         if module.params.get('locality'):
             result['verify_results']['locality'] = (
@@ -584,7 +660,8 @@ def main():
             )
         if module.params.get('email_address'):
             result['verify_results']['email_address'] = (
-                result['details']['email_address'] == module.params.get('email_address')
+                result['details']['email_address'] == module.params.get(
+                    'email_address')
             )
         if module.params.get('serial_number'):
             try:
@@ -592,7 +669,8 @@ def main():
                 if expected_serial.startswith('0x'):
                     expected_serial = str(int(expected_serial, 16))
                 elif not expected_serial.isdigit():
-                    raise ValueError("Serial number must be a valid decimal or hexadecimal number")
+                    raise ValueError(
+                        "Serial number must be a valid decimal or hexadecimal number")
                 result['verify_results']['serial_number'] = (
                     result['details']['serial_number'] == expected_serial
                 )
@@ -605,23 +683,49 @@ def main():
             )
         if module.params.get('signature_algorithm'):
             result['verify_results']['signature_algorithm'] = (
-                result['details']['signature_algorithm'] == module.params.get('signature_algorithm')
+                result['details']['signature_algorithm'] == module.params.get(
+                    'signature_algorithm')
             )
         if module.params.get('key_algo'):
             result['verify_results']['key_algo'] = (
                 result['details']['key_algo'] == module.params.get('key_algo')
             )
-        if module.params.get('key_size') and result['details']['key_algo'] != 'ed25519':
+        if module.params.get(
+                'key_size') and result['details']['key_algo'] != 'ed25519':
             result['verify_results']['key_size'] = (
                 result['details']['key_size'] == module.params.get('key_size')
             )
         elif module.params.get('key_size') and result['details']['key_algo'] == 'ed25519':
-            result['verify_results']['key_size'] = True  # Ed25519 has no key size
+            # Ed25519 has no key size
+            result['verify_results']['key_size'] = True
 
-        # Check expiration
+        # Check expiration with fallback for older cryptography versions
+        try:
+            not_valid_after = cert.not_valid_after_utc
+            log.debug("Using not_valid_after_utc for expiration check")
+        except AttributeError as e:
+            if version_parts >= [41, 0, 0]:
+                if module.params.get('logging_level') == 'DEBUG':
+                    log.error("not_valid_after_utc unavailable in cryptography %s, expected to be present. Falling back to not_valid_after. Stack trace:\n%s",
+                              cryptography_version, ''.join(traceback.format_tb(e.__traceback__)))
+                else:
+                    log.error(
+                        "not_valid_after_utc unavailable in cryptography %s, expected to be present. Falling back to not_valid_after.", cryptography_version)
+            else:
+                log.warning(
+                    "not_valid_after_utc not available in cryptography %s, falling back to not_valid_after", cryptography_version)
+            not_valid_after = cert.not_valid_after
+            if not_valid_after.tzinfo is None:
+                # Convert naive datetime to UTC
+                not_valid_after = not_valid_after.replace(tzinfo=timezone.utc)
+            # Log additional diagnostics when falling back
+            if module.params.get('logging_level') == 'DEBUG':
+                log.debug("Fallback not_valid_after: %s", not_valid_after)
+                log.debug("Certificate object attributes: %s", dir(cert))
+
         if module.params.get('validate_expired'):
             result['verify_results']['expiry_valid'] = (
-                cert.not_valid_after_utc >= datetime.now(timezone.utc)
+                not_valid_after >= datetime.now(timezone.utc)
             )
         else:
             result['verify_results']['expiry_valid'] = True
@@ -629,7 +733,7 @@ def main():
         # Check impending expiration
         if module.params.get('validate_checkend'):
             result['verify_results']['checkend_valid'] = (
-                cert.not_valid_after_utc >= datetime.now(timezone.utc) + timedelta(seconds=module.params.get('checkend_value'))
+                not_valid_after >= datetime.now(timezone.utc) + timedelta(seconds=module.params.get('checkend_value'))
             )
         else:
             result['verify_results']['checkend_valid'] = True
@@ -637,10 +741,12 @@ def main():
         # Verify signature if issuer_ca_path is provided
         if ca_path:
             ca_certs = _load_ca_certs(ca_path)
-            result['verify_results']['signature_valid'] = _verify_signature(cert, ca_certs)
+            result['verify_results']['signature_valid'] = _verify_signature(
+                cert, ca_certs)
             if isinstance(public_key, rsa.RSAPublicKey) and ca_certs:
                 result['cert_modulus'] = _get_modulus(public_key)
-                result['issuer_modulus'] = _get_modulus(ca_certs[0].public_key())
+                result['issuer_modulus'] = _get_modulus(
+                    ca_certs[0].public_key())
                 result['verify_results']['modulus_match'] = result['cert_modulus'] == result['issuer_modulus']
             else:
                 result['verify_results']['modulus_match'] = True
@@ -649,6 +755,9 @@ def main():
             result['verify_results']['modulus_match'] = True
 
     except Exception as e:
+        if module.params.get('logging_level') == 'DEBUG':
+            log.error("Exception occurred: %s\nStack trace:\n%s", str(
+                e), ''.join(traceback.format_tb(e.__traceback__)))
         module.fail_json(msg=str(e), failed=True)
 
     # Update result based on verification results
