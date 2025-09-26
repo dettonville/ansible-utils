@@ -16,74 +16,60 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_lRlHig/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_9mrRKq/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
-  Verifies that a certificate is cryptographically signed by an issuer
-  certificate and validates specified properties.
-  Checks certificate attributes like common name, organization,
-  organizational unit, country, state or province, locality, and email
-  address.
-  Validates certificate serial number, version, and signature
-  algorithm if provided.
-  Validates certificate expiration and proximity to expiration using a
-  checkend threshold.
-  Validates public key algorithm and size if provided.
-  Compares the modulus of RSA public keys between the certificate and
-  issuer certificate (if provided and both are RSA).
-  Uses OpenSSL for cryptographic signature verification and Python's
-  cryptography library for property validation.
+  This module verifies properties of an X.509 certificate, such as
+  common name, organization, serial number, signature algorithm, key
+  algorithm, and expiration status.
+  It can also verify the certificate's signature against an issuer CA
+  certificate or chain.
 
 OPTIONS (= indicates it is required):
 
-- chain_path  Path to a file containing intermediate certificates
-               (PEM or DER format) to build the certificate chain for
-               verification.
-               If provided, these certificates are added to the trust
-               store for signature validation.
+- chain_path  Deprecated. Use `issuer_ca_path' instead. Path to the
+               certificate chain.
         default: null
         type: path
 
-- checkend_value  The number of seconds before expiration to fail.
-                   Only effective if `validate_checkend' is true.
+- checkend_value  Number of seconds to check for impending expiration
+                   (used with validate_checkend).
         default: 86400
         type: int
 
-- common_name  Expected Common Name (CN) in the certificate's
-                subject. If not provided, CN is not validated.
+- common_name  Expected Common Name (CN) of the certificate subject.
         default: null
         type: str
 
-- country  Expected Country (C) in the certificate's subject. If not
-            provided, Country is not validated.
+- country  Expected Country (C) of the certificate subject.
         default: null
         type: str
 
-- email_address  Expected Email Address in the certificate's subject.
-                  If not provided, Email Address is not validated.
+- email_address  Expected Email Address of the certificate subject.
         default: null
         type: str
 
-- issuer_path  Path to the issuer (CA) certificate file (PEM or DER
-                format) used to verify the certificate's signature.
-                If this argument is provided, the module will
-                automatically perform signature validation and modulus
-                comparison (for RSA keys).
+- issuer_ca_path  Path to the issuer CA certificate or chain file
+                   (PEM or DER format) for signature verification.
         default: null
         type: path
 
-- key_algo  Expected public key algorithm. If not provided, key
-             algorithm is not validated.
+- issuer_path  Deprecated. Use `issuer_ca_path' instead. Path to the
+                issuer CA certificate.
+        default: null
+        type: path
+
+- key_algo  Expected public key algorithm (e.g., 'rsa', 'ec', 'dsa',
+             'ed25519').
         choices: [rsa, ec, dsa, ed25519]
         default: null
         type: str
 
-- key_size  Expected public key size in bits. If not provided, key
-             size is not validated. (e.g., 2048 for RSA, 256 for EC).
+- key_size  Expected key size in bits (e.g., 2048 for RSA/DSA, 256
+             for EC). Not applicable for Ed25519.
         default: null
         type: int
 
-- locality  Expected Locality (L) in the certificate's subject. If
-             not provided, Locality is not validated.
+- locality  Expected Locality (L) of the certificate subject.
         default: null
         type: str
 
@@ -93,65 +79,63 @@ OPTIONS (= indicates it is required):
         default: INFO
         type: str
 
-- organization  Expected Organization (O) in the certificate's
-                 subject. If not provided, O is not validated.
+- organization  Expected Organization (O) of the certificate subject.
         default: null
         type: str
 
-- organizational_unit  Expected Organizational Unit (OU) in the
-                        certificate's subject. If not provided, OU is
-                        not validated.
+- organizational_unit  Expected Organizational Unit (OU) of the
+                        certificate subject.
         default: null
         type: str
 
 = path    Path to the certificate file to verify (PEM or DER format).
         type: path
 
-- serial_number  Expected serial number of the certificate (decimal
-                  or hex string). If not provided, serial number is
-                  not validated.
+- serial_number  Expected serial number of the certificate (in
+                  decimal or hexadecimal format, e.g., '12345' or
+                  '0x3039').
         default: null
         type: str
 
 - signature_algorithm  Expected signature algorithm (e.g.,
-                        sha256WithRSAEncryption). If not provided,
-                        signature algorithm is not validated.
+                        'sha256WithRSAEncryption').
         default: null
         type: str
 
-- state_or_province  Expected State or Province (ST) in the
-                      certificate's subject. If not provided, State or
-                      Province is not validated.
+- state_or_province  Expected State or Province (ST) of the
+                      certificate subject.
         default: null
         type: str
 
-- validate_checkend  If set to true, the module will fail if the
-                      certificate expires within the checkend_value.
-        default: false
-        type: bool
-
-- validate_expired  If set to true, the module will fail if the
-                     certificate has expired.
+- validate_checkend  Whether to check if the certificate expires
+                      within a specified time (seconds).
         default: true
         type: bool
 
-- version  Expected version of the certificate (1 or 3). If not
-            provided, version is not validated.
+- validate_expired  Whether to check if the certificate is expired.
+        default: true
+        type: bool
+
+- version  Expected certificate version (1 or 3).
+        choices: [1, 3]
         default: null
         type: int
 
 NOTES:
       * The module works with both PEM and DER encoded
         certificates and keys.
-      * At least one verification property must be provided.
+      * At least one verification property must be provided
+        (e.g., common_name, serial_number,
+        validate_expired=True, or issuer_ca_path).
       * Modulus comparison is performed only for RSA keys when
-        issuer_path is provided.
-      * Use chain_path to include intermediate certificates when
-        verifying certificates not directly signed by the root
-        CA.
+        issuer_ca_path is provided.
+      * Use issuer_ca_path to include the issuer certificate or
+        certificate chain when verifying certificates.
       * For serial_number, provide as a decimal or hex string
         (with or without '0x').
       * For version, specify 1 for v1 or 3 for v3 certificates.
+      * The issuer_path and chain_path parameters are deprecated
+        in favor of issuer_ca_path.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -159,34 +143,24 @@ REQUIREMENTS:  cryptography>=1.5, pyopenssl
 AUTHOR: Lee Johnson (@lj020326)
 
 EXAMPLES:
-- name: Verify certificate signature and properties
+- name: Verify a certificate's properties
   dettonville.utils.x509_certificate_verify:
-    path: /etc/pki/intermediate_ca.pem
-    issuer_path: /etc/pki/ca-root.pem
-    chain_path: /etc/pki/chain.pem
-    common_name: foobar.example.int
-    organization: MyOrg
-    organizational_unit: IT
-    country: US
-    state_or_province: California
-    locality: San Francisco
-    email_address: admin@example.com
-    serial_number: '12345'
-    version: 3
-    signature_algorithm: 'sha256WithRSAEncryption'
-    key_algo: ec
-    key_size: 256
+    path: /path/to/cert.pem
+    common_name: test.example.com
+    organization: TestOrg
     validate_expired: true
     validate_checkend: true
     checkend_value: 86400
-    logging_level: INFO
-  register: cert_verify_result
 
-- name: Verify that a certificate has not expired
+- name: Verify a certificate with CA signature
   dettonville.utils.x509_certificate_verify:
-    path: /etc/pki/certs/mycert.pem
-    validate_checkend: true
-  register: verify_result
+    path: /path/to/cert.pem
+    issuer_ca_path: /path/to/ca.pem
+    common_name: test.example.com
+    serial_number: '12345'
+    signature_algorithm: sha256WithRSAEncryption
+    key_algo: rsa
+    key_size: 2048
 
 - name: Verify that a certificate will not expire in the next 30 days
   dettonville.utils.x509_certificate_verify:
@@ -204,13 +178,13 @@ EXAMPLES:
 
 RETURN VALUES:
 
-- cert_modulus  The modulus of the certificate's public key
-                 (hexadecimal string, only for RSA keys).
-        returned: when issuer_path is provided and the certificate has an RSA key
+- cert_modulus  Modulus of the certificate's public key (hexadecimal,
+                 if applicable).
+        returned: when issuer_ca_path is provided and the certificate has an RSA key
         sample: a1b2c3...
         type: str
 
-- details  Dictionary of validated certificate properties.
+- details  Details about the certificate's properties.
         returned: always
         sample:
           common_name: my.example.com
@@ -218,51 +192,130 @@ RETURN VALUES:
           key_size: 2048
           organization: My Company
         type: dict
+        contains:
 
-- failed  Indicates if the module task failed.
+        - common_name  Common Name (CN) of the certificate.
+          type: str
+
+        - country  Country (C) of the certificate.
+          type: str
+
+        - email_address  Email Address of the certificate.
+          type: str
+
+        - key_algo  Public key algorithm of the certificate.
+          type: str
+
+        - key_size  Key size in bits (if applicable).
+          type: int
+
+        - locality  Locality (L) of the certificate.
+          type: str
+
+        - organization  Organization (O) of the certificate.
+          type: str
+
+        - organizational_unit  Organizational Unit (OU) of the
+                                certificate.
+          type: str
+
+        - serial_number  Serial number of the certificate.
+          type: str
+
+        - signature_algorithm  Signature algorithm of the
+                                certificate.
+          type: str
+
+        - state_or_province  State or Province (ST) of the
+                              certificate.
+          type: str
+
+        - version  Version of the certificate.
+          type: int
+
+- failed  Indicates if the module failed.
         returned: always
-        sample: false
         type: bool
 
-- issuer_modulus  The modulus of the issuer certificate's public key
-                   (hexadecimal string, only for RSA keys).
-        returned: when issuer_path is provided and the issuer certificate has an RSA key
+- issuer_modulus  Modulus of the issuer CA's public key (hexadecimal,
+                   if applicable).
+        returned: when issuer_ca_path is provided and the issuer certificate has an RSA key
         sample: a1b2c3...
         type: str
 
-- modulus_match  Indicates if the modulus of the certificate and
-                  issuer certificate match (only for RSA keys).
-        returned: when issuer_path is provided and both certificates have RSA keys
-        sample: false
-        type: bool
-
-- msg     Message indicating the result of the validation.
+- msg     A message describing the result of the verification.
         returned: always
         sample: All certificate validations passed successfully
         type: str
 
-- valid   Indicates if the certificate passed all validation checks.
+- valid   Whether all specified validations passed.
         returned: always
-        sample: true
         type: bool
 
-- valid_signature  Indicates if the certificate's signature was
-                    successfully verified against the issuer.
-        returned: when issuer_path is provided
-        sample: true
-        type: bool
-
-- verify_failed  Whether any verification checks failed.
+- verify_failed  Whether any validation checks failed.
         returned: always
-        sample: false
         type: bool
 
-- verify_results  Dictionary of verification results with boolean
-                   values for each check.
+- verify_results  Results of individual verification checks.
         returned: always
         sample:
           common_name: true
           key_size: false
+          modulus_match: false
         type: dict
+        contains:
+
+        - checkend_valid  Whether the certificate does not expire
+                           within checkend_value seconds.
+          type: bool
+
+        - common_name  Whether the common name matched.
+          type: bool
+
+        - country  Whether the country matched.
+          type: bool
+
+        - email_address  Whether the email address matched.
+          type: bool
+
+        - expiry_valid  Whether the certificate is not expired.
+          type: bool
+
+        - key_algo  Whether the key algorithm matched.
+          type: bool
+
+        - key_size  Whether the key size matched.
+          type: bool
+
+        - locality  Whether the locality matched.
+          type: bool
+
+        - modulus_match  Whether the certificate and issuer CA moduli
+                          match (if applicable).
+          type: bool
+
+        - organization  Whether the organization matched.
+          type: bool
+
+        - organizational_unit  Whether the organizational unit
+                                matched.
+          type: bool
+
+        - serial_number  Whether the serial number matched.
+          type: bool
+
+        - signature_algorithm  Whether the signature algorithm
+                                matched.
+          type: bool
+
+        - signature_valid  Whether the signature is valid (if
+                            issuer_ca_path is provided).
+          type: bool
+
+        - state_or_province  Whether the state or province matched.
+          type: bool
+
+        - version  Whether the version matched.
+          type: bool
 
 ```

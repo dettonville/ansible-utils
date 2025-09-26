@@ -75,3 +75,9 @@ ansible-test sanity -v --docker --python ${TEST_PYTHON_VERSION} export_dicts
 ansible-test sanity -v --color --coverage --junit --docker default --python ${TEST_PYTHON_VERSION}
 ansible-test sanity -v --color --coverage --junit --docker default --python ${TEST_PYTHON_VERSION} export_dicts
 ```
+
+To fix `no-smart-quotes` related issues
+```shell
+pip install fix-smartquotes
+fix-smartquotes docs/pull-requests/request-for-update.20250924.md
+```
