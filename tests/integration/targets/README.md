@@ -198,14 +198,15 @@ $ cd ${HOME}/.ansible/tmp/
 
 ## find last 10 export_dicts module execs sorted order
 ## use gfind if using MacOS brew installed gnu utils 
-$ find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" |sort -nk1 -nk2 | grep export_dicts | tail -10
+$ find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 -nk2 | grep export_dicts | tail -10
 ```
 
 ### debug export_dicts
 ```shell
 ## find last export_dicts module exec
-$ find .  -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" |sort -nk1 | grep export_dicts | tail -1
-$ find .  -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" |sort -nk1 | grep git_pacp | tail -1
+$ find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 | grep export_dicts | tail -1
+$ find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 | grep x509_certificate_verify | tail -1
+$ find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 | grep git_pacp | tail -1
 ## cd into last module exec debug dir
 $ cd $(dirname $(find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 | grep export_dicts | tail -1 | cut -d' ' -f3))
 $ ./AnsiballZ_export_dicts.py explode
