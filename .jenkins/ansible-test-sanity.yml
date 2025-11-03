@@ -1,5 +1,6 @@
 ---
 # .jenkins/ansible-test-sanity.yml
+ansibleTestCommand: sanity
 debugVerbosity: "-v"
 preTestCmd: >-
   ansible --version
@@ -14,8 +15,8 @@ strategy:
     versions:
       # Testing all ansible and python versions is impractical. Only test the newest and
       # oldest versions of each that we support
-      - {pythonVersion: '3.13', ansibleVersion: stable-2.19}
-      - {pythonVersion: '3.11', ansibleVersion: stable-2.19}
-      - {pythonVersion: '3.12', ansibleVersion: stable-2.16}
-      - {pythonVersion: '3.10', ansibleVersion: stable-2.16}
-      - {pythonVersion: '3.13', ansibleVersion: devel}
+      - {pythonVersion: '3.13', ansibleVersion: "2.19"}
+      - {pythonVersion: '3.11', ansibleVersion: "2.19"}
+      - {pythonVersion: '3.12', ansibleVersion: "2.16"}
+      - {pythonVersion: '3.10', ansibleVersion: "2.16"}
+      - {pythonVersion: '3.13', ansibleVersion: "devel"}

@@ -16,6 +16,7 @@ test_vault_env: "{{ vault_env | d('TEST') }}"
 ########
 ## Test component vars
 ########
+test_component: ''
 test_component__vault_env: "{{ test_vault_env }}"
 test_component__collection: "dettonville.utils"
 
@@ -30,7 +31,7 @@ test_component__git_test_results_enabled: true
 #test_component__git_ssh_private_keydir: "{{ (deploy_key_location | dirname) | d(remote_tmp_dir) }}"
 #test_component__git_ssh_private_keydir: "{{ remote_tmp_dir }}"
 #test_component__git_ssh_private_keyfile: "{{ deploy_key_location }}"
-test_component__git_ssh_private_key_default: "{{ vault__ssh_creds[test_vault_env].bitbucket.private_key }}"
+test_component__git_ssh_private_key_default: "{{ vault__ssh_creds[test_vault_env].bitbucket.private_key | d('') }}"
 test_component__git_ssh_private_key: "{{ '' if deploy_key_location is defined else test_component__git_ssh_private_key_default }}"
 
 test_component__git_user: "ansible"

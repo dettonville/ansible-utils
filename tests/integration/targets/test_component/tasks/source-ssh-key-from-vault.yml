@@ -1,0 +1,30 @@
+---
+
+- name: "{{ __test_component__log_pretest_source_sshkey }} Set __test_component__git_ssh_private_key"
+  no_log: true
+  ansible.builtin.set_fact:
+    __test_component__git_ssh_private_key: "{{ test_repo_git_ssh_private_key | d(vault__test_repo_git_ssh_private_key) }}"
+
+- name: "{{ __test_component__log_pretest_source_sshkey }} Display __test_component__git_ssh_private_keydir"
+  ansible.builtin.debug:
+    var: __test_component__git_ssh_private_keydir
+
+- name: "{{ __test_component__log_pretest_source_sshkey }} Set __test_component__git_ssh_private_keyfile"
+  ansible.builtin.set_fact:
+    __test_component__git_ssh_private_keyfile: "{{ __test_component__git_ssh_private_keydir }}/ansible_repo.key"
+
+#- name: "{{ __test_component__log_pretest_source_sshkey }} Display __test_component__git_ssh_private_key"
+#  ansible.builtin.debug:
+#    var: __test_component__git_ssh_private_key
+
+- name: "{{ __test_component__log_pretest_source_sshkey }} Display __test_component__git_ssh_private_keyfile"
+  ansible.builtin.debug:
+    var: __test_component__git_ssh_private_keyfile
+
+- name: "{{ __test_component__log_pretest_source_sshkey }} Ensure git private key is present at {{ __test_component__git_ssh_private_keyfile }}"
+  no_log: true
+  ansible.builtin.copy:
+    content: "{{ __test_component__git_ssh_private_key }}"
+    dest: "{{ __test_component__git_ssh_private_keyfile }}"
+    mode: "0600"
+    backup: true

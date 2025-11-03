@@ -583,7 +583,7 @@ try:
                 for key in ["time"]:
                     attributes[key] += float(ts_xml.get(key, 0))
                 xml_element.append(ts_xml)
-            for key, value in iteritems(attributes):
+            for key, value in attributes.items():
                 xml_element.set(key, str(value))
 
             if sort_attr:
@@ -645,8 +645,6 @@ except ImportError as imp_exc:
     YAML_IMPORT_ERROR = imp_exc
 else:
     YAML_IMPORT_ERROR = None
-
-from ansible.module_utils.six import u, iteritems
 
 # noinspection PyUnresolvedReferences
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import PrettyLog
@@ -848,7 +846,7 @@ def _clean_illegal_xml_chars(string_to_clean):
         if low < sys.maxunicode
     ]
 
-    illegal_xml_re = re.compile(u("[%s]") % u("").join(illegal_ranges))
+    illegal_xml_re = re.compile("[%s]" % "".join(illegal_ranges))
     return illegal_xml_re.sub("", string_to_clean)
 
 

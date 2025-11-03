@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_9mrRKq/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_36RqL7/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module verifies properties of an X.509 certificate, such as
   common name, organization, serial number, signature algorithm, key
@@ -136,6 +136,20 @@ NOTES:
       * For version, specify 1 for v1 or 3 for v3 certificates.
       * The issuer_path and chain_path parameters are deprecated
         in favor of issuer_ca_path.
+      * When logging_level is set to DEBUG, a full stack trace
+        is logged for any exceptions.
+      * When logging_level is set to DEBUG, additional
+        certificate metadata and environment details are
+        included.
+      * If not_valid_after_utc is unavailable in cryptography >=
+        41.0.0, an error is logged, indicating a potential
+        library or environment issue.
+      * If cryptography is loaded from a system-wide path in a
+        virtual environment, a warning is logged to indicate
+        potential version mismatches.
+      * The module modifies sys.path to prioritize the virtual
+        environment's cryptography installation over system-wide
+        paths.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -167,12 +181,13 @@ EXAMPLES:
     path: /etc/pki/certs/mycert.pem
     validate_checkend: true
     checkend_value: 2592000
+    logging_level: DEBUG
   register: verify_result
 
 - name: Validate public key details
   dettonville.utils.x509_certificate_verify:
     path: /etc/ssl/certs/service.pem
-    key_algo: 'ec'
+    key_algo: ec
     key_size: 256
   register: key_validation
 
@@ -259,9 +274,12 @@ RETURN VALUES:
 - verify_results  Results of individual verification checks.
         returned: always
         sample:
+          checkend_valid: true
           common_name: true
+          expiry_valid: true
           key_size: false
-          modulus_match: false
+          modulus_match: true
+          signature_valid: true
         type: dict
         contains:
 

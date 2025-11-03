@@ -7,7 +7,7 @@
 
 - name: "{{ __test_component__log_run_test }} Run test with columns on {{ 
     __test_component__collection }}.{{ __test_component }}"
-  ignore_errors: yes
+  ignore_errors: true
   ansible.builtin.set_fact:
     __test_filter_result: "{{ __test_data.test_object 
       | dettonville.utils.to_markdown(column_list=__test_data.column_list|d([])) }}"

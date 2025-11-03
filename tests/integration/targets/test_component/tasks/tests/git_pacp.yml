@@ -32,8 +32,17 @@
       ssh_params: "{{ __test_data.git_ssh_params | d(omit) }}"
 
 - name: "{{ __test_component__log_run_test }} Run test on {{ __test_component__collection }}.{{ __test_component }}"
-  ignore_errors: yes
-  dettonville.utils.git_pacp: "{{ __test_component__test_case_args }}"
+  ignore_errors: true
+#  dettonville.utils.git_pacp: "{{ __test_component__test_case_args }}"
+  dettonville.utils.git_pacp:
+    url: "{{ __test_component__test_case_args.git_url }}"
+    path: "{{ __test_component__test_case_args.git_path }}"
+    branch: "{{ __test_component__test_case_args.git_branch | d(omit) }}"
+    remote: "{{ __test_component__test_case_args.git_remote | d(omit) }}"
+    comment: "{{ __test_component__test_case_args.git_comment | d(omit) }}"
+    add: "{{ __test_component__test_case_args.git_add | d(omit) }}"
+    mode: "{{ __test_component__test_case_args.git_mode | d(omit) }}"
+    ssh_params: "{{ __test_component__test_case_args.git_ssh_params | d(omit) }}"
   register: __test_component__test_result
 
 - name: "{{ __test_component__log_run_test }} Display __test_component__test_result"

@@ -18,8 +18,18 @@
       test_results: "{{ __test_data.test_results | d(omit) }}"
 
 - name: "{{ __test_component__log_run_test }} Run test on {{ __test_component__collection }}.{{ __test_component }}"
-  ignore_errors: yes
-  dettonville.utils.test_results_logger: "{{ __test_component__test_case_args }}"
+  ignore_errors: true
+#  dettonville.utils.test_results_logger: "{{ __test_component__test_case_args }}"
+  dettonville.utils.test_results_logger:
+    test_results_dir: "{{ __test_component__test_case_args.test_results_dir }}"
+    test_results_file: "{{ __test_component__test_case_args.test_results_file | d(omit) }}"
+    test_case_base_dir: "{{ __test_component__test_case_args.test_case_base_dir }}"
+    test_case_file_prefix: "{{ __test_component__test_case_args.test_case_file_prefix | d(omit) }}"
+    test_case_file_regex: "{{ __test_component__test_case_args.test_case_file_regex | d(omit) }}"
+    test_case_id_capture_regex: "{{ __test_component__test_case_args.test_case_id_capture_regex | d(omit) }}"
+    test_junit_report_file: "{{ __test_component__test_case_args.test_junit_report_file | d(omit) }}"
+    test_suite_list: "{{ __test_component__test_case_args.test_suite_list | d(omit) }}"
+    test_results: "{{ __test_component__test_case_args.test_results | d(omit) }}"
   register: __test_component__test_result
 
 - name: "{{ __test_component__log_run_test }} Display __test_component__test_result"

@@ -7,7 +7,6 @@ plugins/modules/test_results_logger.py validate-modules:missing-gplv3-license
 plugins/modules/x509_certificate_verify.py validate-modules:missing-gplv3-license
 regenerate-module-docs.sh shellcheck:SC2016
 regenerate-module-docs.sh shellcheck:SC2034
-sync-public-branch.sh shellcheck:SC2034
 tests/integration/targets/run-pytest.sh shellcheck:SC2034
 tests/integration/targets/run-role-tests.sh shellcheck:SC2034
 tests/integration/targets/runModuleTest.groovy shebang!skip

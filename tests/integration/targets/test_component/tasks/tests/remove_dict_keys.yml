@@ -5,7 +5,7 @@
     __test_component__test_case_args: "key_patterns={{ __test_data.key_patterns }}"
 
 - name: "{{ __test_component__log_run_test }} Run test on {{ __test_component__collection }}.{{ __test_component }}"
-  ignore_errors: yes
+  ignore_errors: true
   ansible.builtin.set_fact:
     __test_filter_result: "{{ __test_data.test_object 
       | dettonville.utils.remove_dict_keys(key_patterns=__test_data.key_patterns) }}"

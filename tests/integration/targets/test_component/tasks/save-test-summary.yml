@@ -234,7 +234,6 @@
           'test_details_link': "[test details](./{{ _test_component }}/test.results/test_{{ _test_case_id }}/test-results.detailed.yml)",
           'test_collection': "{{ __test_component__collection }}",
           'test_component': "{{ _test_component }}",
-          'test_case_id': "{{ _test_case_id }}",
       {% for key in _test_case_results.keys() %}
       {% if key != '__test_data' %}
           "{{ key }}": "{{ _test_case_results[key] }}",

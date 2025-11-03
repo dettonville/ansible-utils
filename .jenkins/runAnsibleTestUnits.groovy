@@ -1,5 +1,5 @@
 
 Map config = [:]
 
-config.testTypesToProcess = ['units']
+config.configFile = ".jenkins/ansible-test-units.yml"
 runAnsibleTestManifest(config)

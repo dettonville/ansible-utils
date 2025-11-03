@@ -37,7 +37,7 @@
 
 - name: "Display __test_component__vars.test_vars_dir_override"
   ansible.builtin.debug:
-    var: __test_component__vars.test_vars_dir_override
+    var: __test_component__vars.test_vars_dir_override | d('')
 
 - name: "Set __test_component__test_case_paths"
   when: __test_component__vars.test_vars_dir_override|d('')|length>0

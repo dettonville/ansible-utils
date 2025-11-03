@@ -12,28 +12,28 @@ __test_component__job_markdown_link: "{{ test_component__job_markdown_link | d('
 
 #__test_component__git_branch: "{{ test_component__git_branch | d('') }}"
 __test_component__git_branch: "{{ test_component__git_branch
-    | d(tower_job_scm_branch) 
-    | d(awx_job_scm_branch) 
-    | d(tower_project_scm_branch) 
-    | d(awx_project_scm_branch) 
+    | d(tower_job_scm_branch)
+    | d(awx_job_scm_branch)
+    | d(tower_project_scm_branch)
+    | d(awx_project_scm_branch)
     | d('') }}"
 
-__test_component__git_branch_abbrev: "{{ (__test_component__git_branch 
-  | regex_replace('^(.*)-(\\d+)-(.*)$', '\\1-\\2') | replace('/','-')) | d('unknown') }}"
-__test_component__git_commit_hash_default: "{{ controller_project_revision 
-  | d(tower_project_revision) 
-  | d(awx_project_revision) 
+__test_component__git_branch_abbrev: "{{ __test_component__git_branch
+  | regex_replace('^(.*)-(\\d+)-(.*)$', '\\1-\\2') | replace('/', '-') | d('unknown') }}"
+__test_component__git_commit_hash_default: "{{ controller_project_revision
+  | d(tower_project_revision)
+  | d(awx_project_revision)
   | d('') }}"
-__test_component__git_commit_hash: "{{ test_component__git_commit_hash 
+__test_component__git_commit_hash: "{{ test_component__git_commit_hash
   | d(__test_component__git_commit_hash_default) }}"
-__test_component__git_commit_hash_short: "{{ test_component__git_commit_hash_short 
+__test_component__git_commit_hash_short: "{{ test_component__git_commit_hash_short
   | d(test_component__git_commit_hash[:7]) | d('') }}"
 
 __test_component__collection_default: "dettonville.utils"
 __test_component__collection: "{{ test_component__collection | d(__test_component__collection_default) }}"
 __test_component__collection_namespace: "{{ __test_component__collection.split('.')[0] }}"
 __test_component__collection_name: "{{ __test_component__collection.split('.')[1] }}"
-__test_component__collection_version: "{{ 
+__test_component__collection_version: "{{
   lookup('community.general.collection_version', __test_component__collection) }}"
 
 __test_component__debug_mode: "{{ test_component__debug_mode | d(True) }}"
@@ -43,11 +43,11 @@ __test_component: "{{ test_component }}"
 __test_case_id: "{{ test_case_id | d('') }}"
 
 __test_component__fast_fail: "{{ test_component__fast_fail | d(False) }}"
-__test_component__ignore_errors: "{{ (not (__test_component__fast_fail|bool)) }}"
+__test_component__ignore_errors: "{{ (not (__test_component__fast_fail | bool)) }}"
 __test_result_matched_expected: {}
 
-__test_component__log_prefix: "{{ role_name | upper }}[{{ __test_component }}]:TEST_CASE[{{ __test_case_id }}]"
-__test_component__log_prefix_pretest: "{{ role_name | upper }}[{{ __test_component }}]:[prepare]"
+__test_component__log_prefix: "{{ role_name | d('') | upper }}[{{ __test_component }}]:TEST_CASE[{{ __test_case_id }}]"
+__test_component__log_prefix_pretest: "{{ role_name | d('') | upper }}[{{ __test_component }}]:[prepare]"
 __test_component__log_pretest: "{{ __test_component__log_prefix_pretest }} |"
 __test_component__log_init_job_vars: "{{ __test_component__log_prefix_pretest }}:[init-job-vars] |"
 __test_component__log_pretest_setup_test_workdir: "{{ __test_component__log_prefix_pretest }}:[setup-test-workdir] |"
@@ -55,7 +55,7 @@ __test_component__log_pretest_source_sshkey: "{{ __test_component__log_prefix_pr
 __test_component__log_prefix_posttest: "{{ __test_component__log_prefix }}:[post-test]"
 __test_component__log_posttest: "{{ __test_component__log_prefix_posttest }} |"
 __test_component__log_posttest_remove_users: "{{ __test_component__log_prefix_posttest }}:[remove-test-users] |"
-__test_component__log_posttest_remove_test_in_progress: "{{ 
+__test_component__log_posttest_remove_test_in_progress: "{{
   __test_component__log_prefix_posttest }}:[remove-test-in-progress] |"
 __test_component__log_reset: "{{ __test_component__log_prefix }}:[reset] |"
 __test_component__log_run_test: "{{ __test_component__log_prefix }}:[run-test] |"
@@ -125,25 +125,27 @@ __test_component__disable_reset_env_default: false
 __test_component__ignore_already_running_default: false
 __test_component__reset_already_running_default: true
 
-__test_component__disable_cleanup: "{{ test_component__disable_cleanup 
+__test_component__disable_cleanup: "{{ test_component__disable_cleanup
   | d(__test_component__disable_cleanup_default) }}"
-__test_component__disable_reset_env: "{{ test_component__disable_reset_env 
+__test_component__disable_reset_env: "{{ test_component__disable_reset_env
   | d(__test_component__disable_reset_env_default) }}"
-__test_component__ignore_already_running: "{{ test_component__ignore_already_running 
+__test_component__ignore_already_running: "{{ test_component__ignore_already_running
   | d(__test_component__ignore_already_running_default) }}"
-__test_component__reset_already_running: "{{ test_component__reset_already_running 
+__test_component__reset_already_running: "{{ test_component__reset_already_running
   | d(__test_component__reset_already_running_default) }}"
 
 __test_component__git_test_results_enabled: "{{ test_component__git_test_results_enabled | d(False) }}"
 
-__test_component__git_repo_url: "{{ test_component__git_repo_url }}"
+__test_component__git_repo_url_default: "git@github.com:dettonville/ansible-test-automation.git"
+__test_component__git_repo_url: "{{ test_component__git_repo_url | d(__test_component__git_repo_url_default) }}"
 __test_component__git_repo_branch_default: main
-__test_component__git_repo_branch: "{{ test_component__git_repo_branch 
+__test_component__git_repo_branch: "{{ test_component__git_repo_branch
   | d(__test_component__git_repo_branch_default) }}"
 __test_component__git_ssh_private_key: "{{ test_component__git_ssh_private_key }}"
-#__test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir | d('~/.ssh' | expanduser) }}"
-__test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir }}"
-__test_component__git_ssh_private_keyfile_default: "{{ 
+#__test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir | d('') }}"
+#__test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir | d('~/.ssh') }}"
+__test_component__git_ssh_private_keydir: "{{ test_component__git_ssh_private_keydir | d('~/.ssh' | expanduser) }}"
+__test_component__git_ssh_private_keyfile_default: "{{
   __test_component__git_ssh_private_keydir }}/ansible_repo.github.key"
 __test_component__git_ssh_private_keyfile: "{{ test_component__git_ssh_private_keyfile
   | d(__test_component__git_ssh_private_keyfile_default) }}"
@@ -156,25 +158,26 @@ __test_component__test_base_path: "{{ test_component__test_base_path }}"
 #__test_component__test_run_base_dir: "{{ test_component__test_run_base_dir
 #  | d(__test_component__test_run_base_dir_default) }}"
 
-__test_component__git_user: "{{ test_component__git_user }}"
-__test_component__git_email: "{{ test_component__git_email }}"
+__test_component__git_user: "{{ test_component__git_user | d('ansible') }}"
+__test_component__git_email: "{{ test_component__git_email | d('ansible@dettonville.org') }}"
 __test_component__git_repo_dir: "{{ __test_component__test_base_path }}"
 __test_component__git_comment_prefix: "{{ test_component__git_comment_prefix | d('TEST-1001') }} - "
 __test_component__git_reset_test_dir: true
 #__test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir | d(False) }}"
-__test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir 
-  | d(test_component__test_case_id_list|d([])|length==0) }}"
+__test_component__git_reset_component_dir: "{{ test_component__git_reset_component_dir
+  | d(test_component__test_case_id_list | d([]) | length == 0) }}"
 ## set using set_fact in 'tasks/setup-test-workdir.yml'
 #__test_component__git_reset_test_base_dir_default: "{{ ansible_run_tags|d([])==['all']
 #  and __test_component__run_count_total|d(0)|int==0 }}"
 #__test_component__git_reset_test_base_dir: "{{ test_component__git_reset_test_base_dir
 #  | d(__test_component__git_reset_test_base_dir_default) }}"
+__test_component__run_count_total: 0
 
 ####################
 ## Test Repo Dir configs
 ####################
 #__test_component__base_dir_default: "tests/{{ __test_component__collection.split('.') | join('/') }}"
-__test_component__base_dir_default: "tests/{{ __test_component__collection_namespace }}/{{ 
+__test_component__base_dir_default: "tests/{{ __test_component__collection_namespace }}/{{
   __test_component__collection_name }}/{{ __test_component__git_branch_abbrev }}"
 __test_component__base_dir: "{{ test_component__base_dir | d(__test_component__base_dir_default) }}"
 __test_component__component_dir: "{{ __test_component__base_dir }}/{{ __test_component }}"
@@ -213,17 +216,17 @@ __test_component__report_results_csv: "{{ __test_component__report_results_file.
 __test_component__report_results_md: "{{ __test_component__report_results_file.split('.') | first }}.md"
 
 __test_component__junit_report_dir_default: "{{ __test_component__test_base_path }}/{{ __test_component__base_dir }}"
-__test_component__junit_report_dir: "{{ test_component__junit_report_dir 
+__test_component__junit_report_dir: "{{ test_component__junit_report_dir
   | d(__test_component__junit_report_dir_default) }}"
 
 __test_component__junit_report_file_default: "junit-report.xml"
-__test_component__junit_report_file: "{{ test_component__junit_report_file 
+__test_component__junit_report_file: "{{ test_component__junit_report_file
   | d(__test_component__junit_report_file_default) }}"
 
 __test_component__last_run_results_file: "test-results.last-run.yml"
 
 __test_component__test_in_progress_file: ".ansible-test.in-progress.txt"
-__test_component__test_in_progress_file_content: "{{ __test_component__job_url 
+__test_component__test_in_progress_file_content: "{{ __test_component__job_url
   | d(__test_component__job_path_cli) }}"
 
 __test_component__report_summary_detailed_results_csv: "{{ __test_component__report_results_file.split('.') | first }}.detailed.csv"
@@ -251,7 +254,7 @@ __test_component__runtime_info:
   ansible_host: "{{ ansible_host }}"
   ansible_hostname: "{{ ansible_hostname }}"
   ansible_nodename: "{{ ansible_nodename }}"
-  ansible_controller_vars: "{{ vars | dict2items | selectattr('key', 'match', '^tower.*') | list | items2dict }}"
+#  ansible_controller_vars: "{{ vars | dict2items | selectattr('key', 'match', '^tower.*') | list | items2dict }}"
 
 ## the insertion-order preservation nature of dict objects has been declared to be an official part
 ##  of the Python language spec for versions 3.7+

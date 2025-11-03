@@ -18,12 +18,7 @@
     var: __test_data
     verbosity: 1
 
-- name: "{{ __test_component__log_process_test_results }} Display __test_result_filtered_list"
-  ansible.builtin.debug:
-    var: __test_result_filtered_list
-    verbosity: 1
-
-- name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.changed"
+- name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.changed" # noqa: no-handler
   when: __test_data.test_expected.changed is defined
   ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_changed
@@ -50,14 +45,13 @@
     var: __test_result_validate_expected_failed
 
 - name: "{{ __test_component__log_process_test_results }} Assert __test_data.test_expected.message"
-#  when: __test_data.test_expected.message is defined
   when: __test_data.test_expected.message|d('')|length > 0
   ignore_errors: "{{ __test_component__ignore_errors | bool }}"
   register: __test_result_validate_expected_message
   ansible.builtin.assert:
     that:
       - __test_component__test_result.message is defined
-      - __test_component__test_result.message|d('') | regex_search(__test_data.test_expected.message)
+      - __test_component__test_result.message |d('') | regex_search(__test_data.test_expected.message) is not none
 #      - __test_component__test_result.message == __test_data.test_expected.message
 
 - name: "{{ __test_component__log_process_test_results }} Display __test_result_validate_expected_message"
@@ -72,7 +66,7 @@
   ansible.builtin.assert:
     that:
       - __test_component__test_result.msg is defined
-      - __test_component__test_result.msg | regex_search(__test_data.test_expected.msg)
+      - __test_component__test_result.msg | regex_search(__test_data.test_expected.msg) is not none
 #      - __test_component__test_result.msg == __test_data.test_expected.msg
 
 - name: "{{ __test_component__log_process_test_results }} Display __test_result_validate_expected_msg"

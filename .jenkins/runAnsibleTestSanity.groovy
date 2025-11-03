@@ -1,5 +1,5 @@
 
 Map config = [:]
 
-config.testTypesToProcess = ['sanity']
+config.configFile = ".jenkins/ansible-test-sanity.yml"
 runAnsibleTestManifest(config)

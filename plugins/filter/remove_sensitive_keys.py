@@ -253,7 +253,6 @@ RETURN = """
 
 # from ansible.errors import AnsibleFilterError
 # from ansible.module_utils.common._collections_compat import Mapping, Sequence
-# from ansible.module_utils.six import string_types, text_type
 
 # noinspection PyUnresolvedReferences
 

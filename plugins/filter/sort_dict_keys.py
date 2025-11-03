@@ -91,7 +91,6 @@ RETURN = """
 
 # from ansible.errors import AnsibleFilterError
 # from ansible.module_utils.common._collections_compat import Mapping, Sequence
-# from ansible.module_utils.six import string_types, text_type
 
 # from operator import itemgetter as i
 # from functools import cmp_to_key

@@ -2,8 +2,12 @@
 
 - name: "init-test-vars | Display ansible_env.USER"
   ansible.builtin.debug:
-    var: ansible_env.USER
+    var: ansible_env.USER | d('')
     verbosity: 1
+
+- name: "init-test-vars | Display test_component__git_test_results_enabled"
+  ansible.builtin.debug:
+    var: test_component__git_test_results_enabled
 
 - name: "init-test-vars | Display test_case_id_list_string"
   ansible.builtin.debug:
@@ -24,22 +28,22 @@
 
 - name: "init-test-vars | Init __test_git_branch"
   ansible.builtin.set_fact:
-    __test_git_branch: "{{ test_git_branch 
-      | d(tower_job_scm_branch) 
-      | d(awx_job_scm_branch) 
-      | d(tower_project_scm_branch) 
-      | d(awx_project_scm_branch) 
+    __test_git_branch: "{{ test_git_branch
+      | d(tower_job_scm_branch)
+      | d(awx_job_scm_branch)
+      | d(tower_project_scm_branch)
+      | d(awx_project_scm_branch)
       | d('') }}"
 
 - name: "init-test-vars | Init __test_git_commit_hash"
   ansible.builtin.set_fact:
-    __test_git_commit_hash: "{{ test_git_commit_hash 
-      | d(tower_project_revision) 
-      | d(awx_project_revision)    
+    __test_git_commit_hash: "{{ test_git_commit_hash
+      | d(tower_project_revision)
+      | d(awx_project_revision)
       | d('') }}"
 
 - name: "init-test-vars | Set __test_git_branch"
-  when: __test_git_branch|length==0
+  when: __test_git_branch | d('') | length == 0
   block:
 
     - name: "init-test-vars | Get git branch for current repo"
@@ -235,9 +239,9 @@
 
 - name: "init-test-vars | Set test dirs"
   ansible.builtin.set_fact:
-    __test_job__test_base_dir: "{{ test_job__test_base_dir 
+    __test_job__test_base_dir: "{{ test_job__test_base_dir
       | d(__test_job__test_base_dir_default) }}"
-    __test_job__git_ssh_private_keydir: "{{ test_job__git_ssh_private_keydir 
+    __test_job__git_ssh_private_keydir: "{{ test_job__git_ssh_private_keydir
       | d(__test_job__git_ssh_private_keydir_default) }}"
 
 - name: "init-test-vars | Display test vars"

@@ -43,8 +43,13 @@
       export_list: "{{ __test_data.export_list }}"
 
 - name: "{{ __test_component__log_run_test }} Run test on {{ __test_component__collection }}.{{ __test_component }}"
-  ignore_errors: yes
-  dettonville.utils.export_dicts: "{{ __test_component__test_case_args }}"
+  ignore_errors: true
+#  dettonville.utils.export_dicts: "{{ __test_component__test_case_args }}"
+  dettonville.utils.export_dicts:
+    file: "{{ __test_component__test_case_args.file }}"
+    export_list: "{{ __test_component__test_case_args.export_list }}"
+    format: "{{ __test_component__test_case_args.format | d(omit) }}"
+    columns: "{{ __test_component__test_case_args.columns | d(omit) }}"
   register: __test_component__test_result
 
 - name: "{{ __test_component__log_run_test }} Display __test_component__test_result"
