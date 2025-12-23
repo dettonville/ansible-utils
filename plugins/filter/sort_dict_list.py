@@ -2,8 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function)
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
-    sort_single_key,
-    sort_multi_key,
+    sort_dict_list
 )
 
 __metaclass__ = type
@@ -11,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
   name: sort_dict_list
   short_description: Sort list of dictionaries by specified key(s)
-  version_added: 3.1.0
+  version_added: "2025.3.0"
   author: Lee Johnson (@lj020326)
   description:
     - Sort list of dictionaries by a specified key(s).
@@ -164,7 +163,4 @@ class FilterModule(object):
         return {"sort_dict_list": self.sort_dict_list}
 
     def sort_dict_list(self, dict_list, sort_keys):
-        if isinstance(sort_keys, list):
-            return sort_multi_key(dict_list, sort_keys)
-        else:
-            return sort_single_key(dict_list, sort_keys)
+        return sort_dict_list(dict_list, sort_keys)

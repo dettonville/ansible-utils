@@ -2,7 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function)
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
-    sort_dict_keys,
+    sort_dict_keys
 )
 
 __metaclass__ = type
@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
   name: sort_dict_keys
   short_description: Sort dictionary keys
-  version_added: 3.1.0
+  version_added: "2025.3.0"
   author: Lee Johnson (@lj020326)
   description:
     - Sort dictionary keys.
@@ -100,7 +100,7 @@ RETURN = """
 
 class FilterModule(object):
     def filters(self):
-        return {"sort_dict_keys": self.sort_dictionary_keys}
+        return {"sort_dict_keys": self.sort_dict_keys}
 
-    def sort_dictionary_keys(self, my_dict, reverse=False):
+    def sort_dict_keys(self, my_dict, reverse=False):
         return sort_dict_keys(my_dict, reverse)

@@ -9,6 +9,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: git_pacp
+version_added: "2025.3.0"
 author:
     - "Lee Johnson (@lj020326)"
 short_description: Perform git 'clone', 'pull', 'acp', and 'pacp' (pull, add, commit and push) operations. 

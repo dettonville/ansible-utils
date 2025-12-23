@@ -6,8 +6,13 @@
 ```shell
 ansible-test units --python 3.13
 ansible-test units --python 3.13 export_dicts
-ansible-test units --python 3.13 x509_certificate_verify | tee -a ansible-test-unit-results.log
-ansible-test units --python 3.13 x509_certificate_verify --test dettonville.utils.tests.unit.plugins.modules.test_x509_certificate_verify::TestX509CertificateVerifyModule::test_main_version_mismatch
+ansible-test units --python 3.13 git_pacp
+ansible-test units --python 3.13 x509_certificate_verify
+ansible-test units --python 3.13 tests/unit/plugins/filter/test_redact_sensitive_values.py
+ansible-test units --python 3.13 tests/unit/plugins/filter/test_remove_sensitive_keys.py
+ansible-test units x509_certificate_verify | tee -a ansible-test-unit-results.log
+ansible-test units dettonville.utils.tests.unit.plugins.modules.test_x509_certificate_verify::TestX509CertificateVerifyModule::test_main_version_mismatch
+ansible-test units x509_certificate_verify --test dettonville.utils.tests.unit.plugins.modules.test_x509_certificate_verify::TestX509CertificateVerifyModule::test_main_version_mismatch
 ansible-test --test dettonville.utils.tests.unit.plugins.modules.test_x509_certificate_verify::TestX509CertificateVerifyModule::test_main_version_mismatch  units x509_certificate_verify
 ansible-test units -v --color no --truncate 0 --coverage --docker --python 3.13 x509_certificate_verify | tee ansible-test-unit-docker-results.log
 ansible-test units --python 3.13 --containers '{}' --color yes
