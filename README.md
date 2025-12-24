@@ -37,6 +37,7 @@ Name | Description
 --- | ---
 [remove_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_dict_keys.py) | Remove key(s) with specified list of regex patterns from nested dict/array.
 [remove_sensitive_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_sensitive_keys.py) | Remove sensitive key(s) with specified list of regex patterns from nested dict/array.
+[redact_sensitive_values](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/redact_sensitive_values.py) | Redact values for key(s) with specified list of regex patterns from nested dict/array by replacing them with a redacted tag.
 [sort_dict_list](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_list.py) | Sort a list of dicts using specified sort key(s).
 [sort_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_keys.py) | Sort dictionary keys by specified key(s).
 [to_markdown](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_markdown.py) | Converts a list of flat dictionaries to markdown format.

@@ -16,45 +16,83 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.to_markdown | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/to_markdown.md
-> FILTER dettonville.utils.to_markdown (/Users/ljohnson/tmp/_36RqL7/ansible_collections/dettonville/utils/plugins/filter/to_markdown.py)
+> FILTER dettonville.utils.to_markdown (/Users/ljohnson/tmp/_aQ8hOy/ansible_collections/dettonville/utils/plugins/filter/to_markdown.py)
 
-  Converts a list of flat dictionaries to markdown format.
+  Convert dictionaries or lists of dictionaries to Markdown tables.
+  For simple dicts, creates a key-value table.
+  For lists of dicts, creates a table with keys as headers.
+  Primitives are returned as-is.
+  Nested structures are flattened with dot notation.
 
 OPTIONS (= indicates it is required):
 
-= _input  The list of dictionaries that should be converted to the
-           markdown format.
-        type: list
+= _input  The data to convert to Markdown.
+        type: any
 
-AUTHOR: Lee Johnson
+- flatten_nested  Whether to flatten nested dicts.
+        default: true
+        type: bool
+
+AUTHOR: Lee Johnson (@lj020326)
 
 NAME: to_markdown
 
 EXAMPLES:
-- name: Define a list of dictionaries
-  ansible.builtin.set_fact:
-    export_list:
-      - { key1: "value11", key2: "value12", key3: "value13", key4: "value14" }
-      - { key1: "value21", key2: "value22", key3: "value23", key4: "value24" }
-      - { key1: "value31", key2: "value32", key3: "value33", key4: "value34" }
-      - { key1: "value41", key2: "value42", key3: "value43", key4: "value44" }
+- name: Convert simple dict to Markdown table
+  ansible.builtin.debug:
+    msg: "{{ my_dict | dettonville.utils.to_markdown }}"
+  vars:
+    my_dict:
+      name: Alice
+      age: 30
+      city: New York
+  # Produces:
+  # | Key  | Value   |
+  # |------|---------|
+  # | name | Alice   |
+  # | age  | 30      |
+  # | city | New York |
 
-- name: Write dictionary to markdown
-  ansible.builtin.copy:
-    dest: /tmp/test.md
-    content: '{{ export_list | dettonville.utils.to_markdown }}'
+- name: Convert list of dicts to Markdown table
+  ansible.builtin.debug:
+    msg: "{{ my_list | dettonville.utils.to_markdown }}"
+  vars:
+    my_list:
+      - name: Alice
+        age: 30
+        city: New York
+      - name: Bob
+        age: 25
+        city: London
+  # Produces:
+  # | name | age | city     |
+  # |------|-----|----------|
+  # | Alice| 30  | New York |
+  # | Bob  | 25  | London   |
 
-# Produces the markdown:
-# | key1 | key2 | key3 | key4 |
-# | --- | --- | --- | --- |
-# | value11 | value12 | value13 | value14 |
-# | value21 | value22 | value23 | value24 |
-# | value31 | value32 | value33 | value34 |
-# | value41 | value42 | value43 | value44 |
+- name: Convert nested dict (flattened)
+  ansible.builtin.debug:
+    msg: "{{ my_nested | dettonville.utils.to_markdown }}"
+  vars:
+    my_nested:
+      user:
+        name: Alice
+        address:
+          street: 123 Main St
+          city: New York
+      preferences:
+        theme: dark
+  # Produces:
+  # | Key                  | Value     |
+  # |----------------------|-----------|
+  # | user.name            | Alice     |
+  # | user.address.street  | 123 Main St |
+  # | user.address.city    | New York  |
+  # | preferences.theme    | dark      |
 
 RETURN VALUES:
 
-- _value  A string formatted as markdown.
-        type: string
+- _value  Markdown formatted string representing the input data.
+        type: str
 
 ```

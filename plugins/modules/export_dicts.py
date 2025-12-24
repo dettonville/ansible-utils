@@ -9,6 +9,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: export_dicts
+version_added: "2025.3.0"
 author:
     - "Lee Johnson (@lj020326)"
 short_description: Write a list of flat dictionaries to a file with either csv or markdown format.

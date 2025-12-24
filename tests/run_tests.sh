@@ -35,7 +35,7 @@ TEST_CASE_CONFIGS+=("unit")
 
 
 #PYTHON_TEST_VERSION="3.10"
-PYTHON_TEST_VERSION="3.12"
+PYTHON_TEST_VERSION="3.13"
 
 ## ref: https://www.xmodulo.com/catch-handle-errors-bash.html
 try()

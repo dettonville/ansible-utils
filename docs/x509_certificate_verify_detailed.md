@@ -8,38 +8,287 @@ This document contrasts the "before" approach—using multi-task plays with asse
 
 ## Before: Multi-Task Validation with Assertions
 
-Prior to the `x509_certificate_verify` module, certificate validation often relied on plays like the one in `validate_cert.yml`. This involved multiple tasks using modules from other collections (e.g., `community.crypto.x509_certificate_info` and `community.crypto.openssl_signature_info`) combined with Ansible assertions. Here's an excerpt from `validate_cert.yml`:
+Prior to the `x509_certificate_verify` module, certificate validation often relied on plays like the one in the following `validate_cert.yml`. This involved multiple tasks using modules from other collections (e.g., `community.crypto.x509_certificate_info` and `community.crypto.openssl_signature_info`) combined with Ansible assertions. Here's an excerpt from `validate_cert.yml`:
 
+validate_cert.yml:
 ```yaml
-- name: "Validate certificate properties"
+---
+## cert_configs dictionary expected for validation
+##   cert_configs:
+##     cert_path:
+##     common_name:
+##     cert_type:
+##     issuer_common_name:
+##     issuer_cert_chain_path:
+##     key_algo:
+##     key_type
+##     key_size
+- name: "Display cert_configs"
+  ansible.builtin.debug:
+    var: cert_configs
+
+- name: "Initialize certificate validation results"
+  ansible.builtin.set_fact:
+    __cert_validation_results:
+      failed: false
+      exceptions: []
+      missing_cert: false
+      missing_key: false
+      expiration_check_failed: false
+      info_check_failed: false
+      signature_check_failed: false
+
+- name: "Validate certificate info for {{ cert_configs.cert_path }}"
+  ansible.builtin.debug:
+    msg: "Perform validations for {{ cert_configs.cert_path }}"
+
+- name: "Check if certificate file exists"
+  ansible.builtin.stat:
+    path: "{{ cert_configs.cert_path }}"
+  register: __cert_file_stat
+
+- name: "Check if private key file exists"
+  ansible.builtin.stat:
+    path: "{{ __key_file_path }}"
+  register: __key_file_stat
+
+# 1) Check for CA cert existence
+- name: "Set validation failed if certificate is missing"
+  when: not __cert_file_stat.stat.exists
+  ansible.builtin.set_fact:
+    __cert_validation_results: "{{ __cert_validation_results | d({})
+      | combine({'failed': true,
+        'missing_cert': true,
+        'exceptions': (__cert_validation_results.exceptions | d([]))
+          + ['cert file ' + cert_configs.cert_path + ' does not exist']}) }}"
+
+# 2) Check for CA key existence
+- name: "Set validation failed if key is missing"
+  when: not __key_file_stat.stat.exists
+  ansible.builtin.set_fact:
+    __cert_validation_results: "{{ __cert_validation_results | d({})
+      | combine({'failed': true,
+        'missing_key': true,
+        'exceptions': (__cert_validation_results.exceptions | d([]))
+          + ['key file ' + __key_file_path + ' does not exist']}) }}"
+
+- name: "Display __cert_validation_results #1/2"
+  ansible.builtin.debug:
+    var: __cert_validation_results
+
+# 3) Check if certificate expiration within defined threshold
+- name: "Check certificate expiration date for {{ cert_configs.common_name }}"
+  when:
+    - __cert_file_stat.stat.exists | d(False)
+    - not __cert_validation_results.failed
   block:
-    - name: "Get properties of existing certificate"
-      community.crypto.x509_certificate_info:
-        path: "{{ _validate_cert_input.cert_path }}"
-      register: __cert_info
+    - name: "Run openssl checkend command"
+      changed_when: false
+      failed_when: false
+      ansible.builtin.command: >
+        openssl x509 -checkend {{ ca_cert_expiration_panic_threshold }}
+          -noout -in {{ cert_configs.cert_path }}
+      register: __cert_validity_exp_date_check_result
 
-    - name: "Assert certificate common name matches configuration"
+    - name: "Display __cert_validity_exp_date_check_result"
+      ansible.builtin.debug:
+        var: __cert_validity_exp_date_check_result
+
+    - name: "Set expiration check result"
+      when: __cert_validity_exp_date_check_result.failed | d(True)
+      ansible.builtin.set_fact:
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'expiration_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + ['certificate expires soon (within panic threshold)']}) }}"
+
+    - name: "Display __cert_validation_results #3"
+      ansible.builtin.debug:
+        var: __cert_validation_results
+
+# 4) Check if CA cert info is valid (using community.crypto.x509_certificate_info)
+# Ensure community.crypto collection is installed: ansible-galaxy collection install community.crypto
+- name: "Get certificate info for {{ cert_configs.common_name }}"
+  when:
+    - __cert_file_stat.stat.exists | d(False)
+    - not __cert_validation_results.failed
+  community.crypto.x509_certificate_info:
+    path: "{{ cert_configs.cert_path }}"
+  register: cacert_result
+  ignore_errors: true
+
+- name: "Display cacert_result (debug)"
+  when: display_cacert_result | bool
+  ansible.builtin.debug:
+    var: cacert_result
+
+- name: "Assert cert info is valid and not expired"
+  when:
+    - not cacert_result.failed | d(True)
+    - not cacert_result.skipped | d(False)
+    - not __cert_validation_results.failed
+  block:
+
+    - name: "Assert certificate subject common name matches expected"
       ansible.builtin.assert:
         that:
-          - __cert_info.subject.commonName | d('') == _validate_cert_input.cert_configs.common_name
-        msg: "Certificate common name mismatch. Expected '{{ _validate_cert_input.cert_configs.common_name }}', found '{{ __cert_info.subject.commonName }}'."
+          - cacert_result.subject.commonName == cert_configs.common_name
+        fail_msg: "Certificate subject common name mismatch: Expected '{{
+          cert_configs.common_name }}', Got '{{ cacert_result.subject.commonName }}'"
+        quiet: true
+      register: __assert_subject_cn
+      ignore_errors: true
 
-    - name: "Set expected key types based on configured algorithm"
+    - name: "Set __cert_validation_results.failed if subject CN mismatch"
+      when: __assert_subject_cn.failed | d(False) | bool
       ansible.builtin.set_fact:
-        __expected_key_types: >-
-          {{ ['ecc', 'ecdsa'] if _validate_cert_input.cert_configs.key_algo | lower == 'ecdsa' else [_validate_cert_input.cert_configs.key_algo | lower] }}
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'info_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + [__assert_subject_cn.msg]}) }}"
 
-    - name: "Assert certificate key algorithm matches configuration"
+    - name: "Assert certificate not expired"
+      ansible.builtin.assert:
+        that: not cacert_result.expired
+        fail_msg: "Certificate '{{ cert_configs.common_name }}' is expired according to x509_certificate_info."
+        quiet: true
+      register: __assert_expired
+      ignore_errors: true
+
+    - name: "Set __cert_validation_results.failed if certificate is expired"
+      when: __assert_expired.failed | d(False) | bool
+      ansible.builtin.set_fact:
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'info_check_failed': true,
+            'expiration_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + [__assert_expired.msg]}) }}"
+
+    # Note: Checking issuer details requires knowing the expected issuer based on signerName.
+    # This example asserts if it's not a root CA and a signer is specified.
+    - name: "Assert certificate issuer common name matches signer (if not root)"
+      when:
+        - cert_configs.cert_type != "root"
+        - cert_configs.issuer_common_name is defined and cert_configs.issuer_common_name | d('') | length > 0
       ansible.builtin.assert:
         that:
-          - __cert_info.public_key_type | d('') | lower in __expected_key_types
-        msg: "Certificate key algorithm mismatch. Expected '{{ _validate_cert_input.cert_configs.key_algo }}', found '{{ __cert_info.public_key_type }}'."
+          - cacert_result.issuer.commonName == cert_configs.issuer_common_name
+        fail_msg: "Certificate issuer common name mismatch: Expected '{{
+          cert_configs.issuer_common_name }}', Got '{{ cacert_result.issuer.commonName }}'"
+        quiet: true
+      register: __assert_issuer_cn
+      ignore_errors: true
 
-    # Additional assertions for key size, signature, and expiration...
-  rescue:
-    - name: "A validation failed, set fact to recreate the certificate"
+    - name: "Set __cert_validation_results.failed if issuer CN mismatch"
+      when: __assert_issuer_cn.failed | d(False) | bool
       ansible.builtin.set_fact:
-        __create_new_cert: true
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'info_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + [__assert_issuer_cn.msg]}) }}"
+
+    - name: "Assert certificate key_algo matches expected"
+      ansible.builtin.assert:
+        that:
+          - cacert_result.public_key_type|lower == cert_configs.key_algo|lower
+        fail_msg: "Certificate key type mismatch: Expected '{{
+          cert_configs.key_algo }}', Got '{{ cacert_result.public_key_type }}'"
+        quiet: true
+      register: __assert_key_algo
+      ignore_errors: true
+
+    - name: "Set __cert_validation_results.failed if key_size mismatch"
+      when: __assert_key_algo.failed | d(False) | bool
+      ansible.builtin.set_fact:
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'info_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + [__assert_key_algo.msg]}) }}"
+
+    - name: "Assert certificate key_algo matches expected"
+      ansible.builtin.assert:
+        that:
+          - cacert_result.public_key_data.size == cert_configs.key_size
+        fail_msg: "Certificate key size mismatch: Expected '{{
+          cert_configs.key_size }}', Got '{{ cacert_result.public_key_data.size }}'"
+        quiet: true
+      register: __assert_key_algo
+      ignore_errors: true
+
+    - name: "Set __cert_validation_results.failed if key_algo mismatch"
+      when: __assert_key_algo.failed | d(False) | bool
+      ansible.builtin.set_fact:
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'info_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + [__assert_key_algo.msg]}) }}"
+
+    - name: "Display __cert_validation_results #4"
+      ansible.builtin.debug:
+        var: __cert_validation_results
+
+- name: "Display __cert_validation_results"
+  ansible.builtin.debug:
+    var: __cert_validation_results
+
+# 5) Check if CA cert signature is valid
+- name: "Check if CA cert signature is valid for {{
+    cert_configs.common_name }}"
+  when:
+    - cert_configs.cert_type | d('') != "root"
+    - __cert_file_stat.stat.exists | d(False)
+    - cert_configs.issuer_cert_chain_path | d('') | length > 0
+    - not __cert_validation_results.failed
+  block:
+    - name: "Validate signed by ca signer certs using openssl verify"
+      changed_when: false
+      failed_when: false
+      ansible.builtin.command: >
+        openssl verify -CAfile
+        {{ cert_configs.issuer_cert_chain_path }}
+        {{ cert_configs.cert_path }}
+      register: __cert_validity_signer
+
+    - name: "Display __cert_validity_signer (debug)"
+      ansible.builtin.debug:
+        var: __cert_validity_signer
+
+    - name: "Set signature check result"
+      when: __cert_validity_signer.failed
+      ansible.builtin.set_fact:
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true,
+            'signature_check_failed': true,
+            'exceptions': (__cert_validation_results.exceptions | d([]))
+              + ['invalid certificate signature']}) }}"
+
+  # Ensure __cert_validation_results.signature_check_failed is explicitly set to true if block is skipped due to missing cert_configs.issuer_cert_chain_path
+  always:
+    - name: "Set signature_check_failed to true if conditions not met for signature validation"
+      when:
+        - cert_configs.cert_type | d('') != "root"
+        - (not __cert_file_stat.stat.exists | d(False) or cert_configs.issuer_cert_chain_path | d('') | length == 0)
+      ansible.builtin.set_fact:
+        __cert_validation_results: "{{ __cert_validation_results | d({})
+          | combine({'failed': true, 'signature_check_failed': true}) }}"
+
+# Final determination if certificate needs to be created/recreated
+- name: "Set __create_new_cert"
+  ansible.builtin.set_fact:
+    __create_new_cert: __cert_validation_results.failed
+
+- name: "Display final __missing_or_invalid_cert status"
+  ansible.builtin.debug:
+    msg: "Final status for '{{ cert_configs.common_name
+      }}' - Needs creation/recreation: {{ __create_new_cert }} (Reasons: {{
+      __cert_validation_results.exceptions | join(', ') }})"
+
 ```
 
 ### Pitfalls of the "Before" Approach
@@ -50,7 +299,7 @@ Prior to the `x509_certificate_verify` module, certificate validation often reli
 - **Performance Overhead**: Multiple module calls increase execution time, especially in large playbooks.
 - **Maintenance Burden**: Updating validation logic (e.g., adding new checks) requires modifying the entire play, risking regressions.
 
-This approach was commonly included via `ansible.builtin.include_tasks` in main playbooks, as seen in `create_root_ca.yml` and `openbao_intermediate_ca.yml`, adding indirection and potential for variable scoping issues.
+This approach was commonly included via `ansible.builtin.include_tasks` in main playbooks adding indirection and potential for variable scoping issues.
 
 ## After: Single-Module Validation
 
@@ -76,12 +325,10 @@ In `create_root_ca.yml`, the root CA certificate is validated to check if it mat
 **Before (Multi-Task)**:
 ```yaml
 - name: "Validate existing Root CA properties"
-  ansible.builtin.include_tasks: validate_cert.yml
   when: __root_ca_pem_stat.stat.exists
+  ansible.builtin.include_tasks: validate_cert.yml
   vars:
-    _validate_cert_input:
-      cert_path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__root_ca_configs.output_basename }}.pem"
-      cert_configs: "{{ bootstrap_pki__root_ca_configs }}"
+    cert_configs: "{{ bootstrap_pki__root_ca_configs }}"
 
 - name: "Create or update Root CA"
   when: __create_new_cert | d(True) | bool
@@ -92,24 +339,24 @@ In `create_root_ca.yml`, the root CA certificate is validated to check if it mat
 **After (Single-Module)**:
 ```yaml
 - name: "Normalize key_algo for Root CA"
+  ## since the "key_algo" is specified for cfssl implementation/usage -> convert/normalize to openssl format for openssl validations
   ansible.builtin.set_fact:
-    __normalized_key_algo: "{{ bootstrap_pki__root_ca_configs.key_algo | replace('ecdsa', 'ec') }}"
+    __openssl_key_algo: "{{ bootstrap_pki__root_ca_configs.key_algo | replace('ecdsa', 'ec') }}"
 
 - name: "Validate existing Root CA properties"
   when: __root_ca_pem_stat.stat.exists
-  ignore_errors: true
   dettonville.utils.x509_certificate_verify:
     path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__root_ca_configs.output_basename }}.pem"
     common_name: "{{ bootstrap_pki__root_ca_configs.common_name }}"
     organization: "{{ bootstrap_pki__root_ca_configs.organization | d(omit) }}"
     organizational_unit: "{{ bootstrap_pki__root_ca_configs.organizational_unit | d(omit) }}"
-    key_algo: "{{ __normalized_key_algo }}"
+    key_algo: "{{ __openssl_key_algo }}"
     key_size: "{{ bootstrap_pki__root_ca_configs.key_size }}"
     validate_expired: true
   register: __cert_verify_result
 
 - name: "Create or update Root CA"
-  when: __cert_verify_result.failed | d(True) | bool
+  when: __cert_verify_result.verify_failed | d(True) | bool
   block:
     # Backup and regeneration tasks...
 ```
@@ -118,7 +365,7 @@ This simplifies the playbook while providing detailed results in `__cert_verify_
 
 ### Use Case 2: Validating Intermediate CA to Determine Regeneration
 
-In `openbao_intermediate_ca.yml`, the intermediate CA (managed by OpenBao) is validated against the root issuer, including signature checks, to decide on regeneration and upload to OpenBao.
+In `vault_intermediate_ca.yml`, the intermediate CA (managed by Vault/Openbao) is validated against the root issuer, including signature checks, to decide on regeneration and upload to Vault/Openbao.
 
 **Before (Multi-Task)**:
 ```yaml
@@ -127,40 +374,39 @@ In `openbao_intermediate_ca.yml`, the intermediate CA (managed by OpenBao) is va
   when: __intermediate_ca_pem_stat.stat.exists
   vars:
     _validate_cert_input:
-      cert_path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__openbao_cert_configs.output_basename }}.pem"
-      cert_configs: "{{ bootstrap_pki__openbao_cert_configs }}"
+      cert_path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__vault_cert_configs.output_basename }}.pem"
+      cert_configs: "{{ bootstrap_pki__vault_cert_configs }}"
       cert_issuer_path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__root_ca_configs.output_basename }}.pem"
 
 - name: "Create or update Intermediate CA"
   when: __create_new_cert | d(True) | bool
   block:
-    # Backup, generation, signing, and OpenBao upload tasks...
+    # Backup, generation, signing, and Vault/Openbao upload tasks...
 ```
 
 **After (Single-Module)**:
 ```yaml
 - name: "Normalize key_algo for Intermediate CA"
   ansible.builtin.set_fact:
-    __normalized_key_algo: "{{ bootstrap_pki__openbao_cert_configs.key_algo | replace('ecdsa', 'ec') }}"
+    __openssl_key_algo: "{{ bootstrap_pki__vault_cert_configs.key_algo | replace('ecdsa', 'ec') }}"
 
 - name: "Validate existing Intermediate CA properties"
   when: __intermediate_ca_pem_stat.stat.exists
-  ignore_errors: true
   dettonville.utils.x509_certificate_verify:
-    path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__openbao_cert_configs.output_basename }}.pem"
+    path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__vault_cert_configs.output_basename }}.pem"
     issuer_path: "{{ bootstrap_pki__pki_ca_dir }}/{{ bootstrap_pki__root_ca_configs.output_basename }}.pem"
-    common_name: "{{ bootstrap_pki__openbao_cert_configs.common_name }}"
-    organization: "{{ bootstrap_pki__openbao_cert_configs.organization | d(omit) }}"
-    organizational_unit: "{{ bootstrap_pki__openbao_cert_configs.organizational_unit | d(omit) }}"
-    key_algo: "{{ __normalized_key_algo }}"
-    key_size: "{{ bootstrap_pki__openbao_cert_configs.key_size }}"
+    common_name: "{{ bootstrap_pki__vault_cert_configs.common_name }}"
+    organization: "{{ bootstrap_pki__vault_cert_configs.organization | d(omit) }}"
+    organizational_unit: "{{ bootstrap_pki__vault_cert_configs.organizational_unit | d(omit) }}"
+    key_algo: "{{ __openssl_key_algo }}"
+    key_size: "{{ bootstrap_pki__vault_cert_configs.key_size }}"
     validate_expired: true
   register: __cert_verify_result
 
 - name: "Create or update Intermediate CA"
-  when: __cert_verify_result.failed | d(True) | bool
+  when: __cert_verify_result.verify_failed | d(True) | bool
   block:
-    # Backup, generation, signing, and OpenBao upload tasks...
+    # Backup, generation, signing, and Vault/Openbao upload tasks...
 ```
 
 The module's `issuer_path` parameter enables direct signature validation, eliminating the need for separate `openssl_signature_info` tasks.

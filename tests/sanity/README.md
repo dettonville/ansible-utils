@@ -16,6 +16,7 @@ export ANSIBLE_DEBUG=1
 ansible-test sanity --python 3.13  ## runs all sanity tests
 ansible-test sanity --python 3.13 export_dicts
 ansible-test sanity --python 3.13 x509_certificate_verify
+ansible-test sanity --python 3.13 tests/unit/plugins/filter/test_redact_sensitive_values.py
 ansible-test sanity --python 3.13 --test pep8
 ansible-test sanity --python ${TEST_PYTHON_VERSION} --test pylint
 ansible-test sanity --python ${TEST_PYTHON_VERSION} --test validate-modules

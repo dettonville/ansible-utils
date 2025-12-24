@@ -65,6 +65,19 @@
         test_component__git_commit_hash: "{{ __test_git_commit_hash }}"
         test_component__git_commit_hash_short: "{{ __test_git_commit_hash_short }}"
 
+    - name: "run-module-tests | test remove_sensitive_keys"
+      tags: redact_sensitive_values
+      ansible.builtin.import_role:
+        name: test_component
+      vars:
+        test_component: redact_sensitive_values
+        test_component__test_base_path: "{{ __test_job__test_base_dir }}"
+        test_component__test_case_id_list: "{{ test_case_id_list | d([]) }}"
+        test_component__git_ssh_private_keydir: "{{ __test_job__git_ssh_private_keydir }}"
+        test_component__git_branch: "{{ __test_git_branch }}"
+        test_component__git_commit_hash: "{{ __test_git_commit_hash }}"
+        test_component__git_commit_hash_short: "{{ __test_git_commit_hash_short }}"
+
     - name: "run-module-tests | test sort_dict_list"
       tags: sort_dict_list
       ansible.builtin.import_role:

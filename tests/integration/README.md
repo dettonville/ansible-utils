@@ -4,7 +4,7 @@
 ## Test environment
 
 ```shell
-$ export TEST_PYTHON_VERSION="3.12"
+$ export TEST_PYTHON_VERSION="3.13"
 $ export ANSIBLE_KEEP_REMOTE_FILES=1
 $ export ANSIBLE_DEBUG=1
 ## is MacOS
