@@ -15,6 +15,7 @@ import logging
 
 # import re
 import pprint
+import base64
 
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519
 from cryptography.x509 import NameOID, NameAttribute, Name, Version
@@ -2112,7 +2113,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertFalse(result["verify_results"]["checkend_valid"])
 
     @patch(f"{MODULE_PATH}.verify_private_key_match")
-    @patch(f"{MODULE_PATH}.load_private_key")
+    @patch(f"{MODULE_PATH}.serialization.load_pem_private_key")
     @patch("os.path.exists")
     @patch(f"{MODULE_PATH}._parse_certificate")
     @patch(f"{MODULE_PATH}._read_cert_file")
@@ -2152,7 +2153,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertEqual(result["msg"], "All certificate validations passed successfully")
 
     @patch(f"{MODULE_PATH}.verify_private_key_match")
-    @patch(f"{MODULE_PATH}.load_private_key")
+    @patch(f"{MODULE_PATH}.serialization.load_pem_private_key")
     @patch("os.path.exists")
     @patch(f"{MODULE_PATH}._parse_certificate")
     @patch(f"{MODULE_PATH}._read_cert_file")
@@ -2244,6 +2245,264 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
 
         # Verify that the general failure message is returned
         self.assertEqual(result["msg"], "One or more certificate validations failed")
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_with_content_success(
+        self, mock_ansible_module, mock_b64decode, mock_parse_certificate, mock_cryptography_version
+    ):
+        """Test main function with certificate provided via content (base64)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        cert_b64 = base64.b64encode(b"mock_cert_data").decode('utf-8')
+        mock_module.params = {
+            # No path provided
+            "content": cert_b64,
+            "validate_expired": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_b64decode.return_value = b"mock_cert_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["failed"])
+        self.assertTrue(result["valid"])
+        self.assertFalse(result["verify_failed"])
+        self.assertEqual(result["msg"], "All certificate validations passed successfully")
+        mock_b64decode.assert_called_once_with(cert_b64)
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_with_invalid_content(
+        self, mock_ansible_module, mock_b64decode, mock_parse_certificate, mock_cryptography_version
+    ):
+        """Test main function failure when invalid base64 content for certificate."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        invalid_b64 = "invalid_base64_content"
+        mock_module.params = {
+            # No path provided
+            "content": invalid_b64,
+            "validate_expired": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_b64decode.side_effect = ValueError("Invalid base64")
+
+        with self.assertRaises(AnsibleFailJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["failed"])
+        self.assertIn("Failed to decode certificate content", result["msg"])
+        self.assertIn("Invalid base64", result["msg"])
+
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_no_cert_source(self, mock_ansible_module):
+        """Test main function failure when neither path nor content is provided."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        mock_module.params = {
+            "validate_expired": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        with self.assertRaises(AnsibleFailJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["failed"])
+        self.assertEqual(result["msg"], "Exactly one of path or content must be provided for the certificate.")
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_with_both_path_and_content(
+        self, mock_ansible_module, mock_read_cert_file, mock_b64decode, mock_parse_certificate, mock_cryptography_version
+    ):
+        """Test main function with both path and content provided (uses content)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        cert_b64 = base64.b64encode(b"mock_cert_data").decode('utf-8')
+        mock_module.params = {
+            "path": "/path/to/cert.pem",
+            "content": cert_b64,
+            "validate_expired": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_b64decode.return_value = b"mock_cert_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with patch.object(mock_module, 'warn') as mock_warn:
+            with self.assertRaises(AnsibleExitJson) as exc:
+                module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["failed"])
+        self.assertTrue(result["valid"])
+        mock_warn.assert_called_once_with("Both path and content provided; using content.")
+        mock_b64decode.assert_called_once_with(cert_b64)
+        mock_read_cert_file.assert_not_called()
+
+    @patch(f"{MODULE_PATH}.verify_private_key_match")
+    @patch("cryptography.hazmat.primitives.serialization.load_pem_private_key")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_with_private_key_content_success(
+        self,
+        mock_ansible_module,
+        mock_read_cert_file,
+        mock_parse_certificate,
+        mock_b64decode,
+        mock_load_pem,
+        mock_verify_match,
+    ):
+        """Test main function with successful private key match from content."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        params = self.all_params.copy()
+        key_b64 = base64.b64encode(b"mock_key_data").decode('utf-8')
+        params["private_key_content"] = key_b64
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_cert_data"
+        mock_b64decode.return_value = b"mock_key_data"
+        mock_load_pem.return_value = MagicMock()
+        mock_verify_match.return_value = True
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["verify_results"]["private_key_match"])
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["msg"], "All certificate validations passed successfully")
+        mock_b64decode.assert_called_once_with(key_b64)
+        mock_load_pem.assert_called_once()
+
+    @patch("cryptography.hazmat.primitives.serialization.load_pem_private_key")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_with_invalid_private_key_content(
+        self,
+        mock_ansible_module,
+        mock_read_cert_file,
+        mock_parse_certificate,
+        mock_b64decode,
+        mock_load_pem,
+    ):
+        """Test main function failure when invalid base64 for private key content."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        params = self.all_params.copy()
+        invalid_key_b64 = "invalid_base64_key"
+        params["private_key_content"] = invalid_key_b64
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_cert_data"
+        mock_b64decode.side_effect = ValueError("Invalid base64")
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["private_key_match"])
+        self.assertIn("One or more certificate validations failed", result["msg"])
+        mock_b64decode.assert_called_once_with(invalid_key_b64)
+
+    @patch(f"{MODULE_PATH}.verify_private_key_match")
+    @patch("cryptography.hazmat.primitives.serialization.load_pem_private_key")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_with_private_key_content_mismatch(
+        self,
+        mock_ansible_module,
+        mock_read_cert_file,
+        mock_parse_certificate,
+        mock_b64decode,
+        mock_load_pem,
+        mock_verify_match,
+    ):
+        """Test main function with private key mismatch from content."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        params = self.all_params.copy()
+        key_b64 = base64.b64encode(b"mock_key_data").decode('utf-8')
+        params["private_key_content"] = key_b64
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_cert_data"
+        mock_b64decode.return_value = b"mock_key_data"
+        mock_load_pem.return_value = MagicMock()
+        mock_verify_match.return_value = False  # Mismatch
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["private_key_match"])
+        self.assertIn("One or more certificate validations failed", result["msg"])
 
 
 if __name__ == "__main__":

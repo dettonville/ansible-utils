@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_dict_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_dict_keys.md
-> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_M4VLY1/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
+> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_G2TI8f/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.

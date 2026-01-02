@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_M4VLY1/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_G2TI8f/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -41,6 +41,11 @@ OPTIONS (= indicates it is required):
         type: int
 
 - common_name  Expected Common Name (CN) of the certificate subject.
+        default: null
+        type: str
+
+- content  Base64 encoded certificate content (PEM or DER format).
+            If provided, this takes precedence over `path'.
         default: null
         type: str
 
@@ -87,8 +92,17 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
-= path    Path to the certificate file to verify (PEM or DER format).
+- path    Path to the certificate file to verify (PEM or DER format).
+        default: null
         type: path
+
+- private_key_content  Base64 encoded private key content (PEM
+                        format).
+                        If provided, this takes precedence over
+                        `private_key_path'.
+        default: null
+        no_log: true
+        type: str
 
 - private_key_password  Private key password.
         default: null
@@ -134,6 +148,8 @@ OPTIONS (= indicates it is required):
 NOTES:
       * The module works with both PEM and DER encoded
         certificates and keys.
+      * Exactly one of `path' or `content' must be provided for
+        the certificate.
       * At least one verification property must be provided
         (e.g., common_name, serial_number,
         validate_expired=True, or ca_path).
@@ -160,6 +176,11 @@ NOTES:
       * The module modifies sys.path to prioritize the virtual
         environment's cryptography installation over system-wide
         paths.
+      * Certificate can be provided via `path' or `content'
+        (base64 encoded). `content' takes precedence.
+      * Private key can be provided via `private_key_path' or
+        `private_key_content' (base64 encoded).
+        `private_key_content' takes precedence.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -176,6 +197,19 @@ EXAMPLES:
   dettonville.utils.x509_certificate_verify:
     path: /path/to/cert.pem
     private_key_path: /path/to/key.pem
+
+- name: Verify certificate from base64 content
+  dettonville.utils.x509_certificate_verify:
+    content: "{{ cert_b64_content }}"
+    common_name: test.example.com
+    validate_expired: true
+
+- name: Verify certificate with private key from content
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    private_key_content: "{{ key_b64_content }}"
+    private_key_password: "{{ key_pass }}"
+    validate_expired: true
 
 - name: Verify a certificate's properties
   dettonville.utils.x509_certificate_verify:
@@ -340,8 +374,8 @@ RETURN VALUES:
           type: bool
 
         - private_key_match  Whether the private key matches the
-                              certificate (only if private_key_path
-                              provided).
+                              certificate (only if private_key_path or
+                              private_key_content provided).
           type: bool
 
         - serial_number  Whether the serial number matched.

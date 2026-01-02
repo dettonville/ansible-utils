@@ -24,8 +24,14 @@ options:
   path:
     description:
       - Path to the certificate file to verify (PEM or DER format).
-    required: true
+    required: false
     type: path
+  content:
+    description:
+      - Base64 encoded certificate content (PEM or DER format).
+      - If provided, this takes precedence over C(path).
+    required: false
+    type: str
   ca_path:
     description:
       - Path to the issuer CA certificate, chain file (PEM or DER format), or bundle for signature verification.
@@ -42,6 +48,12 @@ options:
       - If specified, performs a match test between the certificate's public key and the private key.
     type: path
     default: null
+  private_key_content:
+    description:
+      - Base64 encoded private key content (PEM format).
+      - If provided, this takes precedence over C(private_key_path).
+    type: str
+    required: false
   private_key_password:
     type: str
     description:
@@ -143,6 +155,7 @@ requirements:
   - pyopenssl
 notes:
   - The module works with both PEM and DER encoded certificates and keys.
+  - Exactly one of C(path) or C(content) must be provided for the certificate.
   - At least one verification property must be provided (e.g., common_name, serial_number, validate_expired=True, or ca_path).
   - Modulus comparison is performed only for RSA keys when ca_path is provided.
   - Use ca_path to include the issuer certificate or certificate chain when verifying certificates.
@@ -154,6 +167,8 @@ notes:
   - If not_valid_after_utc is unavailable in cryptography >= 41.0.0, an error is logged, indicating a potential library or environment issue.
   - If cryptography is loaded from a system-wide path in a virtual environment, a warning is logged to indicate potential version mismatches.
   - The module modifies sys.path to prioritize the virtual environment's cryptography installation over system-wide paths.
+  - Certificate can be provided via C(path) or C(content) (base64 encoded). C(content) takes precedence.
+  - Private key can be provided via C(private_key_path) or C(private_key_content) (base64 encoded). C(private_key_content) takes precedence.
 """
 
 RETURN = r"""
@@ -270,7 +285,7 @@ verify_results:
       description: Whether the certificate and issuer CA moduli match (if applicable).
       type: bool
     private_key_match:
-      description: Whether the private key matches the certificate (only if private_key_path provided).
+      description: Whether the private key matches the certificate (only if private_key_path or private_key_content provided).
       type: bool
   sample: {"common_name": true, "key_size": false, "expiry_valid": true, "checkend_valid": true, "signature_valid": true, "modulus_match": true}
 cert_modulus:
@@ -295,6 +310,19 @@ EXAMPLES = r"""
   dettonville.utils.x509_certificate_verify:
     path: /path/to/cert.pem
     private_key_path: /path/to/key.pem
+
+- name: Verify certificate from base64 content
+  dettonville.utils.x509_certificate_verify:
+    content: "{{ cert_b64_content }}"
+    common_name: test.example.com
+    validate_expired: true
+
+- name: Verify certificate with private key from content
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    private_key_content: "{{ key_b64_content }}"
+    private_key_password: "{{ key_pass }}"
+    validate_expired: true
 
 - name: Verify a certificate's properties
   dettonville.utils.x509_certificate_verify:
@@ -472,15 +500,6 @@ def _get_modulus(public_key):
     return None
 
 
-def load_private_key(path, password=None):
-    with open(path, 'rb') as f:
-        return serialization.load_pem_private_key(
-            f.read(),
-            password=password.encode() if password else None,
-            backend=default_backend()
-        )
-
-
 def verify_private_key_match(cert, priv_key):
     try:
         pub_from_cert = cert.public_key().public_bytes(
@@ -499,10 +518,12 @@ def verify_private_key_match(cert, priv_key):
 def main():
     """Main module function."""
     module_args = dict(
-        path=dict(type='path', required=True),
+        path=dict(type='path', required=False),
+        content=dict(type='str', required=False),
         ca_path=dict(type='path', required=False),
         issuer_ca_path=dict(type='path', required=False),
         private_key_path=dict(type='path', required=False),
+        private_key_content=dict(type='str', required=False, no_log=True),
         private_key_password=dict(type='str', required=False, no_log=True),
         common_name=dict(type='str', required=False),
         organization=dict(type='str', required=False),
@@ -586,13 +607,20 @@ def main():
             f"Cryptography version {cryptography_version} is below 36.0.0. Some features may not work correctly."
         )
 
-    cert_path = module.params['path']
+    cert_path = module.params.get('path')
+    content = module.params.get('content')
+    if content and cert_path:
+        module.warn("Both path and content provided; using content.")
+    if not content and not cert_path:
+        module.fail_json(msg="Exactly one of path or content must be provided for the certificate.")
+
     ca_path = module.params.get("ca_path")
     if module.params.get("issuer_ca_path"):
         module.warn("issuer_ca_path is deprecated. Use ca_path instead.")
         ca_path = module.params.get("issuer_ca_path")
 
     private_key_path = module.params.get("private_key_path")
+    private_key_content = module.params.get("private_key_content")
     private_key_password = module.params.get("private_key_password")
 
     # Validate version parameter explicitly
@@ -626,6 +654,7 @@ def main():
         or any(module.params.get(prop) is True for prop in boolean_properties)
         or ca_path is not None
         or private_key_path is not None
+        or private_key_content is not None
     )
     if not has_verification:
         module.fail_json(msg="At least one verification property must be provided.")
@@ -649,10 +678,17 @@ def main():
 
     try:
         # Read and parse the certificate
-        cert_data = _read_cert_file(cert_path)
+        if content:
+            import base64
+            try:
+                cert_data = base64.b64decode(content)
+            except Exception as e:
+                module.fail_json(msg=f"Failed to decode certificate content: {to_native(e)}")
+        else:
+            cert_data = _read_cert_file(cert_path)
         log.debug(
             "Certificate data read from %s: %s bytes",
-            cert_path,
+            cert_path if cert_path else "content",
             len(cert_data),
         )
         cert = _parse_certificate(cert_data)
@@ -847,22 +883,34 @@ def main():
             verify_results["signature_valid"] = True
             verify_results["modulus_match"] = True
 
-        if private_key_path:
-            private_key_match = None
+        # Verify private key match if private_key_path or private_key_content provided
+        if private_key_path or private_key_content:
+            private_key_match = False
             private_key_verify_msg = None
-            if not os.path.exists(private_key_path):
-                private_key_match = False
-                private_key_verify_msg = f"Private key path {private_key_path} does not exist"
-            else:
+            key_data = None
+            if private_key_content:
+                import base64
                 try:
-                    priv_key = load_private_key(private_key_path, private_key_password)
-                    private_key_match = verify_private_key_match(cert_data, priv_key)
+                    key_data = base64.b64decode(private_key_content)
+                except Exception as e:
+                    private_key_verify_msg = f"Failed to decode private key content: {to_native(e)}"
+            elif private_key_path:
+                if not os.path.exists(private_key_path):
+                    private_key_verify_msg = f"Private key path {private_key_path} does not exist"
+                else:
+                    key_data = _read_cert_file(private_key_path)
+            if key_data is not None:
+                try:
+                    priv_key = serialization.load_pem_private_key(
+                        key_data,
+                        password=private_key_password.encode() if private_key_password else None,
+                        backend=default_backend()
+                    )
+                    private_key_match = verify_private_key_match(cert, priv_key)
                     if not private_key_match:
                         private_key_verify_msg = "Private key does not match certificate public key"
                 except Exception as e:
-                    private_key_match = False
                     private_key_verify_msg = f"Failed to load or verify private key: {to_native(e)}"
-
             verify_results['private_key_match'] = private_key_match
             if private_key_verify_msg:
                 log.error(private_key_verify_msg)
