@@ -16,18 +16,22 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_aQ8hOy/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_M4VLY1/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
+  This module is intended for idempotent verification of certificates
+  in playbooks.
   This module verifies properties of an X.509 certificate, such as
   common name, organization, serial number, signature algorithm, key
   algorithm, and expiration status.
-  It can also verify the certificate's signature against an issuer CA
-  certificate or chain.
+  This module also can verify the certificate's signature against an
+  issuer CA certificate, chain or CA bundle.
+  This module also can verify the certificate's private key matches
+  the CA certificate.
 
 OPTIONS (= indicates it is required):
 
-- chain_path  Deprecated. Use `issuer_ca_path' instead. Path to the
-               certificate chain.
+- ca_path  Path to the issuer CA certificate, chain file (PEM or DER
+            format), or bundle for signature verification.
         default: null
         type: path
 
@@ -48,13 +52,8 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
-- issuer_ca_path  Path to the issuer CA certificate or chain file
-                   (PEM or DER format) for signature verification.
-        default: null
-        type: path
-
-- issuer_path  Deprecated. Use `issuer_ca_path' instead. Path to the
-                issuer CA certificate.
+- issuer_ca_path  Deprecated. Use `ca_path' instead. Path to the
+                   issuer CA certificate.
         default: null
         type: path
 
@@ -89,6 +88,17 @@ OPTIONS (= indicates it is required):
         type: str
 
 = path    Path to the certificate file to verify (PEM or DER format).
+        type: path
+
+- private_key_password  Private key password.
+        default: null
+        type: str
+
+- private_key_path  Path to the private key file to verify against
+                     the certificate's public key.
+                     If specified, performs a match test between the
+                     certificate's public key and the private key.
+        default: null
         type: path
 
 - serial_number  Expected serial number of the certificate (in
@@ -126,16 +136,16 @@ NOTES:
         certificates and keys.
       * At least one verification property must be provided
         (e.g., common_name, serial_number,
-        validate_expired=True, or issuer_ca_path).
+        validate_expired=True, or ca_path).
       * Modulus comparison is performed only for RSA keys when
-        issuer_ca_path is provided.
-      * Use issuer_ca_path to include the issuer certificate or
+        ca_path is provided.
+      * Use ca_path to include the issuer certificate or
         certificate chain when verifying certificates.
       * For serial_number, provide as a decimal or hex string
         (with or without '0x').
       * For version, specify 1 for v1 or 3 for v3 certificates.
-      * The issuer_path and chain_path parameters are deprecated
-        in favor of issuer_ca_path.
+      * The issuer_ca_path parameter is deprecated in favor of
+        ca_path.
       * When logging_level is set to DEBUG, a full stack trace
         is logged for any exceptions.
       * When logging_level is set to DEBUG, additional
@@ -157,6 +167,16 @@ REQUIREMENTS:  cryptography>=1.5, pyopenssl
 AUTHOR: Lee Johnson (@lj020326)
 
 EXAMPLES:
+- name: Verify certificate chain
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    ca_path: /path/to/ca-bundle.pem
+
+- name: Verify certificate with private key match
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    private_key_path: /path/to/key.pem
+
 - name: Verify a certificate's properties
   dettonville.utils.x509_certificate_verify:
     path: /path/to/cert.pem
@@ -169,7 +189,7 @@ EXAMPLES:
 - name: Verify a certificate with CA signature
   dettonville.utils.x509_certificate_verify:
     path: /path/to/cert.pem
-    issuer_ca_path: /path/to/ca.pem
+    ca_path: /path/to/ca.pem
     common_name: test.example.com
     serial_number: '12345'
     signature_algorithm: sha256WithRSAEncryption
@@ -195,7 +215,7 @@ RETURN VALUES:
 
 - cert_modulus  Modulus of the certificate's public key (hexadecimal,
                  if applicable).
-        returned: when issuer_ca_path is provided and the certificate has an RSA key
+        returned: when ca_path is provided and the certificate has an RSA key
         sample: a1b2c3...
         type: str
 
@@ -254,7 +274,7 @@ RETURN VALUES:
 
 - issuer_modulus  Modulus of the issuer CA's public key (hexadecimal,
                    if applicable).
-        returned: when issuer_ca_path is provided and the issuer certificate has an RSA key
+        returned: when ca_path is provided and the issuer certificate has an RSA key
         sample: a1b2c3...
         type: str
 
@@ -319,6 +339,11 @@ RETURN VALUES:
                                 matched.
           type: bool
 
+        - private_key_match  Whether the private key matches the
+                              certificate (only if private_key_path
+                              provided).
+          type: bool
+
         - serial_number  Whether the serial number matched.
           type: bool
 
@@ -326,8 +351,8 @@ RETURN VALUES:
                                 matched.
           type: bool
 
-        - signature_valid  Whether the signature is valid (if
-                            issuer_ca_path is provided).
+        - signature_valid  Whether the signature is valid (if ca_path
+                            is provided).
           type: bool
 
         - state_or_province  Whether the state or province matched.

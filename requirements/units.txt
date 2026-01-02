@@ -1,0 +1,7 @@
+## library module requirements
+pyyaml
+packaging
+cryptography >= 1.5
+pyopenssl
+coverage
+pytest-xdist

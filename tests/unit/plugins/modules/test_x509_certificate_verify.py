@@ -324,7 +324,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
         }
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
@@ -403,7 +403,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             "path": "/path/to/cert.pem",
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
             "key_algo": "rsa",
             "version": 3,
             "logging_level": "INFO",
@@ -478,7 +478,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
         }
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
@@ -799,83 +799,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
     @patch(f"{MODULE_PATH}._read_cert_file")
     @patch(f"{MODULE_PATH}._load_ca_certs")
     @patch(f"{MODULE_PATH}.AnsibleModule")
-    def test_main_deprecated_chain_path(
-        self,
-        mock_ansible_module,
-        mock_load_ca_certs,
-        mock_read_cert_file,
-        mock_parse_certificate,
-        mock_x509_store,
-        mock_x509_store_context,
-        mock_load_certificate,
-        mock_cryptography_version,
-    ):
-        """Test main function with deprecated chain_path parameter."""
-        mock_module = MagicMock()
-        mock_ansible_module.return_value = mock_module
-        mock_module.params = {
-            "path": "/path/to/cert.pem",
-            "chain_path": "/path/to/chain.pem",
-            "validate_expired": True,
-            "logging_level": "INFO",
-        }
-        mock_module.check_mode = False
-        mock_module.exit_json = exit_json
-        mock_module.fail_json = fail_json
-        mock_module.warn = MagicMock()
-        mock_cryptography_version.return_value = "36.0.0"
-
-        # Mock certificate
-        mock_cert = MagicMock()
-        self._setup_valid_cert_mock(mock_cert, modulus="A1B2C3")
-
-        # Mock CA certificate
-        mock_ca_cert = MagicMock()
-        self._setup_valid_cert_mock(
-            mock_ca_cert, modulus="A1B2C3", issuer="ca.example.com"
-        )
-
-        mock_parse_certificate.side_effect = [mock_cert, mock_ca_cert]
-        mock_read_cert_file.side_effect = [b"mock_cert_data", b"mock_ca_data"]
-        mock_load_ca_certs.return_value = [mock_ca_cert]
-
-        mock_cert_openssl = MagicMock()
-        mock_ca_openssl = MagicMock()
-        mock_load_certificate.side_effect = [mock_cert_openssl, mock_ca_openssl]
-
-        mock_store = MagicMock()
-        mock_x509_store.return_value = mock_store
-        mock_store_ctx = MagicMock()
-        mock_x509_store_context.return_value = mock_store_ctx
-        mock_store_ctx.verify_certificate.return_value = None
-
-        with self.assertRaises(AnsibleExitJson) as exc:
-            module_main()
-
-        result = exc.exception.args[0]
-        self.assertFalse(result["failed"])
-        self.assertTrue(result["valid"])
-        self.assertFalse(result["verify_failed"])
-        self.assertEqual(
-            result["msg"], "All certificate validations passed successfully"
-        )
-        self.assertTrue(result["verify_results"]["signature_valid"])
-        self.assertTrue(result["verify_results"]["modulus_match"])
-        self.assertEqual(result["cert_modulus"], "A1B2C3")
-        self.assertEqual(result["issuer_modulus"], "A1B2C3")
-        mock_module.warn.assert_any_call(
-            "chain_path is deprecated. Use issuer_ca_path instead."
-        )
-
-    @patch("cryptography.__version__")
-    @patch("OpenSSL.crypto.load_certificate")
-    @patch("OpenSSL.crypto.X509StoreContext")
-    @patch("OpenSSL.crypto.X509Store")
-    @patch(f"{MODULE_PATH}._parse_certificate")
-    @patch(f"{MODULE_PATH}._read_cert_file")
-    @patch(f"{MODULE_PATH}._load_ca_certs")
-    @patch(f"{MODULE_PATH}.AnsibleModule")
-    def test_main_deprecated_issuer_path(
+    def test_main_deprecated_issuer_ca_path(
         self,
         mock_ansible_module,
         mock_load_ca_certs,
@@ -891,7 +815,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             "path": "/path/to/cert.pem",
-            "issuer_path": "/path/to/issuer.pem",
+            "issuer_ca_path": "/path/to/issuer.pem",
             "validate_expired": True,
             "logging_level": "INFO",
         }
@@ -1117,7 +1041,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             "path": "/path/to/cert.pem",
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
             "validate_expired": True,
             "logging_level": "INFO",
         }
@@ -1205,7 +1129,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
     @patch(f"{MODULE_PATH}._read_cert_file")
     @patch(f"{MODULE_PATH}._load_ca_certs")
     @patch(f"{MODULE_PATH}.AnsibleModule")
-    def test_main_issuer_ca_path_chain(
+    def test_main_ca_path_chain(
         self,
         mock_ansible_module,
         mock_load_ca_certs,
@@ -1215,12 +1139,12 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_x509_store_context,
         mock_load_certificate,
     ):
-        """Test main function with issuer_ca_path containing multiple certificates."""
+        """Test main function with ca_path containing multiple certificates."""
         mock_module = MagicMock()
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
         }
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
@@ -1281,7 +1205,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
     @patch(f"{MODULE_PATH}._read_cert_file")
     @patch(f"{MODULE_PATH}._load_ca_certs")
     @patch(f"{MODULE_PATH}.AnsibleModule")
-    def test_main_issuer_ca_path_single_cert(
+    def test_main_ca_path_single_cert(
         self,
         mock_ansible_module,
         mock_load_ca_certs,
@@ -1292,12 +1216,12 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_load_certificate,
         mock_cryptography_version,
     ):
-        """Test main function with issuer_ca_path containing a single certificate."""
+        """Test main function with ca_path containing a single certificate."""
         mock_module = MagicMock()
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             "path": "/path/to/cert.pem",
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
             "validate_expired": True,
             "logging_level": "INFO",
         }
@@ -1368,7 +1292,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             "path": "/path/to/cert.pem",
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
             "validate_expired": True,
             "logging_level": "INFO",
         }
@@ -1610,7 +1534,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             **self.all_params,
             "key_algo": "ec",
             "key_size": 256,
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
         }
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
@@ -1670,7 +1594,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
         }
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
@@ -1913,7 +1837,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "issuer_ca_path": "/path/to/issuer_ca.pem",
+            "ca_path": "/path/to/issuer_ca.pem",
         }
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
@@ -2186,6 +2110,140 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["verify_failed"])
         self.assertEqual(result["msg"], "One or more certificate validations failed")
         self.assertFalse(result["verify_results"]["checkend_valid"])
+
+    @patch(f"{MODULE_PATH}.verify_private_key_match")
+    @patch(f"{MODULE_PATH}.load_private_key")
+    @patch("os.path.exists")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_private_key_match_success(
+            self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate,
+            mock_exists, mock_load_key, mock_verify_match
+    ):
+        """Test main function with successful private key match."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        # Setup parameters including the new private_key_path
+        params = self.all_params.copy()
+        params["private_key_path"] = "/path/to/private_key.pem"
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        # Mock filesystem and utility functions
+        mock_exists.return_value = True
+        mock_read_cert_file.return_value = b"mock_cert_data"
+        mock_load_key.return_value = MagicMock()
+        mock_verify_match.return_value = True
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["verify_results"]["private_key_match"])
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["msg"], "All certificate validations passed successfully")
+
+    @patch(f"{MODULE_PATH}.verify_private_key_match")
+    @patch(f"{MODULE_PATH}.load_private_key")
+    @patch("os.path.exists")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_private_key_match_failure(
+            self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate,
+            mock_exists, mock_load_key, mock_verify_match
+    ):
+        """Test main function with a private key mismatch failure."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        # Setup parameters including the private_key_path
+        params = self.all_params.copy()
+        params["private_key_path"] = "/path/to/wrong_private_key.pem"
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        # Mock filesystem and utility functions
+        mock_exists.return_value = True
+        mock_read_cert_file.return_value = b"mock_cert_data"
+        mock_load_key.return_value = MagicMock()
+
+        # Simulate a mismatch between key and cert
+        mock_verify_match.return_value = False
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+
+        # Assertions for failure state
+        self.assertFalse(result["valid"], "Module should mark certificate as invalid on key mismatch")
+        self.assertTrue(result["verify_failed"])
+        self.assertIn("One or more certificate validations failed", result["msg"])
+
+        # Verify the specific result in the verify_results dict
+        self.assertFalse(result["verify_results"]["private_key_match"])
+
+    @patch("os.path.exists")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_private_key_path_not_exists(
+            self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate, mock_exists
+    ):
+        """Test main function when private_key_path does not exist on disk."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        # Setup parameters with a non-existent path
+        invalid_path = "/non/existent/path/to/key.pem"
+        params = self.all_params.copy()
+        params["private_key_path"] = invalid_path
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        # Mock os.path.exists to return False for the key path
+        # We use a side_effect to ensure the cert path exists but the key path doesn't
+        def exists_side_effect(path):
+            if path == invalid_path:
+                return False
+            return True
+
+        mock_exists.side_effect = exists_side_effect
+
+        mock_read_cert_file.return_value = b"mock_cert_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+
+        # Assertions
+        self.assertFalse(result["valid"], "Module should be invalid if key path is missing")
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["private_key_match"])
+
+        # Verify that the general failure message is returned
+        self.assertEqual(result["msg"], "One or more certificate validations failed")
 
 
 if __name__ == "__main__":
