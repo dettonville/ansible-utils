@@ -137,6 +137,13 @@ options:
     required: false
     type: bool
     default: true
+  validate_modulus_match:
+    description:
+      - Whether to verify if the certificate's modulus matches its direct issuer's modulus.
+      - Only applies to RSA keys.
+      - Logic will handle setting this to True if ca_path is present
+      - default is true if ca_path is provided
+    type: bool
   checkend_value:
     description:
       - Number of seconds to check for impending expiration (used with validate_checkend).
@@ -373,7 +380,7 @@ cryptography_version = "0.0.0"  # Initialize with a default value
 # Handle cryptography imports
 try:
     from cryptography import x509
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519
+    from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519, padding
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.backends import default_backend
     from cryptography import __version__ as cryptography_version
@@ -437,66 +444,66 @@ def _parse_certificate(data):
 
 
 def _load_ca_certs(path):
-    """Load CA certificates from a file (single or chain)."""
     try:
         data = _read_cert_file(path)
         certs = []
         if b"-----BEGIN CERTIFICATE-----" in data:
-            # Handle PEM chain
-            pem_certs = data.decode("utf-8").split("-----END CERTIFICATE-----")
-            for pem_cert in pem_certs:
-                if "-----BEGIN CERTIFICATE-----" in pem_cert:
-                    cert_data = (pem_cert + "-----END CERTIFICATE-----").encode("utf-8")
-                    cert = _parse_certificate(cert_data)
-                    certs.append(cert)
+            # Handle PEM bundle/chain
+            # Use a regex or better splitting to avoid empty segments
+            import re
+            pem_blocks = re.findall(b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
+            for cert_data in pem_blocks:
+                certs.append(_parse_certificate(cert_data))
         else:
-            # Handle single DER or PEM certificate
+            # Handle single DER
             certs.append(_parse_certificate(data))
         return certs
     except Exception as e:
-        raise Exception(
-            "Failed to load CA certificates from {}: {}".format(path, str(e))
-        )
+        raise Exception("Failed to load CA certificates from {}: {}".format(path, str(e)))
 
 
 # Function to verify certificate signature
 def _verify_signature(cert, ca_certs):
-    """Verify certificate signature against CA certificates."""
+    # Try standard chain verification first
     store = crypto.X509Store()
-    logging.debug("Certificate issuer: %s", cert.issuer)
     cert_openssl = crypto.load_certificate(
         crypto.FILETYPE_PEM, cert.public_bytes(serialization.Encoding.PEM)
     )
+
     for ca_cert in ca_certs:
-        logging.debug("CA subject: %s", ca_cert.subject)
         ca_openssl = crypto.load_certificate(
             crypto.FILETYPE_PEM, ca_cert.public_bytes(serialization.Encoding.PEM)
         )
         store.add_cert(ca_openssl)
-    store_ctx = crypto.X509StoreContext(store, cert_openssl)
+
     try:
+        store_ctx = crypto.X509StoreContext(store, cert_openssl)
         store_ctx.verify_certificate()
-        logging.debug("Issuer signature valid!")
         return True
-    except (crypto.Error, crypto.X509StoreContextError) as e:
-        logging.debug("Certificate signature verification failed: %s", str(e))
-        logging.error(
-            "Issuer signature invalid: %s (type: %s)", str(e), type(e).__name__
-        )
-        logging.debug("Exception traceback: %s", traceback.format_exc())
-        return False
-    # except Exception as e:
-    #     logging.debug("Certificate signature verification failed: %s", str(e))
-    #     logging.error(
-    #         "Issuer signature invalid: %s (type: %s)", str(e), type(e).__name__)
-    #     logging.debug("Exception traceback: %s", traceback.format_exc())
-    #     return False
+    except (crypto.Error, crypto.X509StoreContextError):
+        # Fallback: Check if any individual cert in the bundle is the direct signer
+        # This handles cases where the full chain to root isn't in the bundle
+        for ca_cert in ca_certs:
+            try:
+                # Use cryptography's native verify method for direct issuer check
+                ca_cert.public_key().verify(
+                    cert.signature,
+                    cert.tbs_certificate_bytes,
+                    padding.PKCS1v15(),  # or appropriate padding based on algo
+                    cert.signature_hash_algorithm,
+                )
+                return True
+            except Exception:
+                continue
+    return False
 
 
 def _get_modulus(public_key):
     """Get the modulus of a public key (if applicable)."""
     if isinstance(public_key, rsa.RSAPublicKey):
         return "{:X}".format(public_key.public_numbers().n)
+        # return hex(public_key.public_numbers().n)[2:].upper()
+
     return None
 
 
@@ -544,6 +551,7 @@ def main():
         key_size=dict(type='int', required=False),
         validate_expired=dict(type='bool', required=False, default=True),
         validate_checkend=dict(type='bool', required=False, default=True),
+        validate_modulus_match=dict(type='bool', default=None),
         checkend_value=dict(type='int', required=False, default=86400),
         logging_level=dict(
             type='str',
@@ -865,23 +873,64 @@ def main():
         else:
             verify_results["checkend_valid"] = True
 
+        validate_modulus_match = module.params.get('validate_modulus_match')
+        if validate_modulus_match is None:
+            validate_modulus_match = True if ca_path else False
+
         # Verify signature if ca_path is provided
         if ca_path:
             ca_certs = _load_ca_certs(ca_path)
+            # 1. Cryptographic signature check (should be independent)
             verify_results["signature_valid"] = _verify_signature(
                 cert, ca_certs
             )
+            # 2. Modulus check logic
             if isinstance(public_key, rsa.RSAPublicKey) and ca_certs:
-                result["cert_modulus"] = _get_modulus(public_key)
-                result["issuer_modulus"] = _get_modulus(ca_certs[0].public_key())
-                verify_results["modulus_match"] = (
-                    result["cert_modulus"] == result["issuer_modulus"]
-                )
-            else:
-                verify_results["modulus_match"] = True
-        else:
-            verify_results["signature_valid"] = True
-            verify_results["modulus_match"] = True
+                cert_modulus = _get_modulus(cert.public_key())
+                result["cert_modulus"] = cert_modulus
+                # result["issuer_modulus"] = _get_modulus(ca_certs[0].public_key())
+                # verify_results["modulus_match"] = (
+                #     result["cert_modulus"] == result["issuer_modulus"]
+                # )
+            # else:
+            #     verify_results["modulus_match"] = True
+
+            # Modulus Match Logic
+            if validate_modulus_match and isinstance(cert.public_key(), rsa.RSAPublicKey):
+                modulus_match = False
+                # cert_modulus = hex(cert.public_key().public_numbers().n)[2:].upper()
+
+                # Traverse CA bundle to find the direct issuer by modulus
+                issuer_cert = None
+                issuer_modulus = None
+                for ca in ca_certs:
+                    # Match by Subject DN (Issuer of cert == Subject of CA)
+                    issuer_modulus = _get_modulus(ca.public_key())
+                    # if ca.subject == cert.issuer:
+                    #    modulus_match = (cert_modulus == issuer_modulus)
+                    if cert_modulus == issuer_modulus:
+                        result["issuer_modulus"] = issuer_modulus
+                        issuer_cert = ca
+                        modulus_match = True
+                        break
+
+                # if issuer_cert:
+                #     if isinstance(issuer_cert.public_key(), rsa.RSAPublicKey):
+                #         issuer_modulus = hex(issuer_cert.public_key().public_numbers().n)[2:].upper()
+                #         modulus_match = (cert_modulus == issuer_modulus)
+                #         if not modulus_match:
+                #             log.error("Modulus mismatch between leaf and direct issuer")
+                #     else:
+                #         log.info("Direct issuer found but does not use RSA; skipping modulus match")
+                #         modulus_match = True  # Skip if not RSA
+                # else:
+                #     log.warning("Direct issuer not found in ca_path; skipping modulus match")
+                #     modulus_match = True  # Skip if direct issuer not in bundle
+
+                verify_results['modulus_match'] = modulus_match
+        # else:
+        #     verify_results["signature_valid"] = True
+        #     # verify_results["modulus_match"] = True
 
         # Verify private key match if private_key_path or private_key_content provided
         if private_key_path or private_key_content:

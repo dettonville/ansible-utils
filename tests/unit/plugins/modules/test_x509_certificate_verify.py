@@ -520,7 +520,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["verify_results"]["signature_valid"])
         self.assertFalse(result["verify_results"]["modulus_match"])
         self.assertEqual(result["cert_modulus"], "A1B2C3")
-        self.assertEqual(result["issuer_modulus"], "D4E5F6")
+        self.assertEqual(result["issuer_modulus"], None)
 
     @patch("cryptography.__version__", return_value="41.0.7")
     @patch(f"{MODULE_PATH}._parse_certificate")
@@ -1326,6 +1326,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             MagicMock(oid=NameOID.COMMON_NAME, value="ca.example.com")
         ]
         mock_ca_cert_public_key = MagicMock(spec=rsa.RSAPublicKey)
+        mock_ca_cert_public_key.verify.side_effect = Exception("Invalid signature fallback")
         mock_ca_cert_public_numbers = MagicMock()
         mock_ca_cert_public_numbers.n = 987654321  # Converts to "3ADE68B1"
         mock_ca_cert_public_key.public_numbers.return_value = (
@@ -1359,7 +1360,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertEqual(result["msg"], "One or more certificate validations failed")
         self.assertFalse(result["verify_results"]["signature_valid"])
         self.assertEqual(result["cert_modulus"], "75BCD15")
-        self.assertEqual(result["issuer_modulus"], "3ADE68B1")
+        self.assertEqual(result["issuer_modulus"], None)
         self.assertFalse(result["verify_results"]["modulus_match"])
         self.assertIn("details", result)
         self.assertIn("verify_results", result)
@@ -2503,6 +2504,91 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["verify_failed"])
         self.assertFalse(result["verify_results"]["private_key_match"])
         self.assertIn("One or more certificate validations failed", result["msg"])
+
+    @patch(f"{MODULE_PATH}._verify_signature")
+    @patch(f"{MODULE_PATH}._load_ca_certs")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_modulus_match_with_bundle(self, mock_module, mock_parse, mock_read, mock_load_ca, mock_verify_sig):
+        """Test modulus matching when the direct issuer is deep in a bundle."""
+        mock_m = MagicMock()
+        mock_module.return_value = mock_m
+        # Include all_params and the new toggle
+        mock_m.params = {**self.all_params, "ca_path": "/path/bundle.pem", "validate_modulus_match": True}
+        mock_m.check_mode = False
+        mock_m.exit_json = exit_json
+        mock_m.fail_json = fail_json
+
+        # Prevent signature verification from failing on mock PEM strings
+        mock_verify_sig.return_value = True
+
+        # Leaf cert: Issued by "Intermediate CA"
+        leaf_cert = MagicMock()
+        self._setup_valid_cert_mock(leaf_cert, modulus="AAAA", issuer="Intermediate CA")
+
+        # Bundle: Root CA (modulus mismatch)
+        root_ca = MagicMock()
+        self._setup_valid_cert_mock(root_ca, modulus="BBBB")
+        root_ca.subject = MagicMock()
+        root_ca.subject.value = "Root CA"
+
+        # Bundle: Intermediate CA (modulus match)
+        int_ca = MagicMock()
+        self._setup_valid_cert_mock(int_ca, modulus="AAAA")
+        # Ensure this CA's subject matches the leaf's issuer exactly
+        int_ca.subject = leaf_cert.issuer
+
+        mock_parse.side_effect = [leaf_cert, root_ca, int_ca]
+        mock_load_ca.return_value = [root_ca, int_ca]
+        mock_read.return_value = b"mock_data"
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["verify_results"]["modulus_match"])
+        self.assertEqual(result["cert_modulus"], "AAAA")
+        self.assertEqual(result["issuer_modulus"], "AAAA")
+
+    @patch(f"{MODULE_PATH}._verify_signature")  # Add this mock
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}._load_ca_certs")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_skip_modulus_match_param(self, mock_module, mock_load_ca, mock_read, mock_parse, mock_verify_sig):
+        """Test that modulus match can be explicitly disabled."""
+        mock_m = MagicMock()
+        mock_module.return_value = mock_m
+        mock_m.params = {**self.all_params, "ca_path": "/path.pem", "validate_modulus_match": False}
+        mock_m.check_mode = False
+        mock_m.exit_json = exit_json
+        mock_m.fail_json = fail_json
+
+        # Ensure signature verification is mocked to return True
+        mock_verify_sig.return_value = True
+
+        # Setup Leaf and CA with mismatching moduli
+        leaf_cert = MagicMock()
+        self._setup_valid_cert_mock(leaf_cert, modulus="AAAA")
+
+        ca_cert = MagicMock()
+        self._setup_valid_cert_mock(ca_cert, modulus="FFFF")
+        ca_cert.subject = leaf_cert.issuer
+
+        mock_parse.side_effect = [leaf_cert, ca_cert]
+        mock_read.return_value = b"mock_data"
+        mock_load_ca.return_value = [ca_cert]
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        # The overall validation should pass because validate_modulus_match is False
+        self.assertTrue(result["valid"])
+        # Check that either modulus_match is True or not present depending on your logic
+        if "modulus_match" in result["verify_results"]:
+            self.assertTrue(result["verify_results"]["modulus_match"])
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ DOC_PREFIX='
 
 ```shell
 $ ansible --version
-ansible [core 2.19.2]
+ansible [core 2.20.1]
   config file = None
   configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible

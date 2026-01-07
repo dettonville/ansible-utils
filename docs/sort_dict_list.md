@@ -2,7 +2,7 @@
 
 ```shell
 $ ansible --version
-ansible [core 2.19.2]
+ansible [core 2.20.1]
   config file = None
   configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.sort_dict_list | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/sort_dict_list.md
-> FILTER dettonville.utils.sort_dict_list (/Users/ljohnson/tmp/_G2TI8f/ansible_collections/dettonville/utils/plugins/filter/sort_dict_list.py)
+> FILTER dettonville.utils.sort_dict_list (/Users/ljohnson/tmp/_5jOlCZ/ansible_collections/dettonville/utils/plugins/filter/sort_dict_list.py)
 
   Sort list of dictionaries by a specified key(s).
 

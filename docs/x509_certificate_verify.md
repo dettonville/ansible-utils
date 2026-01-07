@@ -2,7 +2,7 @@
 
 ```shell
 $ ansible --version
-ansible [core 2.19.2]
+ansible [core 2.20.1]
   config file = None
   configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_G2TI8f/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_5jOlCZ/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -101,7 +101,6 @@ OPTIONS (= indicates it is required):
                         If provided, this takes precedence over
                         `private_key_path'.
         default: null
-        no_log: true
         type: str
 
 - private_key_password  Private key password.
@@ -138,6 +137,16 @@ OPTIONS (= indicates it is required):
 
 - validate_expired  Whether to check if the certificate is expired.
         default: true
+        type: bool
+
+- validate_modulus_match  Whether to verify if the certificate's
+                           modulus matches its direct issuer's
+                           modulus.
+                           Only applies to RSA keys.
+                           Logic will handle setting this to True if
+                           ca_path is present
+                           default is true if ca_path is provided
+        default: null
         type: bool
 
 - version  Expected certificate version (1 or 3).
