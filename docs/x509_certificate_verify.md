@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_5jOlCZ/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_HkmSUC/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.

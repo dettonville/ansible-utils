@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.redact_sensitive_values | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/redact_sensitive_values.md
-> FILTER dettonville.utils.redact_sensitive_values (/Users/ljohnson/tmp/_5jOlCZ/ansible_collections/dettonville/utils/plugins/filter/redact_sensitive_values.py)
+> FILTER dettonville.utils.redact_sensitive_values (/Users/ljohnson/tmp/_HkmSUC/ansible_collections/dettonville/utils/plugins/filter/redact_sensitive_values.py)
 
   Redact values for key(s) with specified list of regex patterns from
   nested dict/array by replacing them with a redacted tag.

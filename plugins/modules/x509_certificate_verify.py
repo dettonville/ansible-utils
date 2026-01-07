@@ -463,6 +463,7 @@ def _load_ca_certs(path):
 
 
 # Function to verify certificate signature
+# Function to verify certificate signature
 def _verify_signature(cert, ca_certs):
     # Try standard chain verification first
     store = crypto.X509Store()
@@ -485,13 +486,34 @@ def _verify_signature(cert, ca_certs):
         # This handles cases where the full chain to root isn't in the bundle
         for ca_cert in ca_certs:
             try:
-                # Use cryptography's native verify method for direct issuer check
-                ca_cert.public_key().verify(
-                    cert.signature,
-                    cert.tbs_certificate_bytes,
-                    padding.PKCS1v15(),  # or appropriate padding based on algo
-                    cert.signature_hash_algorithm,
-                )
+                public_key = ca_cert.public_key()
+                if isinstance(public_key, rsa.RSAPublicKey):
+                    public_key.verify(
+                        cert.signature,
+                        cert.tbs_certificate_bytes,
+                        padding.PKCS1v15(),
+                        cert.signature_hash_algorithm,
+                    )
+                elif isinstance(public_key, ec.EllipticCurvePublicKey):
+                    public_key.verify(
+                        cert.signature,
+                        cert.tbs_certificate_bytes,
+                        ec.ECDSA(cert.signature_hash_algorithm),
+                    )
+                elif isinstance(public_key, dsa.DSAPublicKey):
+                    public_key.verify(
+                        cert.signature,
+                        cert.tbs_certificate_bytes,
+                        dsa.DSA(cert.signature_hash_algorithm),
+                    )
+                elif isinstance(public_key, ed25519.Ed25519PublicKey):
+                    public_key.verify(
+                        cert.signature,
+                        cert.tbs_certificate_bytes,
+                    )
+                else:
+                    # Unsupported key type
+                    continue
                 return True
             except Exception:
                 continue
