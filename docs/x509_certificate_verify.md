@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_HkmSUC/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_F3kJWP/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -130,6 +130,11 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
+- validate_ca  Whether to validate that the certificate is a CA
+                certificate by checking basicConstraints for CA=TRUE.
+        default: false
+        type: bool
+
 - validate_checkend  Whether to check if the certificate expires
                       within a specified time (seconds).
         default: true
@@ -219,6 +224,13 @@ EXAMPLES:
     private_key_content: "{{ key_b64_content }}"
     private_key_password: "{{ key_pass }}"
     validate_expired: true
+
+- name: Verify a root CA certificate
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/root-ca.pem
+    validate_ca: true
+    validate_checkend: true
+    checkend_value: 2592000  # 30 days
 
 - name: Verify a certificate's properties
   dettonville.utils.x509_certificate_verify:
@@ -345,6 +357,10 @@ RETURN VALUES:
           signature_valid: true
         type: dict
         contains:
+
+        - ca_valid  Whether the certificate has CA:TRUE in
+                     basicConstraints (if validate_ca is true).
+          type: bool
 
         - checkend_valid  Whether the certificate does not expire
                            within checkend_value seconds.

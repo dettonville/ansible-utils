@@ -137,6 +137,12 @@ options:
     required: false
     type: bool
     default: true
+  validate_ca:
+    description:
+      - Whether to validate that the certificate is a CA certificate by checking basicConstraints for CA=TRUE.
+    required: false
+    type: bool
+    default: false
   validate_modulus_match:
     description:
       - Whether to verify if the certificate's modulus matches its direct issuer's modulus.
@@ -285,6 +291,9 @@ verify_results:
     checkend_valid:
       description: Whether the certificate does not expire within checkend_value seconds.
       type: bool
+    ca_valid:
+      description: Whether the certificate has CA:TRUE in basicConstraints (if validate_ca is true).
+      type: bool
     signature_valid:
       description: Whether the signature is valid (if ca_path is provided).
       type: bool
@@ -330,6 +339,13 @@ EXAMPLES = r"""
     private_key_content: "{{ key_b64_content }}"
     private_key_password: "{{ key_pass }}"
     validate_expired: true
+
+- name: Verify a root CA certificate
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/root-ca.pem
+    validate_ca: true
+    validate_checkend: true
+    checkend_value: 2592000  # 30 days
 
 - name: Verify a certificate's properties
   dettonville.utils.x509_certificate_verify:
@@ -573,6 +589,7 @@ def main():
         key_size=dict(type='int', required=False),
         validate_expired=dict(type='bool', required=False, default=True),
         validate_checkend=dict(type='bool', required=False, default=True),
+        validate_ca=dict(type='bool', default=False),
         validate_modulus_match=dict(type='bool', default=None),
         checkend_value=dict(type='int', required=False, default=86400),
         logging_level=dict(
@@ -678,7 +695,7 @@ def main():
         "key_algo",
         "key_size",
     ]
-    boolean_properties = ["validate_expired", "validate_checkend"]
+    boolean_properties = ["validate_expired", "validate_checkend", "validate_ca"]
     has_verification = (
         any(module.params.get(prop) is not None for prop in non_boolean_properties)
         or any(module.params.get(prop) is True for prop in boolean_properties)
@@ -859,6 +876,23 @@ def main():
         ):
             # Ed25519 has no key size
             verify_results["key_size"] = True
+
+        # Check if it's a CA certificate
+        if module.params.get("validate_ca"):
+            ca_valid = False
+            try:
+                bc_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
+                ca_valid = bc_ext.value.ca
+                log.debug("basicConstraints CA: %s", ca_valid)
+            except x509.ExtensionNotFound:
+                log.debug("basicConstraints extension not found; not a CA")
+                ca_valid = False
+            except Exception as e:
+                log.error("Error checking basicConstraints: %s", e)
+                ca_valid = False
+            verify_results["ca_valid"] = ca_valid
+        else:
+            verify_results["ca_valid"] = True
 
         # Check expiration with fallback for older cryptography versions
         try:

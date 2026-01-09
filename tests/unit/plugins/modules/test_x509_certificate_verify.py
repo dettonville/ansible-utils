@@ -18,7 +18,7 @@ import pprint
 import base64
 
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519
-from cryptography.x509 import NameOID, NameAttribute, Name, Version
+from cryptography.x509 import NameOID, NameAttribute, Name, Version, BasicConstraints, ExtensionOID, ExtensionNotFound
 
 # from OpenSSL.crypto import Error as CryptoError
 from OpenSSL import crypto
@@ -63,6 +63,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             "key_size": 2048,
             "validate_expired": True,
             "validate_checkend": True,
+            "validate_ca": False,
             "checkend_value": 86400,
             "logging_level": "INFO",
         }
@@ -75,6 +76,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         issuer=None,
         serial_number=12345,
         include_utc=True,
+        ca_flag=None,  # None: no extension, True: CA:TRUE, False: CA:FALSE
     ):
         """Helper to set up a valid certificate mock."""
         mock_cn = MagicMock(spec=NameAttribute)
@@ -162,6 +164,24 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_sig_oid._name = "sha256WithRSAEncryption"
         mock_cert.signature_algorithm_oid = mock_sig_oid
 
+        # Mock extensions for CA check
+        mock_ext_iter = MagicMock()
+        if ca_flag is True:
+            mock_bc_ext = MagicMock()
+            mock_bc = MagicMock(spec=BasicConstraints)
+            mock_bc.ca = True
+            mock_bc_ext.value = mock_bc
+            mock_ext_iter.get_extension_for_oid.return_value = mock_bc_ext
+        elif ca_flag is False:
+            mock_bc_ext = MagicMock()
+            mock_bc = MagicMock(spec=BasicConstraints)
+            mock_bc.ca = False
+            mock_bc_ext.value = mock_bc
+            mock_ext_iter.get_extension_for_oid.return_value = mock_bc_ext
+        else:  # None: no extension
+            mock_ext_iter.get_extension_for_oid.side_effect = ExtensionNotFound("No basicConstraints", ExtensionOID.BASIC_CONSTRAINTS)
+        mock_cert.extensions = mock_ext_iter
+
     def _setup_openssl_x509_mock(self, mock_x509, subject_cn="ca-root"):
         """Helper to set up an OpenSSL.crypto.X509 mock with a subject."""
         mock_subject = MagicMock()
@@ -206,6 +226,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             "path": "/path/to/cert.pem",
             "validate_expired": False,
             "validate_checkend": False,
+            "validate_ca": False,
             "logging_level": "INFO",
         }
         mock_module.check_mode = False
@@ -2589,6 +2610,163 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         # Check that either modulus_match is True or not present depending on your logic
         if "modulus_match" in result["verify_results"]:
             self.assertTrue(result["verify_results"]["modulus_match"])
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_validate_ca_true_success(self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate, mock_cryptography_version):
+        """Test validate_ca=True with a CA certificate (passes)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        mock_module.params = {
+            "path": "/path/to/ca.pem",
+            "validate_ca": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_ca_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, ca_flag=True)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["verify_results"]["ca_valid"])
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["msg"], "All certificate validations passed successfully")
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_validate_ca_true_failure_no_extension(self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate, mock_cryptography_version):
+        """Test validate_ca=True with no basicConstraints extension (fails)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        mock_module.params = {
+            "path": "/path/to/leaf.pem",
+            "validate_ca": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_leaf_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, ca_flag=None)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["verify_results"]["ca_valid"])
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertIn("One or more certificate validations failed", result["msg"])
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_validate_ca_true_failure_ca_false(self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate, mock_cryptography_version):
+        """Test validate_ca=True with basicConstraints CA:FALSE (fails)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        mock_module.params = {
+            "path": "/path/to/end-entity.pem",
+            "validate_ca": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_end_entity_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, ca_flag=False)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["verify_results"]["ca_valid"])
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertIn("One or more certificate validations failed", result["msg"])
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_validate_ca_false_skipped(self, mock_ansible_module, mock_read_cert_file, mock_parse_certificate, mock_cryptography_version):
+        """Test validate_ca=False (skipped, always true)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        mock_module.params = {
+            "path": "/path/to/any-cert.pem",
+            "validate_ca": False,
+            "validate_expired": True,  # Need at least one prop
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_read_cert_file.return_value = b"mock_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, ca_flag=None)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["verify_results"]["ca_valid"])
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["msg"], "All certificate validations passed successfully")
+
+    @patch("cryptography.__version__", return_value="41.0.7")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_main_validate_ca_with_content(self, mock_ansible_module, mock_read_cert_file, mock_b64decode, mock_parse_certificate, mock_cryptography_version):
+        """Test validate_ca=True with base64 content (CA cert)."""
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        ca_b64 = (
+            "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJ5VENDQWVHQ0V3RFFZSktvWklodmNOQVFFQkJRQUVJQkFEQUJzTUNvWUlLb1pJem9RVEl3UWtBZlJRQQoK"
+            "LS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ=="
+        )
+        mock_module.params = {
+            "content": ca_b64,
+            "validate_ca": True,
+            "logging_level": "INFO",
+        }
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_b64decode.return_value = b"mock_ca_data"
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, ca_flag=True)
+        mock_parse_certificate.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["verify_results"]["ca_valid"])
+        self.assertTrue(result["valid"])
 
 
 if __name__ == "__main__":
