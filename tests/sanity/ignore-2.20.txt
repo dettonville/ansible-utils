@@ -2,6 +2,7 @@ deploy-ansible-collection.sh shellcheck:SC2034
 plugins/modules/export_dicts.py pep8!skip # leave as is
 plugins/modules/export_dicts.py validate-modules:missing-gplv3-license
 plugins/modules/git_pacp.py validate-modules:missing-gplv3-license
+plugins/modules/ntlm_uri.py validate-modules:missing-gplv3-license
 plugins/modules/test_results_logger.py validate-modules:missing-gplv3-license
 plugins/modules/x509_certificate_verify.py validate-modules:missing-gplv3-license
 regenerate-module-docs.sh shellcheck:SC2016

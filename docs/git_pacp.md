@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.git_pacp | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/git_pacp.md
-> MODULE dettonville.utils.git_pacp (/Users/ljohnson/tmp/_F3kJWP/ansible_collections/dettonville/utils/plugins/modules/git_pacp.py)
+> MODULE dettonville.utils.git_pacp (/Users/ljohnson/tmp/_1BEe4c/ansible_collections/dettonville/utils/plugins/modules/git_pacp.py)
 
   Manage git `clone', `pull', `acp', `pacp', `config' user name and
   email on a local or remote git repository.

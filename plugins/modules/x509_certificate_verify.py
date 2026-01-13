@@ -137,7 +137,7 @@ options:
     required: false
     type: bool
     default: true
-  validate_ca:
+  validate_is_ca:
     description:
       - Whether to validate that the certificate is a CA certificate by checking basicConstraints for CA=TRUE.
     required: false
@@ -243,6 +243,9 @@ details:
     key_size:
       description: Key size in bits (if applicable).
       type: int
+    ca_path:
+      description: Path to the CA certificate, chain, or bundle used for verification (if provided).
+      type: str
   sample: {"common_name": "my.example.com", "organization": "My Company", "key_algo": "rsa", "key_size": 2048}
 verify_results:
   description: Results of individual verification checks.
@@ -291,8 +294,8 @@ verify_results:
     checkend_valid:
       description: Whether the certificate does not expire within checkend_value seconds.
       type: bool
-    ca_valid:
-      description: Whether the certificate has CA:TRUE in basicConstraints (if validate_ca is true).
+    is_ca:
+      description: Whether the certificate has CA:TRUE in basicConstraints (if validate_is_ca is true).
       type: bool
     signature_valid:
       description: Whether the signature is valid (if ca_path is provided).
@@ -343,7 +346,7 @@ EXAMPLES = r"""
 - name: Verify a root CA certificate
   dettonville.utils.x509_certificate_verify:
     path: /path/to/root-ca.pem
-    validate_ca: true
+    validate_is_ca: true
     validate_checkend: true
     checkend_value: 2592000  # 30 days
 
@@ -589,7 +592,7 @@ def main():
         key_size=dict(type='int', required=False),
         validate_expired=dict(type='bool', required=False, default=True),
         validate_checkend=dict(type='bool', required=False, default=True),
-        validate_ca=dict(type='bool', default=False),
+        validate_is_ca=dict(type='bool', default=False),
         validate_modulus_match=dict(type='bool', default=None),
         checkend_value=dict(type='int', required=False, default=86400),
         logging_level=dict(
@@ -695,7 +698,7 @@ def main():
         "key_algo",
         "key_size",
     ]
-    boolean_properties = ["validate_expired", "validate_checkend", "validate_ca"]
+    boolean_properties = ["validate_expired", "validate_checkend", "validate_is_ca"]
     has_verification = (
         any(module.params.get(prop) is not None for prop in non_boolean_properties)
         or any(module.params.get(prop) is True for prop in boolean_properties)
@@ -772,6 +775,10 @@ def main():
             "key_size": None,
         }
 
+        # Include ca_path in details if defined
+        if ca_path:
+            result["details"]["ca_path"] = ca_path
+
         # Extract subject attributes
         for attr in cert.subject:
             if attr.oid == x509.oid.NameOID.COMMON_NAME:
@@ -804,9 +811,8 @@ def main():
             result["details"]["key_size"] = None
 
         # Initialize verification results
-        for prop in non_boolean_properties + boolean_properties:
-            if prop not in ["validate_expired", "validate_checkend"]:
-                verify_results[prop] = True
+        for prop in non_boolean_properties:
+            verify_results[prop] = True
 
         # Perform property verifications
         if module.params.get("common_name"):
@@ -878,21 +884,21 @@ def main():
             verify_results["key_size"] = True
 
         # Check if it's a CA certificate
-        if module.params.get("validate_ca"):
-            ca_valid = False
+        if module.params.get("validate_is_ca"):
+            is_ca = False
             try:
                 bc_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
-                ca_valid = bc_ext.value.ca
-                log.debug("basicConstraints CA: %s", ca_valid)
+                is_ca = bc_ext.value.ca
+                log.debug("basicConstraints CA: %s", is_ca)
             except x509.ExtensionNotFound:
                 log.debug("basicConstraints extension not found; not a CA")
-                ca_valid = False
+                is_ca = False
             except Exception as e:
                 log.error("Error checking basicConstraints: %s", e)
-                ca_valid = False
-            verify_results["ca_valid"] = ca_valid
+                is_ca = False
+            verify_results["is_ca"] = is_ca
         else:
-            verify_results["ca_valid"] = True
+            verify_results["is_ca"] = True
 
         # Check expiration with fallback for older cryptography versions
         try:

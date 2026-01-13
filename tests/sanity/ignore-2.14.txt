@@ -3,7 +3,9 @@ plugins/module_utils/test_results_logger.py no-basestring!skip
 plugins/modules/export_dicts.py pep8!skip # leave as is
 plugins/modules/export_dicts.py validate-modules:missing-gplv3-license
 plugins/modules/git_pacp.py validate-modules:missing-gplv3-license
+plugins/modules/ntlm_uri.py validate-modules:missing-gplv3-license
 plugins/modules/test_results_logger.py validate-modules:missing-gplv3-license
+plugins/modules/x509_certificate_verify.py validate-modules:missing-gplv3-license
 regenerate-module-docs.sh shellcheck:SC2016
 regenerate-module-docs.sh shellcheck:SC2034
 tests/integration/targets/run-pytest.sh shellcheck:SC2034

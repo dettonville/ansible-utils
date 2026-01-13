@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_F3kJWP/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_1BEe4c/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -130,11 +130,6 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
-- validate_ca  Whether to validate that the certificate is a CA
-                certificate by checking basicConstraints for CA=TRUE.
-        default: false
-        type: bool
-
 - validate_checkend  Whether to check if the certificate expires
                       within a specified time (seconds).
         default: true
@@ -142,6 +137,12 @@ OPTIONS (= indicates it is required):
 
 - validate_expired  Whether to check if the certificate is expired.
         default: true
+        type: bool
+
+- validate_is_ca  Whether to validate that the certificate is a CA
+                   certificate by checking basicConstraints for
+                   CA=TRUE.
+        default: false
         type: bool
 
 - validate_modulus_match  Whether to verify if the certificate's
@@ -228,7 +229,7 @@ EXAMPLES:
 - name: Verify a root CA certificate
   dettonville.utils.x509_certificate_verify:
     path: /path/to/root-ca.pem
-    validate_ca: true
+    validate_is_ca: true
     validate_checkend: true
     checkend_value: 2592000  # 30 days
 
@@ -283,6 +284,10 @@ RETURN VALUES:
           organization: My Company
         type: dict
         contains:
+
+        - ca_path  Path to the CA certificate, chain, or bundle used
+                    for verification (if provided).
+          type: str
 
         - common_name  Common Name (CN) of the certificate.
           type: str
@@ -358,10 +363,6 @@ RETURN VALUES:
         type: dict
         contains:
 
-        - ca_valid  Whether the certificate has CA:TRUE in
-                     basicConstraints (if validate_ca is true).
-          type: bool
-
         - checkend_valid  Whether the certificate does not expire
                            within checkend_value seconds.
           type: bool
@@ -376,6 +377,10 @@ RETURN VALUES:
           type: bool
 
         - expiry_valid  Whether the certificate is not expired.
+          type: bool
+
+        - is_ca  Whether the certificate has CA:TRUE in
+                  basicConstraints (if validate_is_ca is true).
           type: bool
 
         - key_algo  Whether the key algorithm matched.
