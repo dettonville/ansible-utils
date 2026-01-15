@@ -394,6 +394,7 @@ import os
 import sys
 import traceback
 import logging
+import re
 
 HAS_CRYPTOGRAPHY = False
 cryptography_version = "0.0.0"  # Initialize with a default value
@@ -437,6 +438,28 @@ def _read_cert_file(path):
             return f.read()
     except Exception as e:
         raise Exception("Failed to read certificate file {}: {}".format(path, str(e)))
+
+
+def _is_pem_bundle(data):
+    """Check if data contains multiple PEM certificates."""
+    if b"-----BEGIN CERTIFICATE-----" not in data:
+        return False
+    pem_blocks = re.findall(b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
+    return len(pem_blocks) > 1
+
+
+def _load_certificate_chain(data):
+    """Load certificate chain from data, returning leaf and chain certs."""
+    if _is_pem_bundle(data):
+        pem_blocks = re.findall(b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
+        leaf_data = pem_blocks[0]
+        chain_data = b"\n".join(pem_blocks[1:])
+        leaf = _parse_certificate(leaf_data)
+        chain_certs = [_parse_certificate(block) for block in pem_blocks[1:]]
+        return leaf, chain_certs
+    else:
+        cert = _parse_certificate(data)
+        return cert, []
 
 
 def _parse_certificate(data):
@@ -484,15 +507,16 @@ def _load_ca_certs(path):
 
 
 # Function to verify certificate signature
-# Function to verify certificate signature
-def _verify_signature(cert, ca_certs):
+def _verify_signature(cert, ca_certs, chain_certs=None):
+    if chain_certs is None:
+        chain_certs = []
     # Try standard chain verification first
     store = crypto.X509Store()
     cert_openssl = crypto.load_certificate(
         crypto.FILETYPE_PEM, cert.public_bytes(serialization.Encoding.PEM)
     )
 
-    for ca_cert in ca_certs:
+    for ca_cert in ca_certs + chain_certs:
         ca_openssl = crypto.load_certificate(
             crypto.FILETYPE_PEM, ca_cert.public_bytes(serialization.Encoding.PEM)
         )
@@ -505,7 +529,7 @@ def _verify_signature(cert, ca_certs):
     except (crypto.Error, crypto.X509StoreContextError):
         # Fallback: Check if any individual cert in the bundle is the direct signer
         # This handles cases where the full chain to root isn't in the bundle
-        for ca_cert in ca_certs:
+        for ca_cert in ca_certs + chain_certs:
             try:
                 public_key = ca_cert.public_key()
                 if isinstance(public_key, rsa.RSAPublicKey):
@@ -730,7 +754,7 @@ def main():
     verify_results = {}
 
     try:
-        # Read and parse the certificate
+        # Read and parse the certificate or chain
         if content:
             import base64
             try:
@@ -744,8 +768,10 @@ def main():
             cert_path if cert_path else "content",
             len(cert_data),
         )
-        cert = _parse_certificate(cert_data)
+        cert, chain_certs = _load_certificate_chain(cert_data)
         log.debug("Parsed certificate type: %s", type(cert))
+        if chain_certs:
+            log.debug("Detected certificate chain with %d intermediate/root certs", len(chain_certs))
         public_key = cert.public_key()
         try:
             log.debug("Certificate not_before: %s", cert.not_valid_before)
@@ -941,7 +967,7 @@ def main():
             ca_certs = _load_ca_certs(ca_path)
             # 1. Cryptographic signature check (should be independent)
             verify_results["signature_valid"] = _verify_signature(
-                cert, ca_certs
+                cert, ca_certs, chain_certs
             )
             # 2. Modulus check logic
             if isinstance(public_key, rsa.RSAPublicKey) and ca_certs:
@@ -962,7 +988,8 @@ def main():
                 # Traverse CA bundle to find the direct issuer by modulus
                 issuer_cert = None
                 issuer_modulus = None
-                for ca in ca_certs:
+                all_trust_certs = ca_certs + chain_certs
+                for ca in all_trust_certs:
                     # Match by Subject DN (Issuer of cert == Subject of CA)
                     issuer_modulus = _get_modulus(ca.public_key())
                     # if ca.subject == cert.issuer:
