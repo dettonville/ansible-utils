@@ -19,12 +19,10 @@ jobs:
         with:
           fetch-depth: 0 # needed for progressive mode to work
 
-      ## Pin to Python 3.12, which is compatible with ansible-core 2.19.3
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-#          python-version: '3.12'
 
       - name: Install dependencies
         run: |

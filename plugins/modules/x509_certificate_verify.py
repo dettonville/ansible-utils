@@ -314,7 +314,7 @@ issuer_modulus:
   type: str
   returned: when ca_path is provided and the issuer certificate has an RSA key
   sample: "a1b2c3..."
-items:
+item:
   description: The input parameters provided to the module.
   type: dict
   returned: always
@@ -720,7 +720,7 @@ def main():
         "verify_results": {},
         "cert_modulus": None,
         "issuer_modulus": None,
-        "items": module.params
+        "item": module.params
     }
 
     # In check mode, skip file operations and return success
