@@ -2724,7 +2724,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
                                                mock_read_cert_file,
                                                mock_parse_certificate,
                                                mock_cryptography_version):
-        """Test validate_is_ca=False (skipped, always true)."""
+        """Test validate_is_ca=False (skipped, no 'is_ca' in verify_results)."""
         mock_module = MagicMock()
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
@@ -2746,7 +2746,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             module_main()
 
         result = exc.exception.args[0]
-        self.assertTrue(result["verify_results"]["is_ca"])
+        self.assertNotIn("is_ca", result["verify_results"])
         self.assertTrue(result["valid"])
         self.assertEqual(result["msg"], "All certificate validations passed successfully")
 

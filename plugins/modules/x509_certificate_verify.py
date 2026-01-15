@@ -896,8 +896,6 @@ def main():
                 log.error("Error checking basicConstraints: %s", e)
                 is_ca = False
             verify_results["is_ca"] = is_ca
-        else:
-            verify_results["is_ca"] = True
 
         # Check expiration with fallback for older cryptography versions
         try:
