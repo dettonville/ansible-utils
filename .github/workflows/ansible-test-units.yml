@@ -21,11 +21,12 @@ jobs:
         versions:
           # Testing all ansible and python versions is impractical. Only test the newest and
           # oldest versions of each that we support
-          - { python: "3.13", ansible: stable-2.20 }
-          - { python: "3.13", ansible: stable-2.19 }
-          - { python: "3.11", ansible: stable-2.19 }
-          - { python: "3.12", ansible: stable-2.16 }
-          - { python: "3.10", ansible: stable-2.16 }
+#          - { python: "3.14", ansible: "stable-2.20" }
+          - { python: "3.13", ansible: "stable-2.20" }
+          - { python: "3.13", ansible: "stable-2.19" }
+          - { python: "3.11", ansible: "stable-2.19" }
+          - { python: "3.12", ansible: "stable-2.16" }
+          - { python: "3.10", ansible: "stable-2.16" }
 
     steps:
       - name: Checkout repository
@@ -72,7 +73,8 @@ jobs:
       - name: Debug - List test output files
         run: |
           echo "Listing files in ansible_collections/dettonville/utils/tests/output/"
-          find ansible_collections/dettonville/utils/tests/output/ -type f || echo "No files found in ansible_collections/dettonville/utils/tests/output/"
+          find ansible_collections/dettonville/utils/tests/output/ -type f || \
+          echo "No files found in ansible_collections/dettonville/utils/tests/output/"
           echo "ansible-test-gh-action outputs:"
           echo "test-result-files: ${{ steps.ansible_test.outputs.test-result-files }}"
           echo "coverage-report-files: ${{ steps.ansible_test.outputs.coverage-report-files }}"

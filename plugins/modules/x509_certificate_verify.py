@@ -243,9 +243,6 @@ details:
     key_size:
       description: Key size in bits (if applicable).
       type: int
-    ca_path:
-      description: Path to the CA certificate, chain, or bundle used for verification (if provided).
-      type: str
   sample: {"common_name": "my.example.com", "organization": "My Company", "key_algo": "rsa", "key_size": 2048}
 verify_results:
   description: Results of individual verification checks.
@@ -317,6 +314,11 @@ issuer_modulus:
   type: str
   returned: when ca_path is provided and the issuer certificate has an RSA key
   sample: "a1b2c3..."
+items:
+  description: The input parameters provided to the module.
+  type: dict
+  returned: always
+  sample: {"path": "/path/to/cert.pem", "common_name": "test.example.com", ...}
 """
 
 EXAMPLES = r"""
@@ -718,6 +720,7 @@ def main():
         "verify_results": {},
         "cert_modulus": None,
         "issuer_modulus": None,
+        "items": module.params
     }
 
     # In check mode, skip file operations and return success
@@ -774,10 +777,6 @@ def main():
             "key_algo": None,
             "key_size": None,
         }
-
-        # Include ca_path in details if defined
-        if ca_path:
-            result["details"]["ca_path"] = ca_path
 
         # Extract subject attributes
         for attr in cert.subject:

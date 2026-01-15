@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_1BEe4c/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_MNQuXZ/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -285,10 +285,6 @@ RETURN VALUES:
         type: dict
         contains:
 
-        - ca_path  Path to the CA certificate, chain, or bundle used
-                    for verification (if provided).
-          type: str
-
         - common_name  Common Name (CN) of the certificate.
           type: str
 
@@ -337,6 +333,14 @@ RETURN VALUES:
         returned: when ca_path is provided and the issuer certificate has an RSA key
         sample: a1b2c3...
         type: str
+
+- items   The input parameters provided to the module.
+        returned: always
+        sample:
+          '...': null
+          common_name: test.example.com
+          path: /path/to/cert.pem
+        type: dict
 
 - msg     A message describing the result of the verification.
         returned: always
