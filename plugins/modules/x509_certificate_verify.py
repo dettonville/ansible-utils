@@ -720,7 +720,7 @@ def main():
         "verify_results": {},
         "cert_modulus": None,
         "issuer_modulus": None,
-        "item": module.params
+        "item": {k: v for k, v in module.params.items() if v is not None}
     }
 
     # In check mode, skip file operations and return success
