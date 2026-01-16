@@ -94,6 +94,12 @@ options:
       - Expected Email Address of the certificate subject.
     required: false
     type: str
+  subject_alt_names:
+    description:
+      - List of expected Subject Alternative Names (SANs) to verify (DNS names only).
+    required: false
+    type: list
+    elements: str
   serial_number:
     description:
       - Expected serial number of the certificate (in decimal or hexadecimal format, e.g., '12345' or '0x3039').
@@ -228,6 +234,10 @@ details:
     email_address:
       description: Email Address of the certificate.
       type: str
+    subject_alt_names:
+      description: List of Subject Alternative Names (DNS) from the certificate.
+      type: list
+      elements: str
     serial_number:
       description: Serial number of the certificate.
       type: str
@@ -243,7 +253,11 @@ details:
     key_size:
       description: Key size in bits (if applicable).
       type: int
-  sample: {"common_name": "my.example.com", "organization": "My Company", "key_algo": "rsa", "key_size": 2048}
+  sample: {
+        "common_name": "my.example.com", "organization": "My Company",
+        "key_algo": "rsa", "key_size": 2048,
+        "subject_alt_names": ["example.com", "*.example.com"]
+  }
 verify_results:
   description: Results of individual verification checks.
   type: dict
@@ -269,6 +283,9 @@ verify_results:
       type: bool
     email_address:
       description: Whether the email address matched.
+      type: bool
+    subject_alt_names:
+      description: Whether all expected SANs were present.
       type: bool
     serial_number:
       description: Whether the serial number matched.
@@ -303,7 +320,11 @@ verify_results:
     private_key_match:
       description: Whether the private key matches the certificate (only if private_key_path or private_key_content provided).
       type: bool
-  sample: {"common_name": true, "key_size": false, "expiry_valid": true, "checkend_valid": true, "signature_valid": true, "modulus_match": true}
+  sample: {
+        "common_name": true, "key_size": false, "expiry_valid": true,
+        "checkend_valid": true, "signature_valid": true,
+        "modulus_match": true, "subject_alt_names": true
+  }
 cert_modulus:
   description: Modulus of the certificate's public key (hexadecimal, if applicable).
   type: str
@@ -385,6 +406,14 @@ EXAMPLES = r"""
     key_algo: ec
     key_size: 256
   register: key_validation
+
+- name: Verify Subject Alternative Names
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    subject_alt_names:
+      - "*.admin.johnson.int"
+      - "admin.johnson.int"
+    validate_expired: true
 """
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
@@ -437,21 +466,24 @@ def _read_cert_file(path):
         with open(path, "rb") as f:
             return f.read()
     except Exception as e:
-        raise Exception("Failed to read certificate file {}: {}".format(path, str(e)))
+        raise Exception(
+            "Failed to read certificate file {}: {}".format(path, str(e)))
 
 
 def _is_pem_bundle(data):
     """Check if data contains multiple PEM certificates."""
     if b"-----BEGIN CERTIFICATE-----" not in data:
         return False
-    pem_blocks = re.findall(b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
+    pem_blocks = re.findall(
+        b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
     return len(pem_blocks) > 1
 
 
 def _load_certificate_chain(data):
     """Load certificate chain from data, returning leaf and chain certs."""
     if _is_pem_bundle(data):
-        pem_blocks = re.findall(b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
+        pem_blocks = re.findall(
+            b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
         leaf_data = pem_blocks[0]
         chain_data = b"\n".join(pem_blocks[1:])
         leaf = _parse_certificate(leaf_data)
@@ -495,7 +527,8 @@ def _load_ca_certs(path):
             # Handle PEM bundle/chain
             # Use a regex or better splitting to avoid empty segments
             import re
-            pem_blocks = re.findall(b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
+            pem_blocks = re.findall(
+                b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL)
             for cert_data in pem_blocks:
                 certs.append(_parse_certificate(cert_data))
         else:
@@ -503,7 +536,8 @@ def _load_ca_certs(path):
             certs.append(_parse_certificate(data))
         return certs
     except Exception as e:
-        raise Exception("Failed to load CA certificates from {}: {}".format(path, str(e)))
+        raise Exception(
+            "Failed to load CA certificates from {}: {}".format(path, str(e)))
 
 
 # Function to verify certificate signature
@@ -518,7 +552,8 @@ def _verify_signature(cert, ca_certs, chain_certs=None):
 
     for ca_cert in ca_certs + chain_certs:
         ca_openssl = crypto.load_certificate(
-            crypto.FILETYPE_PEM, ca_cert.public_bytes(serialization.Encoding.PEM)
+            crypto.FILETYPE_PEM, ca_cert.public_bytes(
+                serialization.Encoding.PEM)
         )
         store.add_cert(ca_openssl)
 
@@ -606,6 +641,7 @@ def main():
         state_or_province=dict(type='str', required=False),
         locality=dict(type='str', required=False),
         email_address=dict(type='str', required=False),
+        subject_alt_names=dict(type='list', elements='str', required=False),
         serial_number=dict(type='str', required=False),
         version=dict(type='int', required=False, choices=[1, 3]),
         signature_algorithm=dict(type='str', required=False),
@@ -669,7 +705,8 @@ def main():
     log.debug("Python executable: %s", sys.executable)
     log.debug("cryptography module path: %s", os.path.dirname(x509.__file__))
     log.debug(
-        "cryptography runtime version: %s", getattr(x509, "__version__", "Unknown")
+        "cryptography runtime version: %s", getattr(
+            x509, "__version__", "Unknown")
     )
 
     # Log cryptography version for debugging
@@ -688,7 +725,8 @@ def main():
     if content and cert_path:
         module.warn("Both path and content provided; using content.")
     if not content and not cert_path:
-        module.fail_json(msg="Exactly one of path or content must be provided for the certificate.")
+        module.fail_json(
+            msg="Exactly one of path or content must be provided for the certificate.")
 
     ca_path = module.params.get("ca_path")
     if module.params.get("issuer_ca_path"):
@@ -724,16 +762,19 @@ def main():
         "key_algo",
         "key_size",
     ]
-    boolean_properties = ["validate_expired", "validate_checkend", "validate_is_ca"]
+    boolean_properties = ["validate_expired",
+                          "validate_checkend", "validate_is_ca"]
     has_verification = (
         any(module.params.get(prop) is not None for prop in non_boolean_properties)
         or any(module.params.get(prop) is True for prop in boolean_properties)
+        or module.params.get("subject_alt_names") is not None
         or ca_path is not None
         or private_key_path is not None
         or private_key_content is not None
     )
     if not has_verification:
-        module.fail_json(msg="At least one verification property must be provided.")
+        module.fail_json(
+            msg="At least one verification property must be provided.")
 
     result = {
         "failed": False,
@@ -760,7 +801,8 @@ def main():
             try:
                 cert_data = base64.b64decode(content)
             except Exception as e:
-                module.fail_json(msg=f"Failed to decode certificate content: {to_native(e)}")
+                module.fail_json(
+                    msg=f"Failed to decode certificate content: {to_native(e)}")
         else:
             cert_data = _read_cert_file(cert_path)
         log.debug(
@@ -771,7 +813,8 @@ def main():
         cert, chain_certs = _load_certificate_chain(cert_data)
         log.debug("Parsed certificate type: %s", type(cert))
         if chain_certs:
-            log.debug("Detected certificate chain with %d intermediate/root certs", len(chain_certs))
+            log.debug(
+                "Detected certificate chain with %d intermediate/root certs", len(chain_certs))
         public_key = cert.public_key()
         try:
             log.debug("Certificate not_before: %s", cert.not_valid_before)
@@ -796,6 +839,7 @@ def main():
             "state_or_province": None,
             "locality": None,
             "email_address": None,
+            "subject_alt_names": [],
             "serial_number": str(cert.serial_number),
             # cryptography uses 0-based, X.509 uses 1-based
             "version": cert.version.value + 1,
@@ -820,6 +864,21 @@ def main():
                 result["details"]["locality"] = attr.value
             elif attr.oid == x509.oid.NameOID.EMAIL_ADDRESS:
                 result["details"]["email_address"] = attr.value
+
+        # Extract Subject Alternative Names (DNS only)
+        try:
+            san_ext = cert.extensions.get_extension_for_oid(
+                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+            sans = [str(san.value)
+                    for san in san_ext.value if isinstance(san, x509.DNSName)]
+            result["details"]["subject_alt_names"] = sans
+            log.debug("Extracted SANs: %s", sans)
+        except x509.ExtensionNotFound:
+            log.debug("No Subject Alternative Name extension found")
+            result["details"]["subject_alt_names"] = []
+        except Exception as e:
+            log.error("Error extracting SANs: %s", str(e))
+            result["details"]["subject_alt_names"] = []
 
         # Determine key algorithm and size
         if isinstance(public_key, rsa.RSAPublicKey):
@@ -868,6 +927,11 @@ def main():
             verify_results["email_address"] = result["details"][
                 "email_address"
             ] == module.params.get("email_address")
+        if module.params.get("subject_alt_names"):
+            expected_sans = module.params.get("subject_alt_names")
+            actual_sans = result["details"]["subject_alt_names"]
+            verify_results["subject_alt_names"] = all(
+                san in actual_sans for san in expected_sans)
         if module.params.get("serial_number"):
             try:
                 expected_serial = module.params.get("serial_number")
@@ -903,7 +967,8 @@ def main():
                 "key_size"
             ] == module.params.get("key_size")
         elif (
-            module.params.get("key_size") and result["details"]["key_algo"] == "ed25519"
+            module.params.get(
+                "key_size") and result["details"]["key_algo"] == "ed25519"
         ):
             # Ed25519 has no key size
             verify_results["key_size"] = True
@@ -912,7 +977,8 @@ def main():
         if module.params.get("validate_is_ca"):
             is_ca = False
             try:
-                bc_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
+                bc_ext = cert.extensions.get_extension_for_oid(
+                    x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
                 is_ca = bc_ext.value.ca
                 log.debug("basicConstraints CA: %s", is_ca)
             except x509.ExtensionNotFound:
@@ -1041,7 +1107,8 @@ def main():
                         password=private_key_password.encode() if private_key_password else None,
                         backend=default_backend()
                     )
-                    private_key_match = verify_private_key_match(cert, priv_key)
+                    private_key_match = verify_private_key_match(
+                        cert, priv_key)
                     if not private_key_match:
                         private_key_verify_msg = "Private key does not match certificate public key"
                 except Exception as e:

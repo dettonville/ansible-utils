@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_Wx9o71/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_FoCaV2/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -129,6 +129,12 @@ OPTIONS (= indicates it is required):
                       certificate subject.
         default: null
         type: str
+
+- subject_alt_names  List of expected Subject Alternative Names
+                      (SANs) to verify (DNS names only).
+        default: null
+        elements: str
+        type: list
 
 - validate_checkend  Whether to check if the certificate expires
                       within a specified time (seconds).
@@ -267,6 +273,14 @@ EXAMPLES:
     key_size: 256
   register: key_validation
 
+- name: Verify Subject Alternative Names
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    subject_alt_names:
+      - "*.admin.johnson.int"
+      - "admin.johnson.int"
+    validate_expired: true
+
 RETURN VALUES:
 
 - cert_modulus  Modulus of the certificate's public key (hexadecimal,
@@ -282,6 +296,9 @@ RETURN VALUES:
           key_algo: rsa
           key_size: 2048
           organization: My Company
+          subject_alt_names:
+          - example.com
+          - '*.example.com'
         type: dict
         contains:
 
@@ -320,6 +337,11 @@ RETURN VALUES:
         - state_or_province  State or Province (ST) of the
                               certificate.
           type: str
+
+        - subject_alt_names  List of Subject Alternative Names (DNS)
+                              from the certificate.
+          elements: str
+          type: list
 
         - version  Version of the certificate.
           type: int
@@ -364,6 +386,7 @@ RETURN VALUES:
           key_size: false
           modulus_match: true
           signature_valid: true
+          subject_alt_names: true
         type: dict
         contains:
 
@@ -424,6 +447,9 @@ RETURN VALUES:
           type: bool
 
         - state_or_province  Whether the state or province matched.
+          type: bool
+
+        - subject_alt_names  Whether all expected SANs were present.
           type: bool
 
         - version  Whether the version matched.
