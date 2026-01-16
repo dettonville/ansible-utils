@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.ntlm_uri | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/ntlm_uri.md
-> MODULE dettonville.utils.ntlm_uri (/Users/ljohnson/tmp/_FoCaV2/ansible_collections/dettonville/utils/plugins/modules/ntlm_uri.py)
+> MODULE dettonville.utils.ntlm_uri (/Users/ljohnson/tmp/_GYmjq8/ansible_collections/dettonville/utils/plugins/modules/ntlm_uri.py)
 
   Interacts with HTTP and HTTPS web services with NTLM authentication.
 

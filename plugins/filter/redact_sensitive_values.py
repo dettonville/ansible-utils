@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = """
   name: redact_sensitive_values
   short_description: Redact sensitive values with specified list of regex patterns from nested dict/array
-  version_added: "2025.12.0"
+  version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
     - Redact values for key(s) with specified list of regex patterns from nested dict/array by replacing them with a redacted tag.

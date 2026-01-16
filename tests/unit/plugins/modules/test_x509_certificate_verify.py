@@ -59,7 +59,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             "serial_number": "12345",
             "version": 3,
             "signature_algorithm": "sha256WithRSAEncryption",
-            "key_algo": "rsa",
+            "key_type": "rsa",
             "key_size": 2048,
             "validate_expired": True,
             "validate_checkend": True,
@@ -415,7 +415,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertEqual(details["serial_number"], "12345")
         self.assertEqual(details["version"], 3)
         self.assertEqual(details["signature_algorithm"], "sha256WithRSAEncryption")
-        self.assertEqual(details["key_algo"], "rsa")
+        self.assertEqual(details["key_type"], "rsa")
         self.assertEqual(details["key_size"], 2048)
         self.assertEqual(details["subject_alt_names"], [])
         self.assertEqual(result["cert_modulus"], "A1B2C3")
@@ -448,7 +448,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_module.params = {
             "path": "/path/to/cert.pem",
             "ca_path": "/path/to/issuer_ca.pem",
-            "key_algo": "rsa",
+            "key_type": "rsa",
             "version": 3,
             "logging_level": "INFO",
         }
@@ -493,7 +493,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             result["msg"], "All certificate validations passed successfully"
         )
         self.assertTrue(result["verify_results"]["signature_valid"])
-        self.assertTrue(result["verify_results"]["key_algo"])
+        self.assertTrue(result["verify_results"]["key_type"])
         self.assertTrue(result["verify_results"]["version"])
         self.assertEqual(result["cert_modulus"], "A1B2C3")
         self.assertEqual(result["issuer_modulus"], "A1B2C3")
@@ -921,7 +921,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         """Test main function EC key size mismatch failure."""
         mock_module = MagicMock()
         mock_ansible_module.return_value = mock_module
-        mock_module.params = {**self.all_params, "key_algo": "ec", "key_size": 384}
+        mock_module.params = {**self.all_params, "key_type": "ec", "key_size": 384}
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
         mock_module.fail_json = fail_json
@@ -951,7 +951,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "key_algo": "ed25519",
+            "key_type": "ed25519",
             "key_size": None,
         }
         mock_module.check_mode = False
@@ -1196,7 +1196,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_module.params = {
             "path": "/path/to/cert.pem",
             "ca_path": "/path/to/issuer_ca.pem",
-            "key_algo": "rsa",
+            "key_type": "rsa",
             "version": 3,
             "logging_level": "INFO",
         }
@@ -1241,7 +1241,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             result["msg"], "All certificate validations passed successfully"
         )
         self.assertTrue(result["verify_results"]["signature_valid"])
-        self.assertTrue(result["verify_results"]["key_algo"])
+        self.assertTrue(result["verify_results"]["key_type"])
         self.assertTrue(result["verify_results"]["version"])
         self.assertEqual(result["cert_modulus"], "A1B2C3")
         self.assertEqual(result["issuer_modulus"], "A1B2C3")
@@ -1794,19 +1794,19 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertEqual(
             result["details"]["signature_algorithm"], "sha256WithRSAEncryption"
         )
-        self.assertEqual(result["details"]["key_algo"], "rsa")
+        self.assertEqual(result["details"]["key_type"], "rsa")
         self.assertEqual(result["details"]["key_size"], 2048)
 
     @patch(f"{MODULE_PATH}._load_certificate_chain")
     @patch(f"{MODULE_PATH}._read_cert_file")
     @patch(f"{MODULE_PATH}.AnsibleModule")
-    def test_main_key_algo_mismatch(
+    def test_main_key_type_mismatch(
         self, mock_ansible_module, mock_read_cert_file, mock_load_certificate_chain
     ):
         """Test main function key algorithm mismatch failure."""
         mock_module = MagicMock()
         mock_ansible_module.return_value = mock_module
-        mock_module.params = {**self.all_params, "key_algo": "ec"}
+        mock_module.params = {**self.all_params, "key_type": "ec"}
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
         mock_module.fail_json = fail_json
@@ -1824,7 +1824,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["verify_failed"])
         self.assertFalse(result["failed"])
         self.assertEqual(result["msg"], "One or more certificate validations failed")
-        self.assertFalse(result["verify_results"]["key_algo"])
+        self.assertFalse(result["verify_results"]["key_type"])
 
     @patch("OpenSSL.crypto.load_certificate")
     @patch("OpenSSL.crypto.X509StoreContext")
@@ -1957,7 +1957,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_ansible_module.return_value = mock_module
         mock_module.params = {
             **self.all_params,
-            "key_algo": "ec",
+            "key_type": "ec",
             "key_size": 256,
             "ca_path": "/path/to/issuer_ca.pem",
         }

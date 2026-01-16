@@ -11,7 +11,7 @@ from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
 DOCUMENTATION = """
   name: to_markdown
   short_description: Convert data structures to Markdown tables or formatted text
-  version_added: "2025.6.0"
+  version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
     - Convert dictionaries or lists of dictionaries to Markdown tables.

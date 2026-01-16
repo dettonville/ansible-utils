@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_FoCaV2/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_GYmjq8/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -62,16 +62,18 @@ OPTIONS (= indicates it is required):
         default: null
         type: path
 
-- key_algo  Expected public key algorithm (e.g., 'rsa', 'ec', 'dsa',
-             'ed25519').
-        choices: [rsa, ec, dsa, ed25519]
-        default: null
-        type: str
-
 - key_size  Expected key size in bits (e.g., 2048 for RSA/DSA, 256
              for EC). Not applicable for Ed25519.
         default: null
         type: int
+
+- key_type  Expected public key algorithm (e.g., 'rsa', 'ec', 'dsa',
+             'ed25519').
+             Aliased to `key_algo' for backward compatibility.
+        aliases: [key_algo]
+        choices: [rsa, ec, dsa, ed25519]
+        default: null
+        type: str
 
 - locality  Expected Locality (L) of the certificate subject.
         default: null
@@ -255,7 +257,7 @@ EXAMPLES:
     common_name: test.example.com
     serial_number: '12345'
     signature_algorithm: sha256WithRSAEncryption
-    key_algo: rsa
+    key_type: rsa
     key_size: 2048
 
 - name: Verify that a certificate will not expire in the next 30 days
@@ -269,7 +271,7 @@ EXAMPLES:
 - name: Validate public key details
   dettonville.utils.x509_certificate_verify:
     path: /etc/ssl/certs/service.pem
-    key_algo: ec
+    key_type: ec
     key_size: 256
   register: key_validation
 
@@ -293,8 +295,8 @@ RETURN VALUES:
         returned: always
         sample:
           common_name: my.example.com
-          key_algo: rsa
           key_size: 2048
+          key_type: rsa
           organization: My Company
           subject_alt_names:
           - example.com
@@ -311,11 +313,11 @@ RETURN VALUES:
         - email_address  Email Address of the certificate.
           type: str
 
-        - key_algo  Public key algorithm of the certificate.
-          type: str
-
         - key_size  Key size in bits (if applicable).
           type: int
+
+        - key_type  Public key algorithm of the certificate.
+          type: str
 
         - locality  Locality (L) of the certificate.
           type: str
@@ -410,10 +412,10 @@ RETURN VALUES:
                   basicConstraints (if validate_is_ca is true).
           type: bool
 
-        - key_algo  Whether the key algorithm matched.
+        - key_size  Whether the key size matched.
           type: bool
 
-        - key_size  Whether the key size matched.
+        - key_type  Whether the key algorithm matched.
           type: bool
 
         - locality  Whether the locality matched.

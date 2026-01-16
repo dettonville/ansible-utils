@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntlm_uri
 author:
   - "Lee Johnson (@lj020326)"
-version_added: "2025.9.0"
+version_added: "2.20.0"
 short_description: Interacts with webservices via NTLM
 description:
   - Interacts with HTTP and HTTPS web services with NTLM authentication.

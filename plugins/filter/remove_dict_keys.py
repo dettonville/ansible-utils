@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = """
   name: remove_dict_keys
   short_description: Remove key(s) with specified list of regex patterns from nested dict/array
-  version_added: "2025.3.0"
+  version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
     - Remove key(s) with specified list of regex patterns from nested dict/array.

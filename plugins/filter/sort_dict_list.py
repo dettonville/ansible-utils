@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
   name: sort_dict_list
   short_description: Sort list of dictionaries by specified key(s)
-  version_added: "2025.3.0"
+  version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
     - Sort list of dictionaries by a specified key(s).

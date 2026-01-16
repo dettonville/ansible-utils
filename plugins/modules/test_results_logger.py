@@ -9,7 +9,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: test_results_logger
-version_added: "2025.3.0"
+version_added: "2.20.0"
 author:
     - "Lee Johnson (@lj020326)"
 short_description: Update test results.

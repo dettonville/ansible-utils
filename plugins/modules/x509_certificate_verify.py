@@ -13,7 +13,7 @@ module: x509_certificate_verify
 short_description: Verify X.509 certificates
 author:
   - "Lee Johnson (@lj020326)"
-version_added: "2025.9.0"
+version_added: "2.20.0"
 description:
   - This module is intended for idempotent verification of certificates in playbooks.
   - This module verifies properties of an X.509 certificate, such as common name, organization,
@@ -116,9 +116,10 @@ options:
       - Expected signature algorithm (e.g., 'sha256WithRSAEncryption').
     required: false
     type: str
-  key_algo:
+  key_type:
     description:
       - Expected public key algorithm (e.g., 'rsa', 'ec', 'dsa', 'ed25519').
+      - Aliased to C(key_algo) for backward compatibility.
     required: false
     type: str
     choices:
@@ -126,6 +127,8 @@ options:
       - ec
       - dsa
       - ed25519
+    aliases:
+      - key_algo
   key_size:
     description:
       - Expected key size in bits (e.g., 2048 for RSA/DSA, 256 for EC). Not applicable for Ed25519.
@@ -247,7 +250,7 @@ details:
     signature_algorithm:
       description: Signature algorithm of the certificate.
       type: str
-    key_algo:
+    key_type:
       description: Public key algorithm of the certificate.
       type: str
     key_size:
@@ -255,7 +258,7 @@ details:
       type: int
   sample: {
         "common_name": "my.example.com", "organization": "My Company",
-        "key_algo": "rsa", "key_size": 2048,
+        "key_type": "rsa", "key_size": 2048,
         "subject_alt_names": ["example.com", "*.example.com"]
   }
 verify_results:
@@ -296,7 +299,7 @@ verify_results:
     signature_algorithm:
       description: Whether the signature algorithm matched.
       type: bool
-    key_algo:
+    key_type:
       description: Whether the key algorithm matched.
       type: bool
     key_size:
@@ -389,7 +392,7 @@ EXAMPLES = r"""
     common_name: test.example.com
     serial_number: '12345'
     signature_algorithm: sha256WithRSAEncryption
-    key_algo: rsa
+    key_type: rsa
     key_size: 2048
 
 - name: Verify that a certificate will not expire in the next 30 days
@@ -403,7 +406,7 @@ EXAMPLES = r"""
 - name: Validate public key details
   dettonville.utils.x509_certificate_verify:
     path: /etc/ssl/certs/service.pem
-    key_algo: ec
+    key_type: ec
     key_size: 256
   register: key_validation
 
@@ -628,7 +631,7 @@ def main():
     """Main module function."""
     module_args = dict(
         path=dict(type='path', required=False),
-        content=dict(type='str', required=False),
+        content=dict(type='str', required=False, no_log=True),
         ca_path=dict(type='path', required=False),
         issuer_ca_path=dict(type='path', required=False),
         private_key_path=dict(type='path', required=False),
@@ -645,11 +648,12 @@ def main():
         serial_number=dict(type='str', required=False),
         version=dict(type='int', required=False, choices=[1, 3]),
         signature_algorithm=dict(type='str', required=False),
-        key_algo=dict(
+        key_type=dict(
             type='str',
             required=False,
             default=None,
             choices=["rsa", "ec", "dsa", "ed25519"],
+            aliases=['key_algo']
         ),
         key_size=dict(type='int', required=False),
         validate_expired=dict(type='bool', required=False, default=True),
@@ -759,7 +763,7 @@ def main():
         "serial_number",
         "version",
         "signature_algorithm",
-        "key_algo",
+        "key_type",
         "key_size",
     ]
     boolean_properties = ["validate_expired",
@@ -844,7 +848,7 @@ def main():
             # cryptography uses 0-based, X.509 uses 1-based
             "version": cert.version.value + 1,
             "signature_algorithm": cert.signature_algorithm_oid._name,
-            "key_algo": None,
+            "key_type": None,
             "key_size": None,
         }
 
@@ -882,16 +886,16 @@ def main():
 
         # Determine key algorithm and size
         if isinstance(public_key, rsa.RSAPublicKey):
-            result["details"]["key_algo"] = "rsa"
+            result["details"]["key_type"] = "rsa"
             result["details"]["key_size"] = public_key.key_size
         elif isinstance(public_key, ec.EllipticCurvePublicKey):
-            result["details"]["key_algo"] = "ec"
+            result["details"]["key_type"] = "ec"
             result["details"]["key_size"] = public_key.curve.key_size
         elif isinstance(public_key, dsa.DSAPublicKey):
-            result["details"]["key_algo"] = "dsa"
+            result["details"]["key_type"] = "dsa"
             result["details"]["key_size"] = public_key.key_size
         elif isinstance(public_key, ed25519.Ed25519PublicKey):
-            result["details"]["key_algo"] = "ed25519"
+            result["details"]["key_type"] = "ed25519"
             result["details"]["key_size"] = None
 
         # Initialize verification results
@@ -958,17 +962,17 @@ def main():
             verify_results["signature_algorithm"] = result["details"][
                 "signature_algorithm"
             ] == module.params.get("signature_algorithm")
-        if module.params.get("key_algo"):
-            verify_results["key_algo"] = result["details"][
-                "key_algo"
-            ] == module.params.get("key_algo")
-        if module.params.get("key_size") and result["details"]["key_algo"] != "ed25519":
+        if module.params.get("key_type"):
+            verify_results["key_type"] = result["details"][
+                "key_type"
+            ] == module.params.get("key_type")
+        if module.params.get("key_size") and result["details"]["key_type"] != "ed25519":
             verify_results["key_size"] = result["details"][
                 "key_size"
             ] == module.params.get("key_size")
         elif (
             module.params.get(
-                "key_size") and result["details"]["key_algo"] == "ed25519"
+                "key_size") and result["details"]["key_type"] == "ed25519"
         ):
             # Ed25519 has no key size
             verify_results["key_size"] = True
