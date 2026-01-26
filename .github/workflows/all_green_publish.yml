@@ -1,5 +1,8 @@
 ---
 name: Publish Ansible Collection
+permissions:
+  contents: read
+  checks: write
 
 concurrency:
   group: >-
@@ -25,6 +28,10 @@ on: # yamllint disable-line rule:truthy
       - stable-*
     tags:
       - "*"
+  # Schedule run (once daily)
+  schedule:
+    ## Daily Docker Image Rebuild (10:29am daily)
+    - cron: '29 10 * * *'
 
 jobs:
   lint:
