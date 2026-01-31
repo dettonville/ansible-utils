@@ -22,7 +22,48 @@ ansible-test units --docker -v --python 3.13 export_dicts
 ansible-test units --docker -v --python 3.13 git_pacp
 ```
 
-Create test coverage results
+### To run individual test
+
+```shell
+$ ansible-test units --python 3.13 -v plugins/modules/test_x509_certificate_verify.py::TestX509CertificateVerifyModule::test_content_raw_pem_success
+```
+
+### To enable/view module log output during test
+
+1) Add this block at the top of the test file (right after imports, before the class definition):
+```Python
+# Force module logging to console during tests
+import logging
+logging.getLogger('ansible_collections.dettonville.utils.plugins.modules.x509_certificate_verify').setLevel(logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+```
+This will make all log.debug, log.info, log.warning, log.error calls from the module appear in the pytest console output when the test runs.
+
+2) Force the module to use a known logging level (optional but helpful)
+
+In the test, explicitly set:
+```python
+params = {
+    "content": raw_pem,
+    "validate_expired": True,
+    "logging_level": "DEBUG",          # ← changed to DEBUG
+}
+```
+This ensures maximum verbosity from the module itself.
+
+3) Run the test with verbose output
+
+Run the failing test with extra verbosity so you see both pytest output and the module's log lines:
+```Bash
+ansible-test units --python 3.13 x509_certificate_verify -v | grep -E 'raw_pem|DEBUG|INFO|WARNING|ERROR|fail_json|exception|content'
+#ansible-test units --python 3.13 -v plugins/modules/test_x509_certificate_verify.py::TestX509CertificateVerifyModule::test_content_raw_pem_success
+```
+
+### Create test coverage results
 ```shell
 ansible-test units --python 3.13 x509_certificate_verify --coverage --verbose
 ```

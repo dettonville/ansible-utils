@@ -1,11 +1,12 @@
-[![ansible-test sanity](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-sanity.yml/badge.svg)](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-sanity.yml)
-[![ansible-test units](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-units.yml/badge.svg)](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-test-units.yml)
-[![ansible-lint](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/dettonville/ansible-utils/actions/workflows/ansible-lint.yml)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 
 # Dettonville Ansible Utilities Collection
 
 The Ansible `dettonville.utils` collection includes plugins and modules that aid management, manipulation, and visibility of data for Ansible playbooks. This collection provides tools to streamline complex workflows, such as certificate validation, data export, and git operations, with a focus on simplicity and reliability.
+
+## CI Status
+
+[![CI](https://github.com/dettonville/ansible-utils/actions/workflows/all_green_publish.yml/badge.svg?branch=main)](https://github.com/dettonville/ansible-utils/actions/workflows/all_green_publish.yml)
 
 ## Detailed Test / Use Case Examples
 

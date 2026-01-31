@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_GYmjq8/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_Q073EL/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -44,8 +44,12 @@ OPTIONS (= indicates it is required):
         default: null
         type: str
 
-- content  Base64 encoded certificate content (PEM or DER format).
+- content  Certificate content to verify.
+            Can be provided as **base64-encoded string** or as **raw
+            PEM/DER text**.
             If provided, this takes precedence over `path'.
+            When providing raw PEM, it should include the `-----BEGIN
+            CERTIFICATE-----' and `-----END CERTIFICATE-----' markers.
         default: null
         type: str
 
@@ -56,6 +60,18 @@ OPTIONS (= indicates it is required):
 - email_address  Expected Email Address of the certificate subject.
         default: null
         type: str
+
+- extended_key_usage  List of Extended Key Usage (EKU) purpose OIDs /
+                       names that MUST all be present.
+                       Validation fails if the EKU extension is
+                       missing or any requested value is absent.
+                       Use the short names as commonly displayed
+                       (serverAuth, clientAuth, etc.).
+        choices: [serverAuth, clientAuth, codeSigning, emailProtection, timeStamping, OCSPSigning,
+          ipsecEndSystem, ipsecTunnel, ipsecUser, anyExtendedKeyUsage]
+        default: null
+        elements: str
+        type: list
 
 - issuer_ca_path  Deprecated. Use `ca_path' instead. Path to the
                    issuer CA certificate.
@@ -74,6 +90,17 @@ OPTIONS (= indicates it is required):
         choices: [rsa, ec, dsa, ed25519]
         default: null
         type: str
+
+- key_usage  List of expected Key Usage values that **must all** be
+              present in the certificate.
+              Validation fails if any value from this list is missing.
+              Case sensitive — use exact names as defined in RFC 5280
+              / cryptography library.
+        choices: [DigitalSignature, NonRepudiation, KeyEncipherment, DataEncipherment, KeyAgreement,
+          KeyCertSign, CRLSign, EncipherOnly, DecipherOnly]
+        default: null
+        elements: str
+        type: list
 
 - locality  Expected Locality (L) of the certificate subject.
         default: null
@@ -98,10 +125,15 @@ OPTIONS (= indicates it is required):
         default: null
         type: path
 
-- private_key_content  Base64 encoded private key content (PEM
-                        format).
+- private_key_content  Private key content to verify against the
+                        certificate's public key.
+                        Can be provided as **base64-encoded string**
+                        or as **raw PEM text**.
                         If provided, this takes precedence over
                         `private_key_path'.
+                        When providing raw PEM, it should include the
+                        `-----BEGIN PRIVATE KEY-----' / `-----BEGIN
+                        RSA PRIVATE KEY-----' etc. markers.
         default: null
         type: str
 
@@ -116,9 +148,20 @@ OPTIONS (= indicates it is required):
         default: null
         type: path
 
-- serial_number  Expected serial number of the certificate (in
-                  decimal or hexadecimal format, e.g., '12345' or
-                  '0x3039').
+- serial_number  Expected serial number of the certificate to verify
+                  against.
+                  Can be provided in **decimal** (e.g. '12345') or
+                  **hexadecimal** format.
+                  Hex format supports optional `0x' prefix and colon
+                  separators (e.g. '0x3039', '01:23:45:67',
+                  '01234567').
+                  The comparison is case-insensitive and ignores
+                  colons/spaces.
+                  Returned in `details.serial_number' as lowercase hex
+                  with colon separators (e.g.
+                  '01:23:45:67:89:ab:cd:ef'), matching `openssl x509
+                  -serial' and
+                  `community.crypto.x509_certificate_info'.
         default: null
         type: str
 
@@ -147,15 +190,13 @@ OPTIONS (= indicates it is required):
         default: true
         type: bool
 
-- validate_is_ca  Whether to validate that the certificate is a CA
-                   certificate by checking basicConstraints for
-                   CA=TRUE.
+- validate_is_ca  Verify that the certificate is a CA certificate by
+                   checking basicConstraints for CA=TRUE.
         default: false
         type: bool
 
-- validate_modulus_match  Whether to verify if the certificate's
-                           modulus matches its direct issuer's
-                           modulus.
+- validate_modulus_match  Verify if the certificate's modulus matches
+                           its direct issuer's modulus.
                            Only applies to RSA keys.
                            Logic will handle setting this to True if
                            ca_path is present
@@ -185,6 +226,13 @@ NOTES:
       * For version, specify 1 for v1 or 3 for v3 certificates.
       * The issuer_ca_path parameter is deprecated in favor of
         ca_path.
+      * When using `key_usage', the most common combinations
+        are: - Web server certificates: `[DigitalSignature,
+        KeyEncipherment]' - Code signing: `[DigitalSignature]' -
+        Client authentication: `[DigitalSignature,
+        KeyAgreement]'
+      * `EncipherOnly' and `DecipherOnly' are only meaningful
+        when `KeyAgreement' is also present.
       * When logging_level is set to DEBUG, a full stack trace
         is logged for any exceptions.
       * When logging_level is set to DEBUG, additional
@@ -200,10 +248,17 @@ NOTES:
         environment's cryptography installation over system-wide
         paths.
       * Certificate can be provided via `path' or `content'
-        (base64 encoded). `content' takes precedence.
+        (base64-encoded or as raw PEM/DER string). `content'
+        takes precedence.
       * Private key can be provided via `private_key_path' or
-        `private_key_content' (base64 encoded).
-        `private_key_content' takes precedence.
+        `private_key_content' (base64-encoded or as raw PEM/DER
+        string). `private_key_content' takes precedence.
+      * - **serial_number**: Accepts decimal or hexadecimal
+        input (with or without `0x`/colons). - The returned
+        value in `details.serial_number` is always formatted as
+        lowercase hexadecimal with colon separators   (e.g.
+        `01:23:45:67:89:ab:cd:ef`), matching `openssl x509
+        -serial` and `community.crypto.x509_certificate_info`.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -319,6 +374,11 @@ RETURN VALUES:
         - key_type  Public key algorithm of the certificate.
           type: str
 
+        - key_usage  List of all Key Usage values present in the
+                      certificate (if the extension exists)
+          elements: str
+          type: list
+
         - locality  Locality (L) of the certificate.
           type: str
 
@@ -416,6 +476,10 @@ RETURN VALUES:
           type: bool
 
         - key_type  Whether the key algorithm matched.
+          type: bool
+
+        - key_usage  Whether all requested key usage values are
+                      present
           type: bool
 
         - locality  Whether the locality matched.

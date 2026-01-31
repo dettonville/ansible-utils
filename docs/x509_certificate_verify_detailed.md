@@ -20,7 +20,7 @@ validate_cert.yml:
 ##     cert_type:
 ##     issuer_common_name:
 ##     issuer_cert_chain_path:
-##     key_algo:
+##     key_type:
 ##     key_type
 ##     key_size
 - name: "Display cert_configs"
@@ -191,43 +191,43 @@ validate_cert.yml:
             'exceptions': (__cert_validation_results.exceptions | d([]))
               + [__assert_issuer_cn.msg]}) }}"
 
-    - name: "Assert certificate key_algo matches expected"
+    - name: "Assert certificate key_type matches expected"
       ansible.builtin.assert:
         that:
-          - cacert_result.public_key_type|lower == cert_configs.key_algo|lower
+          - cacert_result.public_key_type|lower == cert_configs.key_type|lower
         fail_msg: "Certificate key type mismatch: Expected '{{
-          cert_configs.key_algo }}', Got '{{ cacert_result.public_key_type }}'"
+          cert_configs.key_type }}', Got '{{ cacert_result.public_key_type }}'"
         quiet: true
-      register: __assert_key_algo
+      register: __assert_key_type
       ignore_errors: true
 
     - name: "Set __cert_validation_results.failed if key_size mismatch"
-      when: __assert_key_algo.failed | d(False) | bool
+      when: __assert_key_type.failed | d(False) | bool
       ansible.builtin.set_fact:
         __cert_validation_results: "{{ __cert_validation_results | d({})
           | combine({'failed': true,
             'info_check_failed': true,
             'exceptions': (__cert_validation_results.exceptions | d([]))
-              + [__assert_key_algo.msg]}) }}"
+              + [__assert_key_type.msg]}) }}"
 
-    - name: "Assert certificate key_algo matches expected"
+    - name: "Assert certificate key_type matches expected"
       ansible.builtin.assert:
         that:
           - cacert_result.public_key_data.size == cert_configs.key_size
         fail_msg: "Certificate key size mismatch: Expected '{{
           cert_configs.key_size }}', Got '{{ cacert_result.public_key_data.size }}'"
         quiet: true
-      register: __assert_key_algo
+      register: __assert_key_type
       ignore_errors: true
 
-    - name: "Set __cert_validation_results.failed if key_algo mismatch"
-      when: __assert_key_algo.failed | d(False) | bool
+    - name: "Set __cert_validation_results.failed if key_type mismatch"
+      when: __assert_key_type.failed | d(False) | bool
       ansible.builtin.set_fact:
         __cert_validation_results: "{{ __cert_validation_results | d({})
           | combine({'failed': true,
             'info_check_failed': true,
             'exceptions': (__cert_validation_results.exceptions | d([]))
-              + [__assert_key_algo.msg]}) }}"
+              + [__assert_key_type.msg]}) }}"
 
     - name: "Display __cert_validation_results #4"
       ansible.builtin.debug:
@@ -338,10 +338,10 @@ In `create_root_ca.yml`, the root CA certificate is validated to check if it mat
 
 **After (Single-Module)**:
 ```yaml
-- name: "Normalize key_algo for Root CA"
-  ## since the "key_algo" is specified for cfssl implementation/usage -> convert/normalize to openssl format for openssl validations
+- name: "Normalize key_type for Root CA"
+  ## since the "key_type" is specified for cfssl implementation/usage -> convert/normalize to openssl format for openssl validations
   ansible.builtin.set_fact:
-    __openssl_key_algo: "{{ bootstrap_pki__root_ca_configs.key_algo | replace('ecdsa', 'ec') }}"
+    __openssl_key_type: "{{ bootstrap_pki__root_ca_configs.key_type | replace('ecdsa', 'ec') }}"
 
 - name: "Validate existing Root CA properties"
   when: __root_ca_pem_stat.stat.exists
@@ -350,7 +350,7 @@ In `create_root_ca.yml`, the root CA certificate is validated to check if it mat
     common_name: "{{ bootstrap_pki__root_ca_configs.common_name }}"
     organization: "{{ bootstrap_pki__root_ca_configs.organization | d(omit) }}"
     organizational_unit: "{{ bootstrap_pki__root_ca_configs.organizational_unit | d(omit) }}"
-    key_algo: "{{ __openssl_key_algo }}"
+    key_type: "{{ __openssl_key_type }}"
     key_size: "{{ bootstrap_pki__root_ca_configs.key_size }}"
     validate_expired: true
   register: __cert_verify_result
@@ -386,9 +386,9 @@ In `vault_intermediate_ca.yml`, the intermediate CA (managed by Vault/Openbao) i
 
 **After (Single-Module)**:
 ```yaml
-- name: "Normalize key_algo for Intermediate CA"
+- name: "Normalize key_type for Intermediate CA"
   ansible.builtin.set_fact:
-    __openssl_key_algo: "{{ bootstrap_pki__vault_cert_configs.key_algo | replace('ecdsa', 'ec') }}"
+    __openssl_key_type: "{{ bootstrap_pki__vault_cert_configs.key_type | replace('ecdsa', 'ec') }}"
 
 - name: "Validate existing Intermediate CA properties"
   when: __intermediate_ca_pem_stat.stat.exists
@@ -398,7 +398,7 @@ In `vault_intermediate_ca.yml`, the intermediate CA (managed by Vault/Openbao) i
     common_name: "{{ bootstrap_pki__vault_cert_configs.common_name }}"
     organization: "{{ bootstrap_pki__vault_cert_configs.organization | d(omit) }}"
     organizational_unit: "{{ bootstrap_pki__vault_cert_configs.organizational_unit | d(omit) }}"
-    key_algo: "{{ __openssl_key_algo }}"
+    key_type: "{{ __openssl_key_type }}"
     key_size: "{{ bootstrap_pki__vault_cert_configs.key_size }}"
     validate_expired: true
   register: __cert_verify_result
