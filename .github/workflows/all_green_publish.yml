@@ -1,5 +1,8 @@
 ---
 name: Publish Ansible Collection
+permissions:
+  contents: read
+  checks: write
 
 concurrency:
   group: >-
@@ -9,8 +12,9 @@ concurrency:
   cancel-in-progress: true
 
 on: # yamllint disable-line rule:truthy
-  # Run CI against all pushes (direct commits, also merged PRs), Pull Requests
+  # Allows manual triggering
   workflow_dispatch:
+  # Run CI against all pushes (direct commits, also merged PRs), Pull Requests
   push:
     branches:
       - main
@@ -25,6 +29,10 @@ on: # yamllint disable-line rule:truthy
       - stable-*
     tags:
       - "*"
+  # Schedule run (once daily)
+  schedule:
+    ## Daily Docker Image Rebuild (10:29am daily)
+    - cron: '29 10 * * *'
 
 jobs:
   lint:

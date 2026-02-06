@@ -28,8 +28,10 @@ options:
     type: path
   content:
     description:
-      - Base64 encoded certificate content (PEM or DER format).
+      - Certificate content to verify.
+      - Can be provided as **base64-encoded string** or as **raw PEM/DER text**.
       - If provided, this takes precedence over C(path).
+      - When providing raw PEM, it should include the C(-----BEGIN CERTIFICATE-----) and C(-----END CERTIFICATE-----) markers.
     required: false
     type: str
   ca_path:
@@ -50,8 +52,10 @@ options:
     default: null
   private_key_content:
     description:
-      - Base64 encoded private key content (PEM format).
+      - Private key content to verify against the certificate's public key.
+      - Can be provided as **base64-encoded string** or as **raw PEM text**.
       - If provided, this takes precedence over C(private_key_path).
+      - When providing raw PEM, it should include the C(-----BEGIN PRIVATE KEY-----) / C(-----BEGIN RSA PRIVATE KEY-----) etc. markers.
     type: str
     required: false
   private_key_password:
@@ -102,7 +106,12 @@ options:
     elements: str
   serial_number:
     description:
-      - Expected serial number of the certificate (in decimal or hexadecimal format, e.g., '12345' or '0x3039').
+      - Expected serial number of the certificate to verify against.
+      - Can be provided in **decimal** (e.g. '12345') or **hexadecimal** format.
+      - Hex format supports optional C(0x) prefix and colon separators (e.g. '0x3039', '01:23:45:67', '01234567').
+      - The comparison is case-insensitive and ignores colons/spaces.
+      - Returned in C(details.serial_number) as lowercase hex with colon separators
+        (e.g. '01:23:45:67:89:ab:cd:ef'), matching C(openssl x509 -serial) and C(community.crypto.x509_certificate_info).
     required: false
     type: str
   version:
@@ -116,6 +125,45 @@ options:
       - Expected signature algorithm (e.g., 'sha256WithRSAEncryption').
     required: false
     type: str
+  key_usage:
+    description:
+      - List of expected Key Usage values that **must all** be present in the certificate.
+      - Validation fails if any value from this list is missing.
+      - Case sensitive — use exact names as defined in RFC 5280 / cryptography library.
+    type: list
+    elements: str
+    required: false
+    choices:
+      - DigitalSignature
+      - NonRepudiation
+      - KeyEncipherment
+      - DataEncipherment
+      - KeyAgreement
+      - KeyCertSign
+      - CRLSign
+      - EncipherOnly
+      - DecipherOnly
+    version_added: "2026.1.0"
+  extended_key_usage:
+    description:
+      - List of Extended Key Usage (EKU) purpose OIDs / names that MUST all be present.
+      - Validation fails if the EKU extension is missing or any requested value is absent.
+      - Use the short names as commonly displayed (serverAuth, clientAuth, etc.).
+    type: list
+    elements: str
+    required: false
+    choices:
+      - serverAuth
+      - clientAuth
+      - codeSigning
+      - emailProtection
+      - timeStamping
+      - OCSPSigning
+      - ipsecEndSystem
+      - ipsecTunnel
+      - ipsecUser
+      - anyExtendedKeyUsage
+    version_added: "2026.1.0"
   key_type:
     description:
       - Expected public key algorithm (e.g., 'rsa', 'ec', 'dsa', 'ed25519').
@@ -148,13 +196,13 @@ options:
     default: true
   validate_is_ca:
     description:
-      - Whether to validate that the certificate is a CA certificate by checking basicConstraints for CA=TRUE.
+      - Verify that the certificate is a CA certificate by checking basicConstraints for CA=TRUE.
     required: false
     type: bool
     default: false
   validate_modulus_match:
     description:
-      - Whether to verify if the certificate's modulus matches its direct issuer's modulus.
+      - Verify if the certificate's modulus matches its direct issuer's modulus.
       - Only applies to RSA keys.
       - Logic will handle setting this to True if ca_path is present
       - default is true if ca_path is provided
@@ -184,13 +232,25 @@ notes:
   - For serial_number, provide as a decimal or hex string (with or without '0x').
   - For version, specify 1 for v1 or 3 for v3 certificates.
   - The issuer_ca_path parameter is deprecated in favor of ca_path.
+  - >
+    When using C(key_usage), the most common combinations are:
+    - Web server certificates: C([DigitalSignature, KeyEncipherment])
+    - Code signing: C([DigitalSignature])
+    - Client authentication: C([DigitalSignature, KeyAgreement])
+  - C(EncipherOnly) and C(DecipherOnly) are only meaningful when C(KeyAgreement) is also present.
   - When logging_level is set to DEBUG, a full stack trace is logged for any exceptions.
   - When logging_level is set to DEBUG, additional certificate metadata and environment details are included.
   - If not_valid_after_utc is unavailable in cryptography >= 41.0.0, an error is logged, indicating a potential library or environment issue.
   - If cryptography is loaded from a system-wide path in a virtual environment, a warning is logged to indicate potential version mismatches.
   - The module modifies sys.path to prioritize the virtual environment's cryptography installation over system-wide paths.
-  - Certificate can be provided via C(path) or C(content) (base64 encoded). C(content) takes precedence.
-  - Private key can be provided via C(private_key_path) or C(private_key_content) (base64 encoded). C(private_key_content) takes precedence.
+  - Certificate can be provided via C(path) or C(content) (base64-encoded or as raw PEM/DER string). C(content) takes precedence.
+  - >
+    Private key can be provided via C(private_key_path) or C(private_key_content) (base64-encoded or as raw PEM/DER string).
+    C(private_key_content) takes precedence.
+  - >
+    - **serial_number**: Accepts decimal or hexadecimal input (with or without `0x`/colons).
+    - The returned value in `details.serial_number` is always formatted as lowercase hexadecimal with colon separators
+      (e.g. `01:23:45:67:89:ab:cd:ef`), matching `openssl x509 -serial` and `community.crypto.x509_certificate_info`.
 """
 
 RETURN = r"""
@@ -250,6 +310,10 @@ details:
     signature_algorithm:
       description: Signature algorithm of the certificate.
       type: str
+    key_usage:
+      description: List of all Key Usage values present in the certificate (if the extension exists)
+      type: list
+      elements: str
     key_type:
       description: Public key algorithm of the certificate.
       type: str
@@ -298,6 +362,9 @@ verify_results:
       type: bool
     signature_algorithm:
       description: Whether the signature algorithm matched.
+      type: bool
+    key_usage:
+      description: Whether all requested key usage values are present
       type: bool
     key_type:
       description: Whether the key algorithm matched.
@@ -427,6 +494,7 @@ import sys
 import traceback
 import logging
 import re
+import base64
 
 HAS_CRYPTOGRAPHY = False
 cryptography_version = "0.0.0"  # Initialize with a default value
@@ -471,6 +539,40 @@ def _read_cert_file(path):
     except Exception as e:
         raise Exception(
             "Failed to read certificate file {}: {}".format(path, str(e)))
+
+
+def _normalize_cert_content(content, is_private_key=False):
+    """
+    Normalize content: detect if it's base64 or raw PEM/DER.
+    Returns bytes suitable for loading.
+    """
+    if not content:
+        return None
+
+    content = content.strip()
+
+    # If it looks like PEM (has BEGIN/END markers), treat as raw text
+    pem_markers = [
+        "-----BEGIN CERTIFICATE-----",
+        "-----BEGIN X509 CERTIFICATE-----",
+        "-----BEGIN PRIVATE KEY-----",
+        "-----BEGIN RSA PRIVATE KEY-----",
+        "-----BEGIN EC PRIVATE KEY-----",
+    ]
+    if any(marker in content for marker in pem_markers):
+        # It's likely already raw PEM → just encode to bytes
+        return content.encode('utf-8')
+
+    # Otherwise assume it's base64 → try to decode
+    try:
+        decoded = base64.b64decode(content, validate=True)
+        return decoded
+    except Exception as e:
+        # If base64 decode fails and it didn't look like PEM → fail
+        if is_private_key:
+            raise Exception(f"Failed to decode private_key_content as base64: {to_native(e)}")
+        else:
+            raise Exception(f"Failed to decode content as base64: {to_native(e)}")
 
 
 def _is_pem_bundle(data):
@@ -648,6 +750,42 @@ def main():
         serial_number=dict(type='str', required=False),
         version=dict(type='int', required=False, choices=[1, 3]),
         signature_algorithm=dict(type='str', required=False),
+        key_usage=dict(
+            type='list',
+            elements='str',
+            required=False,
+            choices=[
+                "DigitalSignature",
+                "NonRepudiation",  # also known as ContentCommitment in some contexts
+                "KeyEncipherment",
+                "DataEncipherment",
+                "KeyAgreement",
+                "KeyCertSign",
+                "CRLSign",
+                "EncipherOnly",
+                "DecipherOnly",
+                # Very rarely used aliases / legacy names — optional
+                # "CertificateSigning",   # alias for KeyCertSign
+                # "ContentCommitment",    # alias for NonRepudiation
+            ]
+        ),
+        extended_key_usage=dict(
+            type='list',
+            elements='str',
+            required=False,
+            choices=[
+                "serverAuth",
+                "clientAuth",
+                "codeSigning",
+                "emailProtection",
+                "timeStamping",
+                "OCSPSigning",
+                "ipsecEndSystem",
+                "ipsecTunnel",
+                "ipsecUser",
+                "anyExtendedKeyUsage",
+            ],
+        ),
         key_type=dict(
             type='str',
             required=False,
@@ -763,15 +901,18 @@ def main():
         "serial_number",
         "version",
         "signature_algorithm",
+        "subject_alt_names",
+        "key_usage",
+        "extended_key_usage",
         "key_type",
         "key_size",
     ]
     boolean_properties = ["validate_expired",
-                          "validate_checkend", "validate_is_ca"]
+                          "validate_checkend",
+                          "validate_is_ca"]
     has_verification = (
         any(module.params.get(prop) is not None for prop in non_boolean_properties)
         or any(module.params.get(prop) is True for prop in boolean_properties)
-        or module.params.get("subject_alt_names") is not None
         or ca_path is not None
         or private_key_path is not None
         or private_key_content is not None
@@ -797,18 +938,21 @@ def main():
         module.exit_json(**result)
 
     verify_results = {}
-
+    cert_data = None
     try:
         # Read and parse the certificate or chain
         if content:
-            import base64
             try:
-                cert_data = base64.b64decode(content)
+                cert_data = _normalize_cert_content(content, is_private_key=False)
             except Exception as e:
-                module.fail_json(
-                    msg=f"Failed to decode certificate content: {to_native(e)}")
+                module.fail_json(msg=f"Failed to process certificate content: {to_native(e)}")
         else:
+            if not cert_path:
+                module.fail_json(msg="Either 'path' or 'content' must be provided")
             cert_data = _read_cert_file(cert_path)
+
+        if not cert_data:
+            module.fail_json(msg="No certificate data could be loaded")
         log.debug(
             "Certificate data read from %s: %s bytes",
             cert_path if cert_path else "content",
@@ -821,8 +965,6 @@ def main():
                 "Detected certificate chain with %d intermediate/root certs", len(chain_certs))
         public_key = cert.public_key()
         try:
-            log.debug("Certificate not_before: %s", cert.not_valid_before)
-            log.debug("Certificate not_after: %s", cert.not_valid_after)
             log.debug(
                 "Certificate not_before_utc: %s",
                 getattr(cert, "not_valid_before_utc", "Not available"),
@@ -844,13 +986,21 @@ def main():
             "locality": None,
             "email_address": None,
             "subject_alt_names": [],
-            "serial_number": str(cert.serial_number),
+            "key_usage": [],
+            "extended_key_usage": [],
             # cryptography uses 0-based, X.509 uses 1-based
             "version": cert.version.value + 1,
             "signature_algorithm": cert.signature_algorithm_oid._name,
             "key_type": None,
             "key_size": None,
         }
+
+        # serial_number in hex format - same as openssl
+        result["details"]["serial_number"] = ":".join(
+            f"{b:02x}" for b in cert.serial_number.to_bytes(
+                (cert.serial_number.bit_length() + 7) // 8, "big"
+            )
+        )
 
         # Extract subject attributes
         for attr in cert.subject:
@@ -898,9 +1048,99 @@ def main():
             result["details"]["key_type"] = "ed25519"
             result["details"]["key_size"] = None
 
-        # Initialize verification results
-        for prop in non_boolean_properties:
-            verify_results[prop] = True
+        actual_key_usages = set()
+        has_key_usage_ext = False
+
+        try:
+            ku_ext = cert.extensions.get_extension_for_oid(
+                x509.oid.ExtensionOID.KEY_USAGE
+            )
+            has_key_usage_ext = True
+            log.debug("KeyUsage extension found: %s", ku_ext)
+
+            # cryptography KeyUsage object has boolean attributes
+            ku = ku_ext.value
+            log.debug("KeyUsage object: digital_signature=%s, key_cert_sign=%s, crl_sign=%s, ...",
+                      ku.digital_signature, ku.key_cert_sign, ku.crl_sign)
+
+            if ku.digital_signature:
+                actual_key_usages.add("DigitalSignature")
+            if ku.key_encipherment:
+                actual_key_usages.add("KeyEncipherment")
+            if ku.key_agreement:
+                actual_key_usages.add("KeyAgreement")
+            if ku.data_encipherment:
+                actual_key_usages.add("DataEncipherment")
+            if ku.key_cert_sign:
+                actual_key_usages.add("KeyCertSign")  # official RFC name
+            if ku.crl_sign:
+                actual_key_usages.add("CRLSign")
+            # if ku.content_commitment:
+            #     actual_key_usages.add("NonRepudiation")  # legacy name
+            if ku.content_commitment:
+                actual_key_usages.add("ContentCommitment")  # official name
+            if ku.key_agreement:
+                actual_key_usages.add("KeyAgreement")
+                # Only safe to check these when key_agreement is True
+                if ku.encipher_only:
+                    actual_key_usages.add("EncipherOnly")
+                if ku.decipher_only:
+                    actual_key_usages.add("DecipherOnly")
+
+            log.debug("Extracted actual_key_usages: %s", actual_key_usages)
+
+            # Fill in details
+            result["details"]["key_usage"] = sorted(list(actual_key_usages))
+        except x509.ExtensionNotFound:
+            result["details"]["key_usage"] = []
+            if module.params.get("key_usage"):
+                verify_results["key_usage"] = False
+                log.warning("Key Usage extension missing")
+        except Exception as exc:
+            log.error("Failed to parse KU extension: %s", exc)
+            result["details"]["key_usage"] = []
+            if module.params.get("key_usage"):
+                verify_results["key_usage"] = False
+
+        # Always populate the actual extended key usages (for visibility)
+        actual_ekus = set()
+        try:
+            eku_ext = cert.extensions.get_extension_for_oid(
+                x509.oid.ExtensionOID.EXTENDED_KEY_USAGE
+            )
+            for usage in eku_ext.value:
+                oid = usage.dotted_string
+                # Map common OIDs to short names (what users expect)
+                name = {
+                    "1.3.6.1.5.5.7.3.1": "serverAuth",
+                    "1.3.6.1.5.5.7.3.2": "clientAuth",
+                    "1.3.6.1.5.5.7.3.3": "codeSigning",
+                    "1.3.6.1.5.5.7.3.4": "emailProtection",
+                    "1.3.6.1.5.5.7.3.8": "timeStamping",
+                    "1.3.6.1.5.5.7.3.9": "OCSPSigning",
+                    "1.3.6.1.5.5.7.3.5": "ipsecEndSystem",
+                    "1.3.6.1.5.5.7.3.6": "ipsecTunnel",
+                    "1.3.6.1.5.5.7.3.7": "ipsecUser",
+                    "2.5.29.37.0": "anyExtendedKeyUsage",
+                }.get(oid, oid)  # fallback to OID if unknown
+                actual_ekus.add(name)
+
+            result["details"]["extended_key_usage"] = sorted(list(actual_ekus))
+        except x509.ExtensionNotFound:
+            result["details"]["extended_key_usage"] = []
+            if module.params.get("extended_key_usage"):
+                verify_results["extended_key_usage"] = False
+                log.warning("Extended Key Usage extension missing")
+        except Exception as exc:
+            log.error("Failed to parse EKU extension: %s", exc)
+            result["details"]["extended_key_usage"] = []
+            if module.params.get("extended_key_usage"):
+                verify_results["extended_key_usage"] = False
+
+        # # Initialize verification results
+        # for prop in non_boolean_properties:
+        #     if module.params.get(prop) is not None:
+        #         verify_results[prop] = False
 
         # Perform property verifications
         if module.params.get("common_name"):
@@ -931,23 +1171,79 @@ def main():
             verify_results["email_address"] = result["details"][
                 "email_address"
             ] == module.params.get("email_address")
+
+        # ──────────────────────────────────────────────────────────────
+        # Subject Alt Names validation
+        # ──────────────────────────────────────────────────────────────
         if module.params.get("subject_alt_names"):
             expected_sans = module.params.get("subject_alt_names")
             actual_sans = result["details"]["subject_alt_names"]
             verify_results["subject_alt_names"] = all(
                 san in actual_sans for san in expected_sans)
+
+        # ──────────────────────────────────────────────────────────────
+        # Key Usage validation
+        # ──────────────────────────────────────────────────────────────
+        if module.params.get("key_usage"):
+            expected_key_usages = set(module.params["key_usage"])
+
+            # Check if all expected are present
+            missing = expected_key_usages - actual_key_usages
+            verify_results["key_usage"] = len(missing) == 0
+            if missing:
+                log.warning("Missing requested Key Usage values: %s", missing)
+                log.info("Missing Key Usage values: %s", ", ".join(missing))
+
+        # ──────────────────────────────────────────────────────────────
+        # Extended Key Usage validation
+        # ──────────────────────────────────────────────────────────────
+        if module.params.get("extended_key_usage"):
+            expected_ekus = set(module.params["extended_key_usage"])
+
+            # Check if all expected are present
+            missing = expected_ekus - actual_ekus
+            verify_results["extended_key_usage"] = len(missing) == 0
+
+            if not verify_results["extended_key_usage"]:
+                log.info("Missing Extended Key Usage values: %s", ", ".join(missing))
+
         if module.params.get("serial_number"):
             try:
                 expected_serial = module.params.get("serial_number")
-                if expected_serial.startswith("0x"):
-                    expected_serial = str(int(expected_serial, 16))
-                elif not expected_serial.isdigit():
-                    raise ValueError(
-                        "Serial number must be a valid decimal or hexadecimal number"
-                    )
-                verify_results["serial_number"] = (
-                    result["details"]["serial_number"] == expected_serial
-                )
+                if expected_serial is not None:
+                    expected_serial_int = None
+                    try:
+                        # Remove any 0x prefix and colons/spaces if present
+                        cleaned = str(expected_serial).replace(":", "").replace(" ", "").lower()
+                        if cleaned.startswith("0x"):
+                            cleaned = cleaned[2:]
+
+                        # Try to interpret as hex first
+                        expected_serial_int = int(cleaned, 16)
+                    except ValueError:
+                        try:
+                            # If hex failed, try plain decimal
+                            expected_serial_int = int(expected_serial)
+                        except ValueError:
+                            module.fail_json(
+                                msg="serial_number must be a valid integer (decimal) or hex string (with or without 0x/colons)")
+
+                    cert_serial = cert.serial_number  # integer
+                    verify_results["serial_number"] = (cert_serial == expected_serial_int)
+                    # result["details"]["serial_number_match"] = verify_results["serial_number"]
+                    if not verify_results["serial_number"]:
+                        log.info("Serial number mismatch: expected %s, got %s",
+                                 hex(expected_serial_int), hex(cert_serial))
+
+                # if expected_serial.startswith("0x"):
+                #     expected_serial = str(int(expected_serial, 16))
+                # elif not expected_serial.isdigit():
+                #     raise ValueError(
+                #         "Serial number must be a valid decimal or hexadecimal number"
+                #     )
+                # verify_results["serial_number"] = (
+                #     result["details"]["serial_number"] == expected_serial
+                # )
             except ValueError:
                 module.fail_json(
                     msg="Invalid serial number: {}. Must be a valid decimal or hexadecimal number.".format(
@@ -977,7 +1273,9 @@ def main():
             # Ed25519 has no key size
             verify_results["key_size"] = True
 
-        # Check if it's a CA certificate
+        # ──────────────────────────────────────────────────────────────
+        # Is a CA certificate Verification
+        # ──────────────────────────────────────────────────────────────
         if module.params.get("validate_is_ca"):
             is_ca = False
             try:
@@ -986,12 +1284,13 @@ def main():
                 is_ca = bc_ext.value.ca
                 log.debug("basicConstraints CA: %s", is_ca)
             except x509.ExtensionNotFound:
-                log.debug("basicConstraints extension not found; not a CA")
+                log.warning("basicConstraints extension not found; not a CA")
                 is_ca = False
             except Exception as e:
                 log.error("Error checking basicConstraints: %s", e)
                 is_ca = False
             verify_results["is_ca"] = is_ca
+            result["details"]["is_ca"] = is_ca
 
         # Check expiration with fallback for older cryptography versions
         try:
@@ -1096,7 +1395,7 @@ def main():
             if private_key_content:
                 import base64
                 try:
-                    key_data = base64.b64decode(private_key_content)
+                    key_data = _normalize_cert_content(private_key_content, is_private_key=True)
                 except Exception as e:
                     private_key_verify_msg = f"Failed to decode private key content: {to_native(e)}"
             elif private_key_path:

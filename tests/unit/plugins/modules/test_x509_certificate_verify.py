@@ -41,6 +41,33 @@ MODULE_PATH = (
     "ansible_collections.dettonville.utils.plugins.modules.x509_certificate_verify"
 )
 
+import logging
+logging.getLogger('ansible_collections.dettonville.utils.plugins.modules.x509_certificate_verify').setLevel(logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
+import sys
+import pytest
+
+
+def _normalize_serial(serial_str):
+    cleaned = str(serial_str).replace(":", "").replace(" ", "").lower()
+    if cleaned.startswith("0x"):
+        cleaned = cleaned[2:]
+    return int(cleaned, 16)
+
+
+@pytest.fixture(autouse=True, scope="module")
+def disable_stdin_capture():
+    """Prevent AnsibleModule from failing on captured stdin during unit tests."""
+    original_stdin = sys.stdin
+    sys.stdin = open('/dev/null', 'r')  # empty, non-blocking stdin
+    yield
+    sys.stdin = original_stdin  # restore
+
 
 class TestX509CertificateVerifyModule(ModuleTestCase):
     """Test cases for the x509_certificate_verify main function."""
@@ -56,7 +83,6 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             "state_or_province": "California",
             "locality": "San Francisco",
             "email_address": "admin@example.com",
-            "serial_number": "12345",
             "version": 3,
             "signature_algorithm": "sha256WithRSAEncryption",
             "key_type": "rsa",
@@ -288,7 +314,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["failed"])
         self.assertRegex(
             result["msg"],
-            r"Invalid serial number: .*\. Must be a valid decimal or hexadecimal number\.",
+            r"serial_number must be a valid integer .* or hex string"
         )
 
     @patch("cryptography.__version__", return_value="41.0.7")
@@ -412,7 +438,6 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertEqual(details["state_or_province"], "California")
         self.assertEqual(details["locality"], "San Francisco")
         self.assertEqual(details["email_address"], "admin@example.com")
-        self.assertEqual(details["serial_number"], "12345")
         self.assertEqual(details["version"], 3)
         self.assertEqual(details["signature_algorithm"], "sha256WithRSAEncryption")
         self.assertEqual(details["key_type"], "rsa")
@@ -1162,6 +1187,9 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             module_main()
 
         result = exc.exception.args[0]
+        # Debug print to see what happened
+        print("Full result:", pprint.pformat(result))
+
         self.assertTrue(result["failed"])
         self.assertFalse(result["valid"])
         self.assertTrue(result["verify_failed"])
@@ -1789,7 +1817,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertIn("verify_results", result)
         self.assertEqual(result["details"]["common_name"], "test.example.com")
         self.assertEqual(result["details"]["organization"], "TestOrg")
-        self.assertEqual(result["details"]["serial_number"], "12345")
+        self.assertEqual(_normalize_serial(result["details"]["serial_number"]), 12345)
         self.assertEqual(result["details"]["version"], 3)
         self.assertEqual(
             result["details"]["signature_algorithm"], "sha256WithRSAEncryption"
@@ -2118,12 +2146,16 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         mock_module = MagicMock()
         mock_ansible_module.return_value = mock_module
         mock_module.params = self.all_params
+        mock_module.params['serial_number'] = 12345
         mock_module.check_mode = False
         mock_module.exit_json = exit_json
         mock_module.fail_json = fail_json
 
         mock_cert = MagicMock()
-        self._setup_valid_cert_mock(mock_cert, serial_number=54321)
+        # self._setup_valid_cert_mock(mock_cert, serial_number=54321)
+        self._setup_valid_cert_mock(mock_cert)
+        mock_cert.serial_number = 54321
+
         mock_issuer_cert = MagicMock()
         self._setup_valid_cert_mock(mock_issuer_cert)
         mock_parse_certificate.side_effect = [mock_cert, mock_issuer_cert]
@@ -2143,6 +2175,10 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
             module_main()
 
         result = exc.exception.args[0]
+
+        # Debug print to see what happened
+        print("Full result:", pprint.pformat(result))
+
         self.assertFalse(result["valid"])
         self.assertTrue(result["verify_failed"])
         self.assertFalse(result["failed"])
@@ -2704,7 +2740,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["valid"])
         self.assertFalse(result["verify_failed"])
         self.assertEqual(result["msg"], "All certificate validations passed successfully")
-        mock_b64decode.assert_called_once_with(cert_b64)
+        mock_b64decode.assert_called_once_with(cert_b64, validate=True)
 
     @patch("cryptography.__version__", return_value="41.0.7")
     @patch(f"{MODULE_PATH}._load_certificate_chain")
@@ -2734,7 +2770,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
 
         result = exc.exception.args[0]
         self.assertTrue(result["failed"])
-        self.assertIn("Failed to decode certificate content", result["msg"])
+        self.assertIn("Failed to decode content as base64", result["msg"])
         self.assertIn("Invalid base64", result["msg"])
 
     @patch(f"{MODULE_PATH}.AnsibleModule")
@@ -2792,7 +2828,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertFalse(result["failed"])
         self.assertTrue(result["valid"])
         mock_warn.assert_called_once_with("Both path and content provided; using content.")
-        mock_b64decode.assert_called_once_with(cert_b64)
+        mock_b64decode.assert_called_once_with(cert_b64, validate=True)
         mock_read_cert_file.assert_not_called()
 
     @patch(f"{MODULE_PATH}.verify_private_key_match")
@@ -2838,7 +2874,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["verify_results"]["private_key_match"])
         self.assertTrue(result["valid"])
         self.assertEqual(result["msg"], "All certificate validations passed successfully")
-        mock_b64decode.assert_called_once_with(key_b64)
+        mock_b64decode.assert_called_once_with(key_b64, validate=True)
         mock_load_pem.assert_called_once()
 
     @patch("cryptography.hazmat.primitives.serialization.load_pem_private_key")
@@ -2881,7 +2917,7 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         self.assertTrue(result["verify_failed"])
         self.assertFalse(result["verify_results"]["private_key_match"])
         self.assertIn("One or more certificate validations failed", result["msg"])
-        mock_b64decode.assert_called_once_with(invalid_key_b64)
+        mock_b64decode.assert_called_once_with(invalid_key_b64, validate=True)
 
     @patch(f"{MODULE_PATH}.verify_private_key_match")
     @patch("cryptography.hazmat.primitives.serialization.load_pem_private_key")
@@ -3022,6 +3058,480 @@ class TestX509CertificateVerifyModule(ModuleTestCase):
         # Check that either modulus_match is True or not present depending on your logic
         if "modulus_match" in result["verify_results"]:
             self.assertTrue(result["verify_results"]["modulus_match"])
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_key_usage_all_present_should_pass(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test that key_usage validation passes when all requested values are present."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()
+        params.update({
+            "content": "dummy-base64-cert-content",
+            "key_usage": ["DigitalSignature", "KeyEncipherment"],
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, key_type="rsa")
+
+        # Mock Key Usage extension
+        ku = MagicMock()
+        ku.digital_signature = True
+        ku.key_encipherment = True
+        ku.key_agreement = False
+        ku.key_cert_sign = False
+        ku.crl_sign = False
+
+        # mock_cert.extensions.get_extension_for_oid.return_value = MagicMock(value=ku)
+        mock_cert.extensions.get_extension_for_oid.side_effect = lambda oid: (
+            MagicMock(value=ku) if oid == ExtensionOID.KEY_USAGE else
+            ExtensionNotFound(oid=oid, msg="not found")
+        )
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["valid"])
+        self.assertFalse(result["verify_failed"])
+        self.assertTrue(result["verify_results"]["key_usage"])
+        self.assertIn("DigitalSignature", result["details"].get("key_usage", []))
+        self.assertIn("KeyEncipherment", result["details"].get("key_usage", []))
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_key_usage_missing_one_should_fail(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test that key_usage validation fails when one requested value is missing."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()
+        params.update({
+            "content": "dummy-base64-cert-content",
+            "key_usage": ["DigitalSignature", "KeyEncipherment", "KeyCertSign"],
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, key_type="rsa")
+
+        ku = MagicMock()
+        ku.digital_signature = True
+        ku.key_encipherment = True
+        ku.key_cert_sign = False   # missing
+        mock_cert.extensions.get_extension_for_oid.return_value = MagicMock(value=ku)
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["key_usage"])
+        self.assertIn("One or more certificate validations failed", result["msg"])
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_key_usage_extension_missing_should_fail(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test that requesting key_usage fails when the extension is not present."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()
+        params.update({
+            "content": "dummy-base64-cert-content",
+            "key_usage": ["DigitalSignature"]
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_cert.extensions.get_extension_for_oid.side_effect = ExtensionNotFound(
+            oid=ExtensionOID.KEY_USAGE, msg="No Key Usage extension"
+        )
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["key_usage"])
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_extended_key_usage_all_present_should_pass(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test extended_key_usage validation passes when all requested values exist."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()
+        params.update({
+            "content": "dummy-base64-cert-content",
+            "extended_key_usage": ["serverAuth", "clientAuth"],
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert, key_type="rsa")
+
+        # Setup EKU mock properly
+        mock_eku = MagicMock()
+        mock_eku.__iter__.return_value = [
+            MagicMock(dotted_string="1.3.6.1.5.5.7.3.1"),  # serverAuth
+            MagicMock(dotted_string="1.3.6.1.5.5.7.3.2"),  # clientAuth
+        ]
+
+        def get_ext(oid):
+            if oid == ExtensionOID.EXTENDED_KEY_USAGE:
+                return MagicMock(value=mock_eku)
+            raise ExtensionNotFound(oid=oid, msg="not found")
+
+        # mock_cert.extensions.get_extension_for_oid.return_value = MagicMock(value=mock_eku)
+        mock_cert.extensions.get_extension_for_oid.side_effect = get_ext
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["valid"])
+        self.assertFalse(result["verify_failed"])
+        self.assertTrue(result["verify_results"]["extended_key_usage"])
+        self.assertEqual(
+            sorted(result["details"].get("extended_key_usage", [])),
+            ["clientAuth", "serverAuth"]
+        )
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_extended_key_usage_missing_should_fail(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test extended_key_usage fails when one requested purpose is missing."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()
+        params.update({
+            "content": "dummy-base64-cert-content",
+            "extended_key_usage": ["serverAuth", "codeSigning"],
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+
+        mock_eku = MagicMock()
+        mock_eku.__iter__.return_value = [
+            MagicMock(dotted_string="1.3.6.1.5.5.7.3.1"),  # serverAuth only
+        ]
+        mock_cert.extensions.get_extension_for_oid.return_value = MagicMock(value=mock_eku)
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["extended_key_usage"])
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_extended_key_usage_no_extension_should_fail(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test that requesting extended_key_usage fails if extension is absent."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()
+        params.update({
+            "content": "dummy-base64-cert-content",
+            "extended_key_usage": ["serverAuth"],
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_cert.extensions.get_extension_for_oid.side_effect = ExtensionNotFound(
+            oid=ExtensionOID.EXTENDED_KEY_USAGE, msg="No EKU"
+        )
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertFalse(result["valid"])
+        self.assertTrue(result["verify_failed"])
+        self.assertFalse(result["verify_results"]["extended_key_usage"])
+
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_key_usage_not_requested_should_not_fail(self, mock_ansible_module, mock_parse, mock_b64decode):
+        """Test that absence of key_usage param doesn't cause failure."""
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+        params = self.all_params.copy()  # no key_usage here
+        params.update({
+            "content": "dummy-base64-cert-content"
+        })
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+        mock_cert.extensions.get_extension_for_oid.side_effect = ExtensionNotFound(
+            oid=ExtensionOID.KEY_USAGE,  # or any OID — doesn't matter
+            msg="Simulated missing extension"
+        )
+
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["valid"])  # or depends on other params
+        self.assertNotIn("key_usage", result["verify_results"])
+
+    @patch("logging.basicConfig")
+    @patch("base64.b64decode")
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._read_cert_file")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_content_takes_precedence_over_path(
+            self,
+            mock_ansible_module,
+            mock_read_file,
+            mock_parse,
+            mock_b64decode,
+            mock_basic_config):
+        mock_b64decode.return_value = b"fake-cert-bytes"
+        mock_m = MagicMock()
+        mock_ansible_module.return_value = mock_m
+        params = {
+            "path": "/tmp/should-not-be-used.pem",
+            "content": "base64-dummy",
+            "validate_expired": True,
+            "logging_level": "INFO"
+        }
+        mock_m.params = params
+
+        mock_cert = MagicMock()
+        mock_parse.return_value = mock_cert
+
+        module_main()
+
+        mock_read_file.assert_not_called()   # ← proves path was ignored
+        mock_basic_config.assert_called_once()
+
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_content_raw_pem_success(self, mock_ansible_module, mock_parse):
+        mock_module = MagicMock()
+        mock_ansible_module.return_value = mock_module
+
+        raw_pem = """-----BEGIN CERTIFICATE-----
+    MII...dummy PEM content here...
+    -----END CERTIFICATE-----"""
+
+        params = {
+            "content": raw_pem,
+            "validate_expired": True,
+            "logging_level": "DEBUG"
+        }
+        mock_module.params = params
+        mock_module.check_mode = False
+        mock_module.exit_json = exit_json
+        mock_module.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+
+        # Make sure expiration check passes (mock notBefore/notAfter)
+        mock_cert.not_valid_before = datetime.now(timezone.utc) - timedelta(days=365)
+        mock_cert.not_valid_after = datetime.now(timezone.utc) + timedelta(days=365)
+        mock_parse.return_value = mock_cert
+
+        with self.assertRaises(Exception) as exc:
+            module_main()
+        result = exc.exception.args[0]
+        self.assertTrue(result["valid"])
+        # self.assertFalse(result.get("verify_failed", True))
+        self.assertFalse(result["verify_failed"])
+
+    @patch(f"{MODULE_PATH}._parse_certificate")
+    @patch(f"{MODULE_PATH}._normalize_cert_content")
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_signing_ca_key_usage_cert(self, mock_ansible_module, mock_normalize, mock_parse):
+        """
+        Test that a signing CA certificate is correctly validated for KeyCertSign + CRLSign.
+        Uses mocked parsing to avoid real PEM issues.
+        """
+        mock_m = MagicMock()
+        mock_ansible_module.return_value = mock_m
+
+        # Make normalize return valid-looking bytes
+        mock_normalize.return_value = b"fake-cert-bytes"
+
+        params = {
+            "content": "dummy-content-does-not-matter",  # ignored anyway
+            "key_usage": ["KeyCertSign", "CRLSign"],
+            "validate_expired": True,
+            "logging_level": "DEBUG",
+        }
+        mock_m.params = params
+        mock_m.check_mode = False
+        mock_m.exit_json = exit_json
+        mock_m.fail_json = fail_json
+
+        mock_cert = MagicMock()
+        self._setup_valid_cert_mock(mock_cert)
+
+        # Make expiration check pass
+        mock_cert.not_valid_before = datetime.now(timezone.utc) - timedelta(days=365)
+        mock_cert.not_valid_after = datetime.now(timezone.utc) + timedelta(days=365)
+
+        # Mock Key Usage extension
+        ku_mock = MagicMock()
+        ku_mock.key_cert_sign = True
+        ku_mock.crl_sign = True
+        ku_mock.digital_signature = False
+        ku_mock.key_encipherment = False
+        ku_mock.key_agreement = False
+        ku_mock.content_commitment = False
+        ku_mock.data_encipherment = False
+        ku_mock.encipher_only = False
+        ku_mock.decipher_only = False
+
+        def get_extension(oid):
+            if oid == ExtensionOID.KEY_USAGE:
+                return MagicMock(value=ku_mock)
+            raise ExtensionNotFound(oid=oid, msg="Not mocked")
+
+        mock_cert.extensions.get_extension_for_oid.side_effect = get_extension
+
+        mock_parse.return_value = mock_cert
+
+        # Run the module
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+
+        self.assertTrue(result["valid"], "Overall validation should pass")
+        self.assertFalse(result.get("verify_failed", True), "verify_failed should be False")
+
+        self.assertTrue(result["verify_results"].get("key_usage", False),
+                        "key_usage validation should pass")
+
+        self.assertEqual(
+            sorted(result["details"].get("key_usage", [])),
+            ["CRLSign", "KeyCertSign"],
+            "Should extract exactly KeyCertSign and CRLSign"
+        )
+
+    @patch(f"{MODULE_PATH}.AnsibleModule")
+    def test_signing_ca_key_usage_real_cert(self, mock_ansible_module):
+        """
+        Test that a real intermediate/signing CA certificate is correctly identified
+        as having 'KeyCertSign' and 'CRLSign' when those are requested.
+        Uses the exact PEM from the Jenkins playbook log.
+        """
+        # The real PEM from your log
+        real_pem = """-----BEGIN CERTIFICATE-----
+    MIIDGTCCAr6gAwIBAgIUdf7tumhxyy9Coa/0wAVdRmMrdnYwCgYIKoZIzj0EAwIw
+    gZQxCzAJBgNVBAYTAlVTMRcwFQYDVQQIEw5Ob3J0aCBDYXJvbGluYTEQMA4GA1UE
+    BxMHUmFsZWlnaDEeMBwGA1UEChMVSm9obnNvbnZpbGxlIEludGVybmFsMRswGQYD
+    VQQLExJNb3N0bHkgSW1wcmFjdGljYWwxHTAbBgNVBAMTFERldHRvbnZpbGxlIFZh
+    dWx0IENBMB4XDTI2MDEzMTAzMDQ0M1oXDTI3MDEzMTAzMDUxM1owZDEeMBwGA1UE
+    ChMVSm9obnNvbnZpbGxlIEludGVybmFsMRswGQYDVQQLExJNb3N0bHkgSW1wcmFj
+    dGljYWwxJTAjBgNVBAMTHGNhLmFkbWluLmRldi5kZXR0b252aWxsZS5pbnQwWTAT
+    BgcqhkjOPQIBBggqhkjOPQMBBwNCAAT0wVZrFOYoF/FOEE4fe5LVNGYGO9VS23hr
+    WR+FS+6TMVnzUBq+B+fMAoalXyF4+VvUF2YQPEK71urkhYuc7/fNo4IBGzCCARcw
+    DgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBS3VSI0+O+0DSCyh0m8ZjcQ7drIJjAf
+    BgNVHSMEGDAWgBTbMtrStb+u4/TnTSOFFJMqJ+kt8TBPBggrBgEFBQcBAQRDMEEw
+    PwYIKwYBBQUHMAKGM2h0dHBzOi8vdmF1bHQuYWRtaW4uam9obnNvbi5pbnQvcGtp
+    LWludGVybWVkaWF0ZS9jYTAtBgNVHREEJjAkghxjYS5hZG1pbi5kZXYuZGV0dG9u
+    dmlsbGUuaW50hwR/AAABMEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHBzOi8vdmF1bHQu
+    YWRtaW4uam9obnNvbi5pbnQvcGtpLWludGVybWVkaWF0ZS9jcmwwCgYIKoZIzj0E
+    AwIDSQAwRgIhALnlFeNQ+6KG4g12ol0rpvx83mnC6nMnM69Ql93RU6QnAiEAuyT3
+    KJxRTumYe9OclPgI6Zol1IywGEwTUp3OI6UUC8E=
+    -----END CERTIFICATE-----"""
+
+        mock_m = MagicMock()
+        mock_ansible_module.return_value = mock_m
+
+        params = {
+            "content": real_pem,
+            "key_usage": ["KeyCertSign", "CRLSign"],
+            "logging_level": "DEBUG",
+        }
+        mock_m.params = params
+        mock_m.check_mode = False
+        mock_m.exit_json = exit_json
+        mock_m.fail_json = fail_json
+
+        # Run the module
+        with self.assertRaises(AnsibleExitJson) as exc:
+            module_main()
+
+        result = exc.exception.args[0]
+        # Debug print to see what happened
+        print("Full result:", pprint.pformat(result))
+
+        # Core assertions
+        self.assertTrue(result["valid"], "Overall validation should pass")
+        self.assertFalse(result.get("verify_failed", True), "verify_failed should be False")
+
+        # Key usage specific assertions
+        self.assertIn("key_usage", result["verify_results"], "verify_results should contain key_usage")
+        self.assertTrue(result["verify_results"]["key_usage"], "key_usage validation should pass")
+
+        self.assertIn("key_usage", result["details"], "details should contain key_usage")
+        self.assertEqual(
+            sorted(result["details"]["key_usage"]),
+            ["CRLSign", "KeyCertSign"],
+            "Extracted key usages should be CRLSign and KeyCertSign"
+        )
 
 
 if __name__ == "__main__":

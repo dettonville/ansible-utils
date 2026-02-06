@@ -12,7 +12,7 @@ Please enhance the module to:
     `results['valid'] = False`
     `results['verify_failed'] = True`
     `verify_results['common_name'] = True`
-    `verify_results['key_algo'] = True`
+    `verify_results['key_type'] = True`
     `verify_results['key_size'] = False`
 (2) The logical certificate verifications should be performed according to the specified module arguments unless an exception prevents remaining tests from executing (e.g., "file does not exist").  For example, if the only module input argument specified was the `path` and `common_name`, the certificate "verification" tests results should only include and record for the 'common_name' test with example `successful` verification results as follows:
     `results['failed'] = False`
