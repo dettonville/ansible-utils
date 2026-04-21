@@ -42,6 +42,7 @@ Name | Description
 [sort_dict_list](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_list.py) | Sort a list of dicts using specified sort key(s).
 [sort_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_keys.py) | Sort dictionary keys by specified key(s).
 [to_markdown](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_markdown.py) | Converts a list of flat dictionaries to markdown format.
+[to_key_value](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_key_value.py) | Converts a list of flat dictionaries to key=value format.
 
 ### Modules
 Name | Description

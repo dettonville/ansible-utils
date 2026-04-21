@@ -10,6 +10,7 @@ ansible-test units --python 3.13 git_pacp
 ansible-test units --python 3.13 x509_certificate_verify
 ansible-test units --python 3.13 tests/unit/plugins/filter/test_redact_sensitive_values.py
 ansible-test units --python 3.13 tests/unit/plugins/filter/test_remove_sensitive_keys.py
+ansible-test units --python 3.13 tests/unit/plugins/filter/test_to_markdown.py
 ansible-test units x509_certificate_verify | tee -a ansible-test-unit-results.log
 ansible-test units dettonville.utils.tests.unit.plugins.modules.test_x509_certificate_verify::TestX509CertificateVerifyModule::test_main_version_mismatch
 ansible-test units --test dettonville.utils.tests.unit.plugins.modules.test_x509_certificate_verify::TestX509CertificateVerifyModule::test_main_version_mismatch x509_certificate_verify
