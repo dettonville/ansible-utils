@@ -192,7 +192,7 @@
     }} Flatten results to __test_component__report_summary_results_flattened"
   no_log: true
   ansible.builtin.set_fact:
-    __test_component__report_summary_results_flattened: "{{ _test_results|from_yaml }}"
+    __test_component__report_summary_results_flattened: "{{ _test_results | from_yaml }}"
   vars:
     _test_results: |-
       {% for _test_component, _test_component_results in __test_component__summary_results.test_components.items() %}
@@ -205,7 +205,7 @@
           'test_collection': "{{ __test_component__collection }}",
           'test_collection_version': "{{ _test_component_properties['test_collection_version'] | d(__test_component__collection_version) }}",
           'test_component': "{{ _test_component }}",
-          'test_date': "{{ _test_component_properties['test_date'] | d(_test_component_results['test_date']) | d(ansible_date_time.iso8601) }}",
+          'test_date': "{{ _test_component_properties['test_date'] | d(_test_component_results['test_date']) | d(ansible_facts['date_time']['iso8601']) }}",
           'test_component_git_commit_hash': "{{ _test_component_properties['test_component_git_commit_hash'] | d(__test_component__git_commit_hash_short) }}",
           'test_failed': "{{ _test_component_properties['test_failed'] | d(_test_component_results['test_failed']) | d() }}"
          }
@@ -220,7 +220,7 @@
 - name: "{{ __test_component__log_save_test_summary }} Flatten results to __test_component__report_results_flattened"
   no_log: true
   ansible.builtin.set_fact:
-    __test_component__report_results_flattened: "{{ _test_results|from_yaml }}"
+    __test_component__report_results_flattened: "{{ _test_results | from_yaml }}"
   vars:
     _test_results: |-
       {% set test_item_count = [] %}
@@ -283,7 +283,7 @@
     __test_results_info:
       test_collection_version: "{{ __test_component__collection_version }}"
       test_failed: "{{ __test_failed }}"
-      test_date: "{{ ansible_date_time.iso8601 }}"
+      test_date: "{{ ansible_facts['date_time']['iso8601'] }}"
       test_count: "{{ __test_count }}"
       test_failed_count: "{{ __test_failed_count }}"
 

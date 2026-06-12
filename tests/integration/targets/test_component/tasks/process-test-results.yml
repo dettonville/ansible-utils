@@ -285,7 +285,7 @@
       test_component_git_branch: "{{ __test_component__git_branch }}"
       test_component_git_commit_hash: "{{ __test_component__git_commit_hash_short }}"
       test_failed: "{{ __test_case_failed }}"
-      test_date: "{{ ansible_date_time.iso8601 }}"
+      test_date: "{{ ansible_facts['date_time']['iso8601'] }}"
     __test_case_info_detailed:
       test_case_id: "{{ __test_component__test_case_id }}"
       test_collection_version: "{{ __test_component__collection_version }}"
@@ -295,7 +295,7 @@
       test_component_git_commit_hash: "{{ __test_component__git_commit_hash }}"
       test_failed: "{{ __test_case_failed }}"
 #      test_data: "{{ __test_data }}"
-      test_date: "{{ ansible_date_time.iso8601 }}"
+      test_date: "{{ ansible_facts['date_time']['iso8601'] }}"
       test_component_args: "{{ __test_component__test_case_args }}"
       test_result: "{{ __test_component__test_result | d({}) }}"
       test_runtime_info: "{{ __test_component__runtime_info

@@ -34,22 +34,26 @@ Plugins and modules within a collection may be tested with only specific Ansible
 
 <!--start collection content-->
 ### Filter Plugins
-Name | Description
---- | ---
-[remove_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_dict_keys.py) | Remove key(s) with specified list of regex patterns from nested dict/array.
-[remove_sensitive_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_sensitive_keys.py) | Remove sensitive key(s) with specified list of regex patterns from nested dict/array.
-[redact_sensitive_values](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/redact_sensitive_values.py) | Redact values for key(s) with specified list of regex patterns from nested dict/array by replacing them with a redacted tag.
-[sort_dict_list](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_list.py) | Sort a list of dicts using specified sort key(s).
-[sort_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_keys.py) | Sort dictionary keys by specified key(s).
-[to_markdown](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_markdown.py) | Converts a list of flat dictionaries to markdown format.
+| Name                                                                                                                        | Description                                                                                                                  |
+|-----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| [debug_sanitized](https://github.com/dettonville/ansible-utils/blob/main/plugins/action/debug_sanitized.py)                 | Print sanitized debug statements with automated regex redactions.                                                            |
+| [keep_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/keep_keys.py)                             | Keep only specified key names from a dict or list of dicts.                                                                  |
+| [remove_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_dict_keys.py)               | Remove key(s) with specified list of regex patterns from nested dict/array.                                                  |
+| [remove_sensitive_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/remove_sensitive_keys.py)     | Remove sensitive key(s) with specified list of regex patterns from nested dict/array.                                        |
+| [redact_sensitive_values](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/redact_sensitive_values.py) | Redact values for key(s) with specified list of regex patterns from nested dict/array by replacing them with a redacted tag. |
+| [sort_dict_list](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_list.py)                   | Sort a list of dicts using specified sort key(s).                                                                            |
+| [sort_dict_keys](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/sort_dict_keys.py)                   | Sort dictionary keys by specified key(s).                                                                                    |
+| [to_markdown](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_markdown.py)                         | Converts a list of flat dictionaries to markdown format.                                                                     |
+| [to_nice_yaml](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_nice_yaml_utils.py)                 | Convert data structure to custom-indented YAML using `ruamel.yaml`.                                                          |
+| [to_key_value](https://github.com/dettonville/ansible-utils/blob/main/plugins/filter/to_key_value.py)                       | Converts a list of flat dictionaries to key=value format.                                                                    |
 
 ### Modules
-Name | Description
---- | ---
-[export_dicts](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/export_dicts.py) | Export a list of dicts to markdown or csv formatted file.
-[git_pacp](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/git_pacp.py) | Perform git actions, including clone, add, commit, push, or combined add+commit+push (ACP).
-[test_results_logger](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/test_results_logger.py) | Renders test results specified in dict format into JUnit XML.
-[x509_certificate_verify](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/x509_certificate_verify.py) | Verify X.509 certificate properties and signature.
+| Name                                                                                                                         | Description                                                                                 |
+|------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| [export_dicts](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/export_dicts.py)                       | Export a list of dicts to markdown or csv formatted file.                                   |
+| [git_pacp](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/git_pacp.py)                               | Perform git actions, including clone, add, commit, push, or combined add+commit+push (ACP). |
+| [test_results_logger](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/test_results_logger.py)         | Renders test results specified in dict format into JUnit XML.                               |
+| [x509_certificate_verify](https://github.com/dettonville/ansible-utils/blob/main/plugins/modules/x509_certificate_verify.py) | Verify X.509 certificate properties and signature.                                          |
 
 <!--end collection content-->
 

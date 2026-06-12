@@ -1,6 +1,7 @@
 ## library module requirements
 packaging
 pyyaml
+ruamel.yaml
 jmespath
 netaddr
 requests

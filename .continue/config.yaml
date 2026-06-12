@@ -1,0 +1,45 @@
+name: dettonville.utils Collection Config
+version: 1.0.0
+schema: v1
+
+rules:
+  - "This is the dettonville.utils Ansible Collection — maintain high code quality, test coverage, and collection best practices"
+  - "All modules and filters must be well-documented with proper DOCUMENTATION strings"
+  - "Prioritize idempotency, error handling, and clear logging in all modules"
+  - "Maintain 100% test coverage goal for unit + integration tests"
+  - "Use ansible-test, molecule, and sanity tests rigorously"
+  - "Follow Ansible Collection development standards (FQCNs, structure, versioning)"
+  - "Keep Python code clean, use type hints where appropriate, follow PEP 8"
+  - "Favor open source tooling and community contribution patterns"
+
+prompts:
+  - name: ansible-module
+    description: Review or create Ansible module
+    prompt: "Review or help write this Ansible module. Focus on proper argument spec, documentation, error handling, idempotency, and test coverage."
+
+  - name: ansible-filter
+    description: Review or create filter plugin
+    prompt: "Review or help improve this Ansible filter plugin. Ensure it is efficient, well-documented, and follows collection standards."
+
+  - name: ansible-unit-test
+    description: Unit test a function
+    prompt: >
+      Please write a complete suite of unit tests for this function. You should
+      use the `ansible-test unit` testing framework.
+
+      The tests should cover all possible edge cases and should be as thorough
+      as possible.
+
+      You should also include a description of each test case.
+
+  - name: test-coverage
+    description: Improve tests
+    prompt: "Review the tests for this module/filter. Suggest improvements to increase coverage, edge cases, and integration test quality."
+
+  - name: documentation
+    description: Improve module documentation
+    prompt: "Review and improve the DOCUMENTATION, EXAMPLES, and RETURN sections for this Ansible module or filter."
+
+  - name: collection-best-practices
+    description: Collection standards review
+    prompt: "Review this code against Ansible Collection best practices for structure, testing, documentation, and maintainability."

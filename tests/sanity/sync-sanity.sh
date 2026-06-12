@@ -14,6 +14,7 @@ DEST_FILE_LIST+=("ignore-2.17.txt")
 DEST_FILE_LIST+=("ignore-2.18.txt")
 DEST_FILE_LIST+=("ignore-2.19.txt")
 DEST_FILE_LIST+=("ignore-2.20.txt")
+DEST_FILE_LIST+=("ignore-2.21.txt")
 
 IFS=$'\n'
 for DEST_FILE in "${DEST_FILE_LIST[@]}"; do

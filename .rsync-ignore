@@ -2,6 +2,7 @@ private/***
 vault/***
 archive/***
 save/***
+.ansible/
 vault.yml
 *vault.yml
 secrets.yml

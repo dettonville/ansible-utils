@@ -7,10 +7,6 @@ permissions:
 on:
   workflow_call:  # allow this workflow to be called from other workflows
   workflow_dispatch:  # allow this workflow to be called from user
-  # Schedule run (once daily)
-  schedule:
-    ## Daily Docker Image Rebuild (10:29am daily)
-    - cron: '29 10 * * *'
 
 jobs:
   ansible_test_units:
@@ -24,12 +20,13 @@ jobs:
         versions:
           # Testing all ansible and python versions is impractical. Only test the newest and
           # oldest versions of each that we support
-#          - { python: "3.14", ansible: "stable-2.20" }
+          - { python: "3.14", ansible: "stable-2.21" }
           - { python: "3.13", ansible: "stable-2.20" }
-          - { python: "3.13", ansible: "stable-2.19" }
-          - { python: "3.11", ansible: "stable-2.19" }
+#          - { python: "3.13", ansible: "stable-2.19" }
+#          - { python: "3.11", ansible: "stable-2.19" }
           - { python: "3.12", ansible: "stable-2.16" }
           - { python: "3.10", ansible: "stable-2.16" }
+#          - { python: "3.13", ansible: devel }
 
     steps:
       - name: Checkout repository

@@ -1,6 +1,7 @@
 ## library module requirements
-pyyaml
-packaging
 cryptography >= 1.5
-pyopenssl
 distlib
+packaging
+pyopenssl
+pyyaml
+ruamel.yaml

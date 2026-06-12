@@ -1,7 +1,8 @@
 ## library module requirements
-pyyaml
-packaging
-cryptography >= 1.5
-pyopenssl
 coverage
+cryptography >= 1.5
+packaging
+pyopenssl
 pytest-xdist
+pyyaml
+ruamel.yaml

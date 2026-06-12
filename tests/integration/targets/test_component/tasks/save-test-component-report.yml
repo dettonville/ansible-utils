@@ -177,7 +177,7 @@
     }} Flatten results to __test_component__report_results_flattened"
   no_log: true
   ansible.builtin.set_fact:
-    __test_component__report_results_flattened: "{{ _test_results|from_yaml }}"
+    __test_component__report_results_flattened: "{{ _test_results | from_yaml }}"
   vars:
     _test_results: |-
       {% for _test_component, _test_component_results in __test_component__report_results.test_components.items() %}
@@ -226,7 +226,7 @@
 - name: "{{ __test_component__log_save_component_report }} Set __test_component__info"
   ansible.builtin.set_fact:
     __test_component__info:
-      test_date: "{{ ansible_date_time.iso8601 }}"
+      test_date: "{{ ansible_facts['date_time']['iso8601'] }}"
       test_job_link: "{{ __test_component__job_markdown_link }}"
       test_collection_version: "{{ __test_component__collection_version }}"
       test_component_git_commit_hash: "{{ __test_component__git_commit_hash_short }}"
@@ -268,18 +268,16 @@
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }}"
     mode: "0644"
 
-- name: "{{ __test_component__log_save_component_report }} Save test report results to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save test report results to {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_csv }}"
-  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_case_id') }}"
     file: "{{ __test_component__test_base_path }}/{{ 
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_csv }}"
     format: "csv"
 
-- name: "{{ __test_component__log_save_component_report }} Save test report results to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save test report results to {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_md }}"
-  ignore_errors: true
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_case_id') }}"
     file: "{{ __test_component__test_base_path }}/{{ 

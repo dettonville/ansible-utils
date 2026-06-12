@@ -1,8 +1,8 @@
 ---
 
-- name: "init-test-vars | Display ansible_env.USER"
+- name: "init-test-vars | Display ansible_facts['env'].USER"
   ansible.builtin.debug:
-    var: ansible_env.USER | d('')
+    var: ansible_facts['env'].USER | d('')
     verbosity: 1
 
 - name: "init-test-vars | Display test_component__git_test_results_enabled"
@@ -62,7 +62,7 @@
 ## ref: https://stackoverflow.com/questions/59869843/ansible-awx-get-project-url-and-user
 - name: "init-test-vars | Display tower vars"
   ansible.builtin.debug:
-    var: vars | dict2items
+    var: ansible_facts | dict2items
           | selectattr('key', 'match', '^tower.*')
           | list | items2dict
 
@@ -118,9 +118,9 @@
       - "__test_git_commit_hash={{ __test_git_commit_hash }}"
       - "__test_git_commit_hash_short={{ __test_git_commit_hash_short }}"
 
-- name: "init-test-vars | Display ansible_env.AWX_HOST"
+- name: "init-test-vars | Display ansible_facts['env'].AWX_HOST"
   ansible.builtin.debug:
-    var: ansible_env.AWX_HOST|d('')
+    var: ansible_facts['env'].AWX_HOST|d('')
     verbosity: 1
 
 - name: "init-test-vars | Display common variable information"
@@ -133,13 +133,13 @@
       - "ansible_version={{ ansible_version | d('') }}"
       - "discovered_interpreter_python={{ discovered_interpreter_python | d('') }}"
       - "ansible_python_interpreter={{ ansible_python_interpreter | d('') }}"
-      - "ansible_python_version={{ ansible_python_version | d('') }}"
+      - "ansible_facts.python_version={{ ansible_facts.python_version | d('') }}"
       - "ansible_pip_interpreter={{ ansible_pip_interpreter | d('') }}"
       - "ansible_user={{ ansible_user|d('') }}"
       - "inventory_hostname={{ inventory_hostname }}"
-      - "ansible_nodename={{ ansible_nodename | d('') }}"
       - "ansible_host={{ ansible_host }}"
-      - "ansible_hostname={{ ansible_hostname | d('') }}"
+      - "ansible_facts.nodename={{ ansible_facts.nodename | d('') }}"
+      - "ansible_facts.hostname={{ ansible_facts.hostname | d('') }}"
 
 - name: "init-test-vars | Display collection version information"
   ansible.builtin.debug:
@@ -182,20 +182,20 @@
 #  ansible.builtin.import_role:
 #    name: setup_remote_tmp_dir
 
-- name: "init-test-vars | Display ansible_env"
+- name: "init-test-vars | Display ansible_facts['env']"
   ansible.builtin.debug:
-    var: ansible_env
+    var: ansible_facts['env']
     verbosity: 1
 
 - name: "init-test-vars | Set test_job_tmpdir_base"
-  when: ansible_env.HOME is defined
+  when: ansible_facts['env'].HOME is defined
   ansible.builtin.set_fact:
-    test_job_tmpdir_base: "{{ ansible_env.HOME }}/.ansible/tmp"
+    test_job_tmpdir_base: "{{ ansible_facts['env'].HOME }}/.ansible/tmp"
 
 - name: "init-test-vars | Set test_job_tmpdir_base"
-  when: ansible_env.WORKSPACE_TMP is defined
+  when: ansible_facts['env'].WORKSPACE_TMP is defined
   ansible.builtin.set_fact:
-    test_job_tmpdir_base: "{{ ansible_env.WORKSPACE_TMP }}/.ansible/tmp"
+    test_job_tmpdir_base: "{{ ansible_facts['env'].WORKSPACE_TMP }}/.ansible/tmp"
 
 - name: "init-test-vars | Create temporary base directory"
   when: test_job_tmpdir_base is defined
@@ -227,7 +227,7 @@
 
 - name: "init-test-vars | Set defaults"
   ansible.builtin.set_fact:
-    __test_job__test_base_dir_default: "{{ __test_job__temp_dir }}/test.{{ test_component__collection }}"
+    __test_job__test_results_base_dir_default: "{{ __test_job__temp_dir }}/test.{{ test_component__collection }}"
 #    __test_job__git_ssh_private_keydir_default: "{{ '~/.ssh' | expanduser }}"
     __test_job__git_ssh_private_keydir_default: "{{ __test_job__temp_dir }}"
     __test_job__raise_final_excp_upon_test_failure_default: true
@@ -239,15 +239,15 @@
 
 - name: "init-test-vars | Set test dirs"
   ansible.builtin.set_fact:
-    __test_job__test_base_dir: "{{ test_job__test_base_dir
-      | d(__test_job__test_base_dir_default) }}"
+    __test_job__test_results_base_dir: "{{ test_job__test_results_base_dir
+      | d(__test_job__test_results_base_dir_default) }}"
     __test_job__git_ssh_private_keydir: "{{ test_job__git_ssh_private_keydir
       | d(__test_job__git_ssh_private_keydir_default) }}"
 
 - name: "init-test-vars | Display test vars"
   ansible.builtin.debug:
     msg:
-      - "__test_job__test_base_dir={{ __test_job__test_base_dir }}"
+      - "__test_job__test_results_base_dir={{ __test_job__test_results_base_dir }}"
       - "__test_job__git_ssh_private_keydir={{ __test_job__git_ssh_private_keydir }}"
       - "__test_job__raise_final_excp_upon_test_failure={{ __test_job__raise_final_excp_upon_test_failure }}"
 
