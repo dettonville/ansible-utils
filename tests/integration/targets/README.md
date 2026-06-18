@@ -93,8 +93,16 @@ winansd3s4.example.int | SUCCESS => {
 
 ```
 
-
 ### Run module tests
+
+Directly using integration test playbook:
+```shell
+$ run-playbook.sh -i localhost, -c local test_export_dicts.yml
+## or simply:
+$ run-playbook.sh test_export_dicts.yml
+$ run-playbook.sh test_debug_sanitized_playbook.yml
+```
+
 
 ```shell
 $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
@@ -105,6 +113,7 @@ $ find -L test_component/vars/sort_dict_list -name "test_*.yml" | sort
 ## runme.sh defaults via test-vars.yml to use vault TEST env
 $ runme.sh -v -t sort_dict_list
 $ runme.sh -v -t export_dicts
+$ runme.sh -v -t test_debug_sanitized
 ## OR 
 $ run-module-tests.sh -v -t export_dicts
 $ run-module-tests.sh -v -t sort_dict_list

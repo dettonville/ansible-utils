@@ -34,7 +34,7 @@ def action_module():
 
 
 def test_debug_sanitized_msg_default(action_module):
-    """Verify that default messages fall back to hello world cleanly when no options exist."""
+    """Verify that default messages fall back to empty string cleanly when no options exist."""
     action_module._task.args = {}
     result = action_module.run(task_vars={})
     assert result['msg'] == ""

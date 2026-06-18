@@ -1,9 +1,49 @@
 ---
 
-- name: "Test export_dicts"
+- name: "TEST export_dicts | Export test dicts"
   hosts: localhost
+#  vars_files: ./../integration_config.vault.yml
   connection: local
-  become: no
-  vars_files: ./../integration_config.vault.yml
-  roles:
-    - role: export_dicts
+  vars:
+    output_file: "/tmp/file1.csv"
+    test_list:
+      - { key1: "value11", key2: "value12", key3: "value13", key4: "value14" }
+      - { key1: "value21", key2: "value22", key3: "value23", key4: "value24" }
+      - { key1: "value31", key2: "value32", key3: "value33", key4: "value34" }
+  tasks:
+    # -------------------------------------------------------------------------
+    # Upfront Meta Test: Validate galaxy.yml Source Version Consistency
+    # -------------------------------------------------------------------------
+    - name: "TEST debug_sanitized | Load galaxy.yml source metadata descriptor"
+      ansible.builtin.slurp:
+        src: "{{ playbook_dir }}/../../../galaxy.yml"
+      register: galaxy_file_raw
+
+    - name: "TEST debug_sanitized | Parse version string from galaxy.yml"
+      vars:
+        galaxy_content: "{{ galaxy_file_raw['content'] | b64decode }}"
+        # Regex capture matching the 'version: "X.Y.Z"' signature line directly
+        version_extracted: "{{ galaxy_content | regex_search('(?m)^version:\\s*[\"\\']?([^\"\\s\\'#]+)[\"\\']?', '\\1') | first }}"
+        runtime_version: "{{ lookup('community.general.collection_version', 'dettonville.utils') }}"
+      ansible.builtin.assert:
+        that:
+          - version_extracted == runtime_version
+        fail_msg: >
+          Collection source mismatch error! 
+          galaxy.yml version ({{ version_extracted }}) does not match the integration environment execution runtime context ({{ runtime_version }}).
+
+    - name: "TEST export_dicts | Display collection version information"
+      ansible.builtin.debug:
+        msg:
+          - "dettonville.utils version={{ lookup('community.general.collection_version', 'dettonville.utils') }}"
+
+    - name: "TEST export_dicts | Export test_list dicts to {{ output_file }}"
+      dettonville.utils.export_dicts:
+        file: "{{ output_file }}"
+        format: "csv"
+        export_list: "{{ test_list }}"
+      register: export_result
+
+    - name: dump export_result
+      ansible.builtin.debug:
+        var: export_result

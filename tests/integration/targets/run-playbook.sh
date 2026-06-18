@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
 
-#set -eux
-
-#source virtualenv.sh
+# Enable strict mode for better error handling
+set -euo pipefail
 
 # Requirements have to be installed prior to running ansible-playbook
 # because plugins and requirements are loaded before the task runs
-
-#pip install -r requirements.txt
-
-#echo "==> ENV"
-#echo "$(export -p | sed 's/declare -x //')"
-
-#VERSION="2025.7.1"
+# pip install -r requirements.txt
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_NAME_PREFIX="${SCRIPT_NAME%.*}"
 
-PLAYBOOK="${SCRIPT_NAME_PREFIX}.yml"
 REPO_DIR="$(cd "$SCRIPT_DIR/" && git rev-parse --show-toplevel)"
 
 ## only needed if sourcing local private collections by source instead of galaxy
@@ -43,7 +35,6 @@ SOURCE_COLLECTIONS_PATH="${REPO_PARENT_DIR}/requirements_collections"
 
 echo "SCRIPT_DIR=[${SCRIPT_DIR}]"
 echo "SCRIPT_NAME=[${SCRIPT_NAME}]"
-echo "PLAYBOOK=[${PLAYBOOK}]"
 echo "REPO_PARENT_DIR=${REPO_PARENT_DIR}"
 echo "REPO_DIR=${REPO_DIR}"
 
@@ -76,8 +67,110 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 #export ANSIBLE_GALAXY_IGNORE=true
 #export GALAXY_IGNORE_CERTS=true
 
+KEEP_TEMP_DIR=1
+
 cleanup_tmpdir() {
   test "${KEEP_TEMP_DIR:-0}" = 1 || rm -rf "${TEMP_DIR:-}"
+}
+
+# Trap to clean up SSH agent and temporary files on exit
+cleanup() {
+  if [ -n "${SSH_AGENT_PID:-}" ]; then
+    echo "==> Stopping SSH agent (PID: $SSH_AGENT_PID)"
+    eval "$(ssh-agent -k)" >/dev/null 2>&1
+  fi
+  cleanup_tmpdir
+  rm -f "${TEMP_VARS:-}" "${TEMP_RENDERED_KEY:-}" "${TEMP_KEY:-}"
+}
+
+# SSH agent setup
+start_ssh_agent() {
+  # Check if a user-managed SSH agent is running
+  if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -n "${SSH_AGENT_PID:-}" ] && kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
+    echo "==> SSH agent already running (PID: $SSH_AGENT_PID, SOCK: $SSH_AUTH_SOCK)"
+  else
+    # Start a new agent, overriding any system agent
+    unset SSH_AUTH_SOCK SSH_AGENT_PID
+    echo "==> Starting new SSH agent"
+    eval "$(ssh-agent -s)" || {
+      echo "Error: Failed to start SSH agent"
+      return 1
+    }
+  fi
+  # Verify SSH agent is usable
+  ssh-add -l >/dev/null 2>&1 || echo "==> SSH agent is empty"
+
+  # Render ansible_ssh_private_key using Ansible to resolve templates
+  TEMP_RENDERED_KEY=$(mktemp)
+  set +e
+  # OVERRIDE: Prefixing the command with ANSIBLE_LOG_PATH=/dev/null blocks writing to ansible.log
+  ANSIBLE_LOG_PATH=/dev/null ansible localhost -m debug -a "var=ansible_ssh_private_key" -e "@${VAULT_FILEPATH}" --vault-id "${VAULT_ID}@${VAULTPASS_FILEPATH}" > "${TEMP_RENDERED_KEY}.out" 2> "${TEMP_RENDERED_KEY}.err"
+  RENDER_EXIT=$?
+  set -e
+  if [ $RENDER_EXIT -ne 0 ]; then
+    echo "Error: Failed to render ansible_ssh_private_key:"
+    cat "${TEMP_RENDERED_KEY}.err"
+    rm -f "${TEMP_RENDERED_KEY}" "${TEMP_RENDERED_KEY}.out" "${TEMP_RENDERED_KEY}.err"
+    return 1
+  fi
+
+  # Extract the rendered key from debug output
+  TEMP_KEY=$(mktemp)
+  grep '"ansible_ssh_private_key":' "${TEMP_RENDERED_KEY}.out" | sed 's/.*"ansible_ssh_private_key": "\(.*\)".*/\1/' | sed 's/\\n/\n/g' > "$TEMP_KEY" 2> "${TEMP_KEY}.err"
+  if [ ! -s "$TEMP_KEY" ]; then
+    echo "Warning: Failed to extract rendered key or key is empty"
+    cat "${TEMP_KEY}.err"
+    rm -f "${TEMP_RENDERED_KEY}" "${TEMP_RENDERED_KEY}.out" "${TEMP_RENDERED_KEY}.err" "$TEMP_KEY" "${TEMP_KEY}.err"
+    return 1
+  fi
+  rm -f "${TEMP_RENDERED_KEY}.out" "${TEMP_RENDERED_KEY}.err" "${TEMP_KEY}.err"
+
+  # Validate key format
+  if ! python3 - <<EOF
+import re
+with open('$TEMP_KEY', 'r') as f:
+    key_content = f.read()
+print("Extracted key length:", len(key_content))
+print("Key preview:", key_content[:100])
+# Validate key format
+if re.match(r'^-{5}BEGIN.*PRIVATE KEY-{5}', key_content) and re.search(r'-{5}END.*PRIVATE KEY-{5}\n?$', key_content):
+    print("Key format valid")
+else:
+    print("Invalid key format: does not match BEGIN/END PRIVATE KEY")
+    import sys
+    sys.exit(1)
+EOF
+  then
+    echo "Warning: Invalid SSH key format after rendering"
+    rm -f "$TEMP_KEY"
+    return 1
+  fi
+  if [ -s "$TEMP_KEY" ]; then
+    echo "==> Extracted key preview (first line):"
+    head -n 1 "$TEMP_KEY"
+    chmod 600 "$TEMP_KEY"
+    # Test key validity
+    if ssh-keygen -y -P "" -f "$TEMP_KEY" >/dev/null 2>&1; then
+      if ssh-add "$TEMP_KEY" 2>/dev/null; then
+        echo "==> Successfully added SSH key to agent"
+        ssh-add -l
+      else
+        echo "Warning: Failed to add SSH key to agent (passphrase or format issue?)"
+        rm -f "$TEMP_KEY"
+        return 1
+      fi
+    else
+      echo "Warning: Invalid SSH key format in ansible_ssh_private_key"
+      rm -f "$TEMP_KEY"
+      return 1
+    fi
+  else
+    echo "Warning: Empty or missing SSH key in ansible_ssh_private_key"
+    rm -f "$TEMP_KEY"
+    return 1
+  fi
+
+  trap cleanup EXIT
 }
 
 # Install Galaxy collections if needed
@@ -180,7 +273,6 @@ function main() {
   if [[ "${#PLAYBOOK_ARGS[@]}" -gt 0 ]]; then
     PLAYBOOK_CMD+=("${PLAYBOOK_ARGS[*]}")
   fi
-  PLAYBOOK_CMD+=("${PLAYBOOK}")
 
   echo "==> ${PLAYBOOK_CMD[*]}"
   if ! eval "${PLAYBOOK_CMD[*]}"; then

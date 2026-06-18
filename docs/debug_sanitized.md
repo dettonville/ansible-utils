@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.debug_sanitized | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/debug_sanitized.md
-> MODULE dettonville.utils.debug_sanitized (/Users/ljohnson/tmp/_DcjK8N/ansible_collections/dettonville/utils/plugins/modules/debug_sanitized.py)
+> MODULE dettonville.utils.debug_sanitized (/Users/ljohnson/tmp/_waNGu4/ansible_collections/dettonville/utils/plugins/modules/debug_sanitized.py)
 
   Extends the core behavior of the standard `ansible.builtin.debug'
   module by applying automated sanitization filters prior to

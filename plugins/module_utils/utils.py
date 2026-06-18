@@ -5,6 +5,7 @@ from importlib import import_module
 from functools import cmp_to_key
 from operator import itemgetter as i
 from collections import OrderedDict
+from collections.abc import Mapping, Sequence
 import logging
 import pprint
 
@@ -120,15 +121,16 @@ def get_collection_version(fqcn, not_found=None, no_version="*"):
 Utility functions for dettonville.utils collection.
 """
 
-import re
-
 
 def remove_keys_from_object(obj: Any, key_patterns: List[str], log_level: str = "INFO") -> Any:
     """
     Recursively traverse the object and remove keys matching the patterns.
     Modifies the object in place.
     """
-    if isinstance(obj, dict):
+    logging.basicConfig(level=log_level)
+    logging.debug("key_patterns=%s", key_patterns)
+
+    if isinstance(obj, Mapping):
         # Use a copy of items to avoid modification during iteration
         items_to_process = list(obj.items())
         for key, value in items_to_process:
@@ -138,55 +140,19 @@ def remove_keys_from_object(obj: Any, key_patterns: List[str], log_level: str = 
                     # Optional logging; adjust as needed
                     pass  # Could add print or logging here if required
             # Recurse if value is a container (even if key was deleted, value reference is still valid)
-            if isinstance(value, (dict, list)):
+            if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)):
                 remove_keys_from_object(value, key_patterns, log_level)
-    elif isinstance(obj, list):
+    elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
             remove_keys_from_object(item, key_patterns, log_level)
     return obj
-
-
-def remove_keys_from_object_orig(
-    object: any, key_patterns: list, log_level: str = "INFO"
-) -> any:
-    logging.basicConfig(level=log_level)
-
-    logging.debug("key_patterns=%s", key_patterns)
-
-    # ref:
-    # https://stackoverflow.com/questions/3040716/python-elegant-way-to-check-if-at-least-one-regex-in-list-matches-a-string
-
-    # regex_pattern_list = map(re.compile, key_patterns)
-    # print("regex_pattern_list=%s" % regex_pattern_list)
-
-    if isinstance(object, dict):
-        # the call to `list` is useless for py2 but makes
-        # the code py2/py3 compatible
-        for key in list(object.keys()):
-            # print("key=%s" % key)
-            # if any(regex.match(key) for regex in regex_pattern_list):
-            # if any(re.match(regex, key) for regex in key_patterns):
-            if any(re.search(regex, key) for regex in key_patterns):
-                logging.debug("*** regex=%s", key)
-                logging.debug("*** remove key=%s", key)
-                del object[key]
-            else:
-                remove_keys_from_object(object[key], key_patterns, log_level)
-    elif isinstance(object, list):
-        for i in reversed(range(len(object))):
-            if isinstance(object[i], dict):
-                remove_keys_from_object(object[i], key_patterns, log_level)
-    else:
-        # neither a dict nor a list, do nothing
-        pass
-    return
 
 
 def redact_sensitive_values_from_object(obj: Any, key_patterns: list, log_level: str = "INFO") -> Any:
     """
     Recursively traverse the object and redact values for keys matching the patterns.
     """
-    if isinstance(obj, dict):
+    if isinstance(obj, Mapping):
         items_to_process = list(obj.items())
         for key, value in items_to_process:
             if any(re.match(pattern, key) for pattern in key_patterns):
@@ -194,9 +160,9 @@ def redact_sensitive_values_from_object(obj: Any, key_patterns: list, log_level:
                 if log_level == "INFO":
                     # Optional logging; adjust as needed
                     pass  # Could add print or logging here if required
-            if isinstance(value, (dict, list)):
+            if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)):
                 redact_sensitive_values_from_object(value, key_patterns, log_level)
-    elif isinstance(obj, list):
+    elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
             redact_sensitive_values_from_object(item, key_patterns, log_level)
     return obj
@@ -205,21 +171,19 @@ def redact_sensitive_values_from_object(obj: Any, key_patterns: list, log_level:
 # ref: https://stackoverflow.com/questions/9001509/how-do-i-sort-a-dictionary-by-key
 # ref:
 # https://stackoverflow.com/questions/72899/how-to-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
-
-
 def sort_dict_keys(obj: Any, reverse: bool = False) -> Any:
     """
     Recursively sort dictionary keys in the object.
     Returns a new object with sorted keys.
     """
-    if isinstance(obj, dict):
+    if isinstance(obj, Mapping):
         # Sort the current dict's items
         sorted_items = sorted(obj.items(), key=lambda x: x[0], reverse=reverse)
         new_dict = {}
         for key, value in sorted_items:
-            new_dict[key] = sort_dict_keys(value, reverse) if isinstance(value, (dict, list)) else value
+            new_dict[key] = sort_dict_keys(value, reverse) if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)) else value
         return new_dict
-    elif isinstance(obj, list):
+    elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         return [sort_dict_keys(item, reverse) for item in obj]
     else:
         # Primitives remain unchanged
@@ -354,14 +318,14 @@ def to_markdown(data: Any, flatten_nested: bool = True) -> str:
     """
     Main conversion function.
     """
-    if isinstance(data, dict):
+    if isinstance(data, Mapping):
         if flatten_nested:
             flat_data = flatten_dict(data)
             return dict_to_markdown_table(flat_data)
         else:
             # For non-flattened, could implement recursive tables, but for simplicity, flatten
             return dict_to_markdown_table(data)
-    elif isinstance(data, list):
+    elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
         return list_of_dicts_to_markdown(data)
     else:
         # Primitives

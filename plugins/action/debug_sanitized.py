@@ -30,7 +30,11 @@ class ActionModule(ActionBase):
         if task_vars is None:
             task_vars = dict()
 
+        # Explicitly pass the playbook variables to the template coordinator engine
+        self._templar.available_variables = task_vars
+
         result = super(ActionModule, self).run(tmp, task_vars)
+        result['changed'] = False
 
         # 1. Check core verbosity parameter threshold early
         verbosity = int(self._task.args.get('verbosity', 0))
@@ -66,13 +70,17 @@ class ActionModule(ActionBase):
         if var is not None:
             # If a raw string variable name was passed, resolve its data out of task_vars
             if isinstance(var, str):
-                try:
-                    # Template out the bare variable name to extract the underlying object data
-                    resolved_var = self._templar.template(f"{{{{ {var} }}}}")
-                except Exception as e:
-                    result['failed'] = True
-                    result['msg'] = f"Failed to template variable '{var}': {e}"
-                    return result
+                # FIX: First check if the string passed is a plain variable name in task_vars
+                if var in task_vars:
+                    resolved_var = task_vars[var]
+                else:
+                    try:
+                        # Template out the bare variable name to extract the underlying object data
+                        resolved_var = self._templar.template(f"{{{{ {var} }}}}")
+                    except Exception as e:
+                        result['failed'] = True
+                        result['msg'] = f"Failed to template variable '{var}': {e}"
+                        return result
             else:
                 # If they passed an already-templated or inline literal dictionary/list
                 resolved_var = self._templar.template(var)

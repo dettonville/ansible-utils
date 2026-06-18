@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.to_nice_yaml_utils | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/to_nice_yaml_utils.md
-> FILTER dettonville.utils.to_nice_yaml_utils (/Users/ljohnson/tmp/_DcjK8N/ansible_collections/dettonville/utils/plugins/filter/to_nice_yaml_utils.py)
+> FILTER dettonville.utils.to_nice_yaml_utils (/Users/ljohnson/tmp/_waNGu4/ansible_collections/dettonville/utils/plugins/filter/to_nice_yaml_utils.py)
 
   Serializes an input data object down to a cleanly formatted YAML
   string representation.
