@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
     redact_sensitive_values_from_object,
 )

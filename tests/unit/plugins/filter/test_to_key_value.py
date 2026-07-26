@@ -16,10 +16,7 @@ def filter_module():
 
 def test_to_key_value_basic(filter_module):
     """Test basic dictionary to key=value conversion"""
-    data = {
-        'DB_HOST': 'postgres',
-        'DB_PORT': '5432'
-    }
+    data = {'DB_HOST': 'postgres', 'DB_PORT': '5432'}
     # Expected output is joined by newlines
     expected = "DB_HOST=postgres\nDB_PORT=5432"
 
@@ -53,10 +50,7 @@ def test_to_key_value_non_dict(filter_module):
 
 def test_to_key_value_complex_values(filter_module):
     """Test handling of values that look like lists/strings"""
-    data = {
-        'CORS_ORIGIN': "['*']",
-        'ENABLED': 'true'
-    }
+    data = {'CORS_ORIGIN': "['*']", 'ENABLED': 'true'}
     expected = "CORS_ORIGIN=['*']\nENABLED=true"
     result = filter_module.filters()['to_key_value'](data)
     assert result == expected
@@ -82,11 +76,7 @@ def test_to_key_value_single_quote(filter_module):
 
 def test_to_key_value_default_no_sort(filter_module):
     """Test that keys retain their dictionary/insertion order by default"""
-    data = {
-        'Z_KEY': 'last',
-        'A_KEY': 'first',
-        'M_KEY': 'middle'
-    }
+    data = {'Z_KEY': 'last', 'A_KEY': 'first', 'M_KEY': 'middle'}
     expected = "Z_KEY=last\nA_KEY=first\nM_KEY=middle"
 
     result = filter_module.filters()['to_key_value'](data)
@@ -95,11 +85,7 @@ def test_to_key_value_default_no_sort(filter_module):
 
 def test_to_key_value_sorted_keys(filter_module):
     """Test that keys are sorted alphanumerically when sort_keys=True"""
-    data = {
-        'Z_KEY': 'last',
-        'A_KEY': 'first',
-        'M_KEY': 'middle'
-    }
+    data = {'Z_KEY': 'last', 'A_KEY': 'first', 'M_KEY': 'middle'}
     expected = "A_KEY=first\nM_KEY=middle\nZ_KEY=last"
 
     result = filter_module.filters()['to_key_value'](data, sort_keys=True)

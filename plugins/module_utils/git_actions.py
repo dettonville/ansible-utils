@@ -112,24 +112,35 @@ class Git:
         if self.repo_scheme == "ssh":
             ssh_command_parts = ["ssh"]
             if self.ssh_key_file:
-                ssh_command_parts.extend(["-i", self.ssh_key_file, "-o", "IdentitiesOnly=yes"])
+                ssh_command_parts.extend(
+                    ["-i", self.ssh_key_file, "-o", "IdentitiesOnly=yes"]
+                )
             ssh_command_parts.extend(["-o", "BatchMode=yes"])
             if self.ssh_opts:
                 ssh_command_parts.extend(self.ssh_opts.split())
 
-            final_ssh_command = ' '.join([
-                f"'{part}'" if ' ' in part and not (part.startswith("'") or part.startswith('"')) else part
-                for part in ssh_command_parts
-            ])
+            final_ssh_command = ' '.join(
+                [
+                    f"'{part}'"
+                    if ' ' in part
+                    and not (part.startswith("'") or part.startswith('"'))
+                    else part
+                    for part in ssh_command_parts
+                ]
+            )
             self.git_ssh_command = final_ssh_command
-            self.log.debug("Git class initialized with GIT_SSH_COMMAND: %s", self.git_ssh_command)
+            self.log.debug(
+                "Git class initialized with GIT_SSH_COMMAND: %s", self.git_ssh_command
+            )
 
         # We screen scrape a huge amount of git commands so use C locale
         self.module.run_command_environ_update = dict(
             LANG="C", LC_ALL="C", LC_MESSAGES="C", LC_CTYPE="C"
         )
         if self.git_ssh_command:
-            self.module.run_command_environ_update['GIT_SSH_COMMAND'] = self.git_ssh_command
+            self.module.run_command_environ_update['GIT_SSH_COMMAND'] = (
+                self.git_ssh_command
+            )
 
     @staticmethod
     def get_url_scheme(url) -> str:
@@ -146,14 +157,24 @@ class Git:
 
         if self.user_name:
             self.module.run_command_environ_update['GIT_AUTHOR_NAME'] = self.user_name
-            self.module.run_command_environ_update['GIT_COMMITTER_NAME'] = self.user_name
+            self.module.run_command_environ_update['GIT_COMMITTER_NAME'] = (
+                self.user_name
+            )
         if self.user_email:
             self.module.run_command_environ_update['GIT_AUTHOR_EMAIL'] = self.user_email
-            self.module.run_command_environ_update['GIT_COMMITTER_EMAIL'] = self.user_email
+            self.module.run_command_environ_update['GIT_COMMITTER_EMAIL'] = (
+                self.user_email
+            )
 
         git_cmd = [self.git_bin_path] + cmd
 
-        self.log.info("%s Executing git command: %s with env: %s in cwd: %s", log_prefix, ' '.join(git_cmd), self.module.run_command_environ_update, cwd)
+        self.log.info(
+            "%s Executing git command: %s with env: %s in cwd: %s",
+            log_prefix,
+            ' '.join(git_cmd),
+            self.module.run_command_environ_update,
+            cwd,
+        )
 
         try:
             rc, stdout, stderr = self.module.run_command(
@@ -164,8 +185,12 @@ class Git:
                 check_rc=check_rc,
             )
             # Safely decode stdout, as it may already be a string or bytes
-            decoded_stdout = stdout.decode('utf-8') if isinstance(stdout, bytes) else stdout
-            decoded_stderr = stderr.decode('utf-8') if isinstance(stderr, bytes) else stderr
+            decoded_stdout = (
+                stdout.decode('utf-8') if isinstance(stdout, bytes) else stdout
+            )
+            decoded_stderr = (
+                stderr.decode('utf-8') if isinstance(stderr, bytes) else stderr
+            )
 
             self.log.debug("%s: rc=%d", log_prefix, rc)
             self.log.debug("%s: decoded_stdout=%s", log_prefix, decoded_stdout)
@@ -251,12 +276,12 @@ class Git:
         current_user_name_rc, current_user_name, _stderr = self.execute_git_command(
             ['config', '--local', 'user.name', user_name],
             check_rc=False,
-            cwd=self.repo_dir
+            cwd=self.repo_dir,
         )
         current_user_email_rc, current_user_email, _stderr = self.execute_git_command(
             ['config', '--local', 'user.email', user_email],
             check_rc=False,
-            cwd=self.repo_dir
+            cwd=self.repo_dir,
         )
 
         # Set user.name if it's not already configured or if it's different from the desired value
@@ -264,7 +289,7 @@ class Git:
             self.execute_git_command(
                 ['config', '--local', 'user.name', user_name],
                 check_rc=True,
-                cwd=self.repo_dir
+                cwd=self.repo_dir,
             )
             self.log.debug("%s Set git user.name to %s", log_prefix, user_name)
 
@@ -273,7 +298,7 @@ class Git:
             self.execute_git_command(
                 ['config', '--local', 'user.email', user_email],
                 check_rc=True,
-                cwd=self.repo_dir
+                cwd=self.repo_dir,
             )
             self.log.debug("%s Set git user.email to %s", log_prefix, user_email)
 
@@ -320,7 +345,9 @@ class Git:
             command, check_rc=True, cwd=self.repo_dir
         )
 
-        result.update({"message": stdout, "git.clone": str(stdout) + str(stderr), "changed": True})
+        result.update(
+            {"message": stdout, "git.clone": str(stdout) + str(stderr), "changed": True}
+        )
 
         if bare and self.remote != "origin":
             self.execute_git_command(
@@ -355,7 +382,9 @@ class Git:
             command, check_rc=True, cwd=self.repo_dir
         )
 
-        result.update({"message": stdout, "git.pull": str(stdout) + str(stderr), "changed": True})
+        result.update(
+            {"message": stdout, "git.pull": str(stdout) + str(stderr), "changed": True}
+        )
 
         self.log.debug("%s result => %s", log_prefix, pprint.pformat(result))
         return result
@@ -387,9 +416,13 @@ class Git:
 
         self.log.debug("%s command => %s", log_prefix, command)
 
-        rc, stdout, stderr = self.execute_git_command(command, check_rc=True, cwd=self.repo_dir)
+        rc, stdout, stderr = self.execute_git_command(
+            command, check_rc=True, cwd=self.repo_dir
+        )
 
-        result.update({"message": stdout, "git.add": str(stdout) + str(stderr), "changed": True})
+        result.update(
+            {"message": stdout, "git.add": str(stdout) + str(stderr), "changed": True}
+        )
 
         self.log.debug("%s result => %s", log_prefix, pprint.pformat(result))
 
@@ -417,7 +450,9 @@ class Git:
 
         self.log.debug("%s command => %s", log_prefix, command)
 
-        rc, stdout, stderr = self.execute_git_command(command, check_rc=True, cwd=self.repo_dir)
+        rc, stdout, stderr = self.execute_git_command(
+            command, check_rc=True, cwd=self.repo_dir
+        )
 
         if rc == 0:
             for line in stdout.split("\n"):
@@ -451,9 +486,17 @@ class Git:
 
         self.log.debug("%s command => %s", log_prefix, command)
 
-        rc, stdout, stderr = self.execute_git_command(command, check_rc=True, cwd=self.repo_dir)
+        rc, stdout, stderr = self.execute_git_command(
+            command, check_rc=True, cwd=self.repo_dir
+        )
 
-        result.update({"message": stdout, "git.commit": str(stdout) + str(stderr), "changed": True})
+        result.update(
+            {
+                "message": stdout,
+                "git.commit": str(stdout) + str(stderr),
+                "changed": True,
+            }
+        )
 
         self.log.debug("%s result => %s", log_prefix, pprint.pformat(result))
 
@@ -490,7 +533,9 @@ class Git:
             """
             cmd = ["remote", "get-url", "--all", self.remote]
 
-            rc, _stdout, _stderr = self.execute_git_command(cmd, check_rc=True, cwd=self.repo_dir)
+            rc, _stdout, _stderr = self.execute_git_command(
+                cmd, check_rc=True, cwd=self.repo_dir
+            )
 
             if rc == 0:
                 return
@@ -518,7 +563,9 @@ class Git:
                         self.repo_url,
                     ]
 
-                rc, stdout, stderr = self.execute_git_command(cmd, check_rc=True, cwd=self.repo_dir)
+                rc, stdout, stderr = self.execute_git_command(
+                    cmd, check_rc=True, cwd=self.repo_dir
+                )
 
                 if rc == 0:
                     return
@@ -543,7 +590,9 @@ class Git:
             """
             result = dict()
 
-            rc, stdout, stderr = self.execute_git_command(command, check_rc=True, cwd=self.repo_dir)
+            rc, stdout, stderr = self.execute_git_command(
+                command, check_rc=True, cwd=self.repo_dir
+            )
 
             if rc == 0:
                 result.update(

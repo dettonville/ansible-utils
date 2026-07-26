@@ -124,11 +124,9 @@ class TestGitPacpModule(ModuleTestCase):
         self.assertEqual(
             arg_spec["action"]["choices"], ["acp", "pacp", "pull", "clone"]
         )
-        self.assertEqual(arg_spec["mode"]["choices"],
-                         ["ssh", "https", "local"])
+        self.assertEqual(arg_spec["mode"]["choices"], ["ssh", "https", "local"])
         self.assertEqual(
-            arg_spec["logging_level"]["choices"], [
-                "NOTSET", "DEBUG", "INFO", "ERROR"]
+            arg_spec["logging_level"]["choices"], ["NOTSET", "DEBUG", "INFO", "ERROR"]
         )
 
         # Verify defaults
@@ -138,8 +136,7 @@ class TestGitPacpModule(ModuleTestCase):
 
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
-    def test_main_pacp_action_with_changes(
-            self, mock_git_class, mock_ansible_module):
+    def test_main_pacp_action_with_changes(self, mock_git_class, mock_ansible_module):
         """Test main function with pacp action when there are changes"""
         self.setUp()
         mock_ansible_module.return_value = self.mock_module
@@ -150,16 +147,13 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance.status.return_value = {"file1.txt"}
         mock_git_instance.check_uncommitted_changes.return_value = False
         mock_git_instance.set_user_config.return_value = {"changed": True}
-        mock_git_instance.pull.return_value = {
-            "changed": True, "message": "pulled"}
-        mock_git_instance.add.return_value = {
-            "changed": True, "message": "added"}
+        mock_git_instance.pull.return_value = {"changed": True, "message": "pulled"}
+        mock_git_instance.add.return_value = {"changed": True, "message": "added"}
         mock_git_instance.commit.return_value = {
             "changed": True,
             "message": "committed",
         }
-        mock_git_instance.push.return_value = {
-            "changed": True, "message": "pushed"}
+        mock_git_instance.push.return_value = {"changed": True, "message": "pushed"}
 
         self.main()
 
@@ -175,8 +169,7 @@ class TestGitPacpModule(ModuleTestCase):
 
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
-    def test_main_acp_action_with_changes(
-            self, mock_git_class, mock_ansible_module):
+    def test_main_acp_action_with_changes(self, mock_git_class, mock_ansible_module):
         """Test main function with acp action when there are changes"""
         self.mock_module.params["action"] = "acp"
         mock_ansible_module.return_value = self.mock_module
@@ -186,14 +179,12 @@ class TestGitPacpModule(ModuleTestCase):
         # Mock git methods
         mock_git_instance.status.return_value = {"file1.txt"}
         mock_git_instance.set_user_config.return_value = {"changed": True}
-        mock_git_instance.add.return_value = {
-            "changed": True, "message": "added"}
+        mock_git_instance.add.return_value = {"changed": True, "message": "added"}
         mock_git_instance.commit.return_value = {
             "changed": True,
             "message": "committed",
         }
-        mock_git_instance.push.return_value = {
-            "changed": True, "message": "pushed"}
+        mock_git_instance.push.return_value = {"changed": True, "message": "pushed"}
 
         self.main()
 
@@ -234,8 +225,7 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance = Mock()
         mock_git_class.return_value = mock_git_instance
 
-        mock_git_instance.clone.return_value = {
-            "changed": True, "message": "cloned"}
+        mock_git_instance.clone.return_value = {"changed": True, "message": "cloned"}
 
         self.main()
 
@@ -252,8 +242,7 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance = Mock()
         mock_git_class.return_value = mock_git_instance
 
-        mock_git_instance.pull.return_value = {
-            "changed": True, "message": "pulled"}
+        mock_git_instance.pull.return_value = {"changed": True, "message": "pulled"}
 
         self.main()
 
@@ -267,8 +256,7 @@ class TestGitPacpModule(ModuleTestCase):
     def test_main_validation_https_mode(self, mock_git_class):
         """Test main function parameter validation for HTTPS mode"""
         module_args = self.mock_module.params
-        module_args.update(
-            {"url": "git@github.com:test/repo.git", "mode": "https"})
+        module_args.update({"url": "git@github.com:test/repo.git", "mode": "https"})
 
         # Expect fail_json to be called with a specific message
         # Make it raise for testing
@@ -294,8 +282,7 @@ class TestGitPacpModule(ModuleTestCase):
     def test_main_validation_ssh_mode(self, mock_git_class):
         """Test main function parameter validation for SSH mode"""
         module_args = self.mock_module.params
-        module_args.update(
-            {"url": "https://github.com/test/repo.git", "mode": "ssh"})
+        module_args.update({"url": "https://github.com/test/repo.git", "mode": "ssh"})
 
         # Expect fail_json to be called with a specific message
         # Make it raise for testing
@@ -347,8 +334,7 @@ class TestGitActions(unittest.TestCase):
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.stat"))
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.chmod"))
     @patch(
-        make_absolute(MODULE_UTILS_IMPORT_PATH,
-                      "git_actions.Git.execute_git_command")
+        make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command")
     )
     @patch(
         make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.environ"),
@@ -395,8 +381,7 @@ class TestGitActions(unittest.TestCase):
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.stat"))
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.chmod"))
     @patch(
-        make_absolute(MODULE_UTILS_IMPORT_PATH,
-                      "git_actions.Git.execute_git_command")
+        make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command")
     )  # Mock execute_git_command directly
     @patch(
         make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.environ"),
@@ -437,7 +422,9 @@ class TestGitActions(unittest.TestCase):
 
         # Assert that the GIT_SSH_COMMAND is correctly formed in the mocked os.environ
         # This checks the logic inside Git.__init__
-        expected_ssh_command = "ssh -i /some/path/ansible_repo.key -o IdentitiesOnly=yes"
+        expected_ssh_command = (
+            "ssh -i /some/path/ansible_repo.key -o IdentitiesOnly=yes"
+        )
         expected_ssh_command += " -o BatchMode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
         # Assert that the correct GIT_SSH_COMMAND is set correctly

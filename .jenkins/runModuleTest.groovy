@@ -1,4 +1,3 @@
-#!/usr/bin/env groovy
 
 import jenkins.branch.*
 import jenkins.model.Jenkins

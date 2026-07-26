@@ -91,8 +91,7 @@ class TestExportDictUtils(ModuleTestCase):
 
     def test_get_headers_and_fields(self):
         """Test extracting headers and field names from column list."""
-        headers, fieldnames = self.get_headers_and_fields(
-            self.sample_column_list)
+        headers, fieldnames = self.get_headers_and_fields(self.sample_column_list)
 
         expected_headers = ["Key #1", "Key #2", "Key #3"]
         expected_fieldnames = ["key1", "key2", "key3"]
@@ -108,8 +107,7 @@ class TestExportDictUtils(ModuleTestCase):
             {"name": "key3", "header": ""},
         ]
 
-        headers, fieldnames = self.get_headers_and_fields(
-            column_list_no_headers)
+        headers, fieldnames = self.get_headers_and_fields(column_list_no_headers)
 
         # Should fallback to fieldnames when headers are empty
         self.assertEqual(headers, fieldnames)
@@ -227,8 +225,7 @@ class TestExportDictUtils(ModuleTestCase):
             )
 
             # Verify file was opened with UTF-8 encoding
-            mock_file.assert_called_once_with(
-                output_file, "w", encoding="utf-8")
+            mock_file.assert_called_once_with(output_file, "w", encoding="utf-8")
 
             # Verify result
             self.assertTrue(result["changed"])
@@ -276,8 +273,7 @@ class TestExportDictUtils(ModuleTestCase):
             {"key1": "value31", "key2": "value32", "key3": "ḃâŗ"},
         ]
 
-        csv_string = self.write_csv_string(
-            unicode_export_list, self.sample_column_list)
+        csv_string = self.write_csv_string(unicode_export_list, self.sample_column_list)
         print(f"csv_string: {csv_string}")
 
         # Unicode characters should be preserved
@@ -357,15 +353,13 @@ class TestExportDictsModule(ModuleTestCase):
         # Verify choices
         self.assertEqual(arg_spec["format"]["choices"], ["md", "csv"])
         self.assertEqual(
-            arg_spec["logging_level"]["choices"], [
-                "NOTSET", "DEBUG", "INFO", "ERROR"]
+            arg_spec["logging_level"]["choices"], ["NOTSET", "DEBUG", "INFO", "ERROR"]
         )
 
     @patch(make_absolute(MODULES_IMPORT_PATH, "export_dicts.write_csv_file"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "export_dicts.AnsibleModule"))
     @patch("os.path.exists")
-    def test_main_csv_export(
-            self, mock_exists, mock_ansible_module, mock_write_csv):
+    def test_main_csv_export(self, mock_exists, mock_ansible_module, mock_write_csv):
         """Test main function with CSV export."""
         mock_module = Mock()
         mock_ansible_module.return_value = mock_module
@@ -655,7 +649,6 @@ class TestExportDictsIntegration(ModuleTestCase):
 
         # Import utility functions
         try:
-
             mock_module = MockAnsibleModule()
             result = write_csv_file(
                 mock_module, output_file, self.sample_data, self.sample_columns
@@ -677,8 +670,7 @@ class TestExportDictsIntegration(ModuleTestCase):
             self.assertIn("successfully", result["message"])
 
         except ImportError:
-            self.skipTest(
-                "export_dict_utils not available for integration test")
+            self.skipTest("export_dict_utils not available for integration test")
 
     def test_markdown_export_integration(self):
         """Test complete Markdown export workflow."""
@@ -686,7 +678,6 @@ class TestExportDictsIntegration(ModuleTestCase):
 
         # Import utility functions
         try:
-
             mock_module = MockAnsibleModule()
             result = write_markdown_file(
                 mock_module, output_file, self.sample_data, self.sample_columns
@@ -710,8 +701,7 @@ class TestExportDictsIntegration(ModuleTestCase):
             self.assertIn("successfully", result["message"])
 
         except ImportError:
-            self.skipTest(
-                "export_dict_utils not available for integration test")
+            self.skipTest("export_dict_utils not available for integration test")
 
     def test_large_dataset_export(self):
         """Test exporting large datasets."""
@@ -729,10 +719,8 @@ class TestExportDictsIntegration(ModuleTestCase):
         output_file = os.path.join(self.temp_dir, "large_test.csv")
 
         try:
-
             mock_module = MockAnsibleModule()
-            result = write_csv_file(
-                mock_module, output_file, large_data, columns)
+            result = write_csv_file(mock_module, output_file, large_data, columns)
 
             # Verify file was created
             self.assertTrue(os.path.exists(output_file))
@@ -747,8 +735,7 @@ class TestExportDictsIntegration(ModuleTestCase):
             self.assertTrue(result["changed"])
 
         except ImportError:
-            self.skipTest(
-                "export_dict_utils not available for integration test")
+            self.skipTest("export_dict_utils not available for integration test")
 
 
 if __name__ == "__main__":

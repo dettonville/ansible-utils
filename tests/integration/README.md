@@ -170,7 +170,7 @@ nano debug_dir/ansible_collections/dettonville/utils/plugins/module_utils/git_ac
 ### Run All Tests
 
 ```shell
-tests/run_tests.sh > run_test.results.txt
+./run-tests.sh > run_test.results.txt
 
 ```
 

@@ -27,10 +27,7 @@ def default_patterns():
 
 def test_remove_single_dict_password(filter_module, default_patterns):
     """Test removing a password key from a simple dict."""
-    input_dict = {
-        "username": "admin",
-        "password": "secret123"
-    }
+    input_dict = {"username": "admin", "password": "secret123"}
     result = filter_module.remove_sensitive_keys(input_dict)
     assert "username" in result
     assert result["username"] == "admin"
@@ -42,12 +39,9 @@ def test_remove_nested_dict(filter_module, default_patterns):
     input_dict = {
         "user": {
             "name": "admin",
-            "credentials": {
-                "password": "secret",
-                "api_key": "key123"
-            }
+            "credentials": {"password": "secret", "api_key": "key123"},
         },
-        "other": "value"
+        "other": "value",
     }
     result = filter_module.remove_sensitive_keys(input_dict)
     assert result["user"]["name"] == "admin"
@@ -107,11 +101,10 @@ def test_remove_nested_list(filter_module):
 def test_custom_patterns(filter_module):
     """Test with custom key patterns."""
     custom_patterns = ["(?i).*secret.*"]
-    input_dict = {
-        "secret_key": "mysecret",
-        "normal_key": "normal"
-    }
-    result = filter_module.remove_sensitive_keys(input_dict, key_patterns=custom_patterns)
+    input_dict = {"secret_key": "mysecret", "normal_key": "normal"}
+    result = filter_module.remove_sensitive_keys(
+        input_dict, key_patterns=custom_patterns
+    )
     assert "normal_key" in result
     assert result["normal_key"] == "normal"
     assert "secret_key" not in result
@@ -119,13 +112,9 @@ def test_custom_patterns(filter_module):
 
 def test_additional_patterns(filter_module):
     """Test with additional key patterns."""
-    input_dict = {
-        "password": "pass",
-        "ssh_key": "sshkey"
-    }
+    input_dict = {"password": "pass", "ssh_key": "sshkey"}
     result = filter_module.remove_sensitive_keys(
-        input_dict,
-        additional_key_patterns=["(?i).*ssh.*"]
+        input_dict, additional_key_patterns=["(?i).*ssh.*"]
     )
     assert "password" not in result
     assert "ssh_key" not in result
@@ -140,11 +129,7 @@ def test_no_patterns(filter_module):
 
 def test_non_matching_keys(filter_module, default_patterns):
     """Test that non-matching keys are unchanged."""
-    input_dict = {
-        "username": "admin",
-        "description": "some desc",
-        "password": "secret"
-    }
+    input_dict = {"username": "admin", "description": "some desc", "password": "secret"}
     result = filter_module.remove_sensitive_keys(input_dict)
     assert result["username"] == "admin"
     assert result["description"] == "some desc"

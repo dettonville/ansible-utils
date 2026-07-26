@@ -39,10 +39,10 @@ $ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ### Run All Tests
 
 ```shell
-tests/run_tests.sh > run_test.results.txt
-tests/run_tests.sh sanity
-tests/run_tests.sh integration
-tests/run_tests.sh -L DEBUG sanity
+./run-tests.sh > run_test.results.txt
+./run-tests.sh sanity
+./run-tests.sh integration
+./run-tests.sh -L DEBUG sanity
 
 ```
 

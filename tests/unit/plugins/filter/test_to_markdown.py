@@ -16,11 +16,7 @@ def filter_module():
 
 def test_to_markdown_simple_dict(filter_module):
     """Test converting a simple dict to Markdown."""
-    input_dict = {
-        "name": "Alice",
-        "age": 30,
-        "city": "New York"
-    }
+    input_dict = {"name": "Alice", "age": 30, "city": "New York"}
     result = filter_module.to_markdown(input_dict)
     expected = """| Key | Value |
 |-----|-------|
@@ -35,7 +31,7 @@ def test_to_markdown_list_of_dicts(filter_module):
     input_list = [
         {"name": "Alice", "age": 30, "city": "New York"},
         {"name": "Bob", "age": 25, "city": "London"},
-        {"name": "Charlie", "age": 35, "city": "Paris"}
+        {"name": "Charlie", "age": 35, "city": "Paris"},
     ]
     result = filter_module.to_markdown(input_list)
     expected = """| name | age | city |
@@ -51,12 +47,9 @@ def test_to_markdown_nested_dict(filter_module):
     input_dict = {
         "user": {
             "name": "Alice",
-            "address": {
-                "street": "123 Main St",
-                "city": "New York"
-            }
+            "address": {"street": "123 Main St", "city": "New York"},
         },
-        "preferences": {"theme": "dark"}
+        "preferences": {"theme": "dark"},
     }
     result = filter_module.to_markdown(input_dict)
     expected = """| Key | Value |
@@ -72,11 +65,8 @@ def test_to_markdown_mixed_structure(filter_module):
     """Test converting mixed structure to Markdown (flattened dict with list repr)."""
     input_obj = {
         "title": "Users Report",
-        "users": [
-            {"name": "Alice", "age": 30},
-            {"name": "Bob", "age": 25}
-        ],
-        "summary": "Two users listed."
+        "users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}],
+        "summary": "Two users listed.",
     }
     result = filter_module.to_markdown(input_obj)
     expected = """| Key | Value |
@@ -114,10 +104,7 @@ def test_to_markdown_with_flatten_option(filter_module):
     input_dict = {
         "user": {
             "name": "Alice",
-            "address": {
-                "street": "123 Main St",
-                "city": "New York"
-            }
+            "address": {"street": "123 Main St", "city": "New York"},
         }
     }
     result = filter_module.to_markdown(input_dict, flatten_nested=False)
@@ -130,16 +117,7 @@ def test_to_markdown_with_flatten_option(filter_module):
 def test_to_markdown_complex_nested_list(filter_module):
     """Test deeply nested lists and dicts (flattened)."""
     input_obj = {
-        "data": [
-            {
-                "level1": {
-                    "items": [
-                        {"name": "Item1"},
-                        {"name": "Item2"}
-                    ]
-                }
-            }
-        ]
+        "data": [{"level1": {"items": [{"name": "Item1"}, {"name": "Item2"}]}}]
     }
     result = filter_module.to_markdown(input_obj)
     expected = """| Key | Value |

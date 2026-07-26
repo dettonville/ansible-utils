@@ -93,8 +93,7 @@ def set_module_args(args):
 
 # Mock the Ansible module utils
 class MockAnsibleModule:
-    def __init__(self, argument_spec=None,
-                 supports_check_mode=False, **kwargs):
+    def __init__(self, argument_spec=None, supports_check_mode=False, **kwargs):
         self.argument_spec = argument_spec
         self.supports_check_mode = supports_check_mode
         self.params = kwargs.get("params", {})

@@ -3,7 +3,7 @@
 to_markdown Ansible filter plugin
 """
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 DOCUMENTATION = """
   name: to_key_value
@@ -96,7 +96,9 @@ EXAMPLES = """
 __metaclass__ = type
 
 
-def to_key_value(data, separator='=', joiner='\n', quote=False, quote_char='"', sort_keys=False):
+def to_key_value(
+    data, separator='=', joiner='\n', quote=False, quote_char='"', sort_keys=False
+):
     """
     Converts a dictionary to a flat string of key=value pairs.
     :param separator: String used to separate key and value (default: '=')
@@ -122,6 +124,4 @@ def to_key_value(data, separator='=', joiner='\n', quote=False, quote_char='"', 
 
 class FilterModule(object):
     def filters(self):
-        return {
-            'to_key_value': to_key_value
-        }
+        return {'to_key_value': to_key_value}

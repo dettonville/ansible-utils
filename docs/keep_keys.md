@@ -16,7 +16,7 @@ $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
 $
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.keep_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/keep_keys.md
-> FILTER dettonville.utils.keep_keys (/Users/ljohnson/tmp/_waNGu4/ansible_collections/dettonville/utils/plugins/filter/keep_keys.py)
+> FILTER dettonville.utils.keep_keys (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/filter/keep_keys.py)
 
   Traverses a dictionary or a list of dictionaries and retains only
   the keys that match the provided list of regex patterns.

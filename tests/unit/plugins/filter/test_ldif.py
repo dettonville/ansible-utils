@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -13,7 +13,7 @@ def test_to_ldif_basic_and_ordering():
         'objectClass': 'posixGroup',
         'dn': 'cn=admins,ou=groups,dc=dettonville,dc=int',
         'cn': 'admins',
-        'gidNumber': 2000
+        'gidNumber': 2000,
     }
     output = to_ldif(entry)
 
@@ -32,7 +32,7 @@ def test_to_ldif_lists_and_multivalue():
     entry = {
         'dn': 'cn=wheel,ou=groups,dc=dettonville,dc=int',
         'objectClass': ['top', 'posixGroup'],
-        'memberUid': ['ljohnson', 'testuser_infra_dev01']
+        'memberUid': ['ljohnson', 'testuser_infra_dev01'],
     }
     output = to_ldif(entry)
     lines = output.splitlines()
@@ -47,11 +47,13 @@ def test_to_ldif_explicit_base64():
     """Verify fields terminating with explicit double colons are base64-encoded automatically."""
     entry = {
         'dn': 'cn=search,dc=dettonville,dc=int',
-        'userPassword::': '{SSHA}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+        'userPassword::': '{SSHA}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     }
     output = to_ldif(entry)
     # {SSHA}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx encodes exactly to e1NTSEF9eFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFg=
-    assert "userPassword:: e1NTSEF9eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=" in output
+    assert (
+        "userPassword:: e1NTSEF9eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=" in output
+    )
 
 
 def test_to_ldif_skips_none_values():
@@ -59,7 +61,7 @@ def test_to_ldif_skips_none_values():
     entry = {
         'dn': 'cn=sudo.root,ou=SUDOers,dc=dettonville,dc=int',
         'gidNumber': None,
-        'description': 'Root Sudo Rule'
+        'description': 'Root Sudo Rule',
     }
     output = to_ldif(entry)
     assert "description: Root Sudo Rule" in output
@@ -154,8 +156,17 @@ def test_to_ldif_from_ldif_roundtrip():
     assert set(reconstructed['objectClass']) == set(original['objectClass'])
 
     # Check scalar values
-    for key in ['cn', 'sn', 'givenName', 'uid', 'mail', 'homeDirectory', 'loginShell',
-                'description', 'employeeNumber']:
+    for key in [
+        'cn',
+        'sn',
+        'givenName',
+        'uid',
+        'mail',
+        'homeDirectory',
+        'loginShell',
+        'description',
+        'employeeNumber',
+    ]:
         assert reconstructed.get(key) == original[key]
 
     # Check integer values (come back as strings from LDIF strings)

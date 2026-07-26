@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 import re
 import copy
 from ansible.errors import AnsibleFilterError
@@ -68,7 +68,9 @@ class FilterModule(object):
     def filters(self):
         return {"keep_keys": self.keep_keys}
 
-    def keep_keys(self, input_object: any, key_patterns: list, recursive: bool = False) -> any:
+    def keep_keys(
+        self, input_object: any, key_patterns: list, recursive: bool = False
+    ) -> any:
         if not isinstance(key_patterns, list):
             raise AnsibleFilterError("The 'key_patterns' option must be a list.")
 
@@ -91,11 +93,15 @@ class FilterModule(object):
 
                     if matched:
                         if is_recursive:
-                            new_dict[k] = _process_object(v, is_recursive, parent_matched=True)
+                            new_dict[k] = _process_object(
+                                v, is_recursive, parent_matched=True
+                            )
                         else:
                             new_dict[k] = copy.deepcopy(v)
                     elif is_recursive:
-                        if isinstance(v, (Mapping, Sequence)) and not isinstance(v, (str, bytes)):
+                        if isinstance(v, (Mapping, Sequence)) and not isinstance(
+                            v, (str, bytes)
+                        ):
                             res = _process_object(v, is_recursive, parent_matched=False)
                             if res or res == {} or res == []:
                                 new_dict[k] = res
@@ -105,7 +111,12 @@ class FilterModule(object):
                 new_list = []
                 for item in obj:
                     res = _process_object(item, is_recursive, parent_matched)
-                    if res or isinstance(res, (bool, int, float)) or res == {} or res == []:
+                    if (
+                        res
+                        or isinstance(res, (bool, int, float))
+                        or res == {}
+                        or res == []
+                    ):
                         new_list.append(res)
                 return new_list
 

@@ -3,7 +3,8 @@
 # Copyright: (c) 2025, Lee Johnson (ljohnson@dettonville.com)
 # MIT license (https://opensource.org/license/mit/)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -387,10 +388,7 @@ def run_module():
     else:  # default is in ['acp','pacp']
         changed_files = git.status()
         if changed_files:
-            user_config = {
-                "name": user_name,
-                "email": user_email
-            }
+            user_config = {"name": user_name, "email": user_email}
             git.set_user_config(user_config)
 
             if action == "pacp":

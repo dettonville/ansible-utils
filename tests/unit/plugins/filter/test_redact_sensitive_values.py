@@ -29,10 +29,7 @@ def default_patterns():
 
 def test_redact_single_dict_password(filter_module, default_patterns):
     """Test redacting a password in a simple dict."""
-    input_dict = {
-        "username": "admin",
-        "password": "secret123"
-    }
+    input_dict = {"username": "admin", "password": "secret123"}
     result = filter_module.redact_sensitive_values(input_dict)
     assert result["username"] == "admin"
     assert result["password"] == "<redacted_password>"
@@ -43,10 +40,7 @@ def test_redact_nested_dict(filter_module):
     input_dict = {
         "user": {
             "name": "admin",
-            "credentials": {
-                "password": "secret",
-                "api_key": "key123"
-            }
+            "credentials": {"password": "secret", "api_key": "key123"},
         },
         "other": "value",
     }
@@ -92,24 +86,19 @@ def test_redact_mixed_structure(filter_module):
 def test_custom_patterns(filter_module):
     """Test with custom key patterns."""
     custom_patterns = ["(?i).*secret.*"]
-    input_dict = {
-        "secret_key": "mysecret",
-        "normal_key": "normal"
-    }
-    result = filter_module.redact_sensitive_values(input_dict, key_patterns=custom_patterns)
+    input_dict = {"secret_key": "mysecret", "normal_key": "normal"}
+    result = filter_module.redact_sensitive_values(
+        input_dict, key_patterns=custom_patterns
+    )
     assert result["normal_key"] == "normal"
     assert result["secret_key"] == "<redacted_secret_key>"
 
 
 def test_additional_patterns(filter_module):
     """Test with additional key patterns."""
-    input_dict = {
-        "password": "pass",
-        "ssh_key": "sshkey"
-    }
+    input_dict = {"password": "pass", "ssh_key": "sshkey"}
     result = filter_module.redact_sensitive_values(
-        input_dict,
-        additional_key_patterns=["(?i).*ssh.*"]
+        input_dict, additional_key_patterns=["(?i).*ssh.*"]
     )
     assert result["password"] == "<redacted_password>"
     assert result["ssh_key"] == "<redacted_ssh_key>"
@@ -124,11 +113,7 @@ def test_no_patterns(filter_module):
 
 def test_non_matching_keys(filter_module):
     """Test that non-matching keys are unchanged."""
-    input_dict = {
-        "username": "admin",
-        "description": "some desc",
-        "password": "secret"
-    }
+    input_dict = {"username": "admin", "description": "some desc", "password": "secret"}
     result = filter_module.redact_sensitive_values(input_dict)
     assert result["username"] == "admin"
     assert result["description"] == "some desc"

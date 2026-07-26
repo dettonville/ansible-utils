@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
 import base64
-
 
 DOCUMENTATION = """
   name: to_ldif
@@ -109,7 +108,7 @@ def _fold_line(line, width=76):
     chunk_size = width - 1
 
     for i in range(0, len(remaining), chunk_size):
-        chunks.append(" " + remaining[i:i + chunk_size])
+        chunks.append(" " + remaining[i : i + chunk_size])
 
     return "\n".join(chunks)
 
@@ -163,7 +162,9 @@ def to_ldif(entry):
                 line_content = "{0}:: {1}".format(attr_name, b64_val)
             else:
                 # Auto-encode unsafe string elements if they contain non-printable or non-ASCII characters
-                if any(ord(c) < 32 or ord(c) > 126 for c in val_str) or val_str.startswith((':', ' ')):
+                if any(
+                    ord(c) < 32 or ord(c) > 126 for c in val_str
+                ) or val_str.startswith((':', ' ')):
                     b64_val = base64.b64encode(val_str.encode('utf-8')).decode('utf-8')
                     line_content = "{0}:: {1}".format(key, b64_val)
                 else:
@@ -181,7 +182,9 @@ def from_ldif(ldif_str):
     Handles unfolding of continuous lines starting with leading spaces or tabs gracefully.
     """
     if not isinstance(ldif_str, str):
-        raise ValueError("from_ldif requires a string argument representing an LDIF record.")
+        raise ValueError(
+            "from_ldif requires a string argument representing an LDIF record."
+        )
 
     entry = {}
     lines = ldif_str.splitlines()
@@ -240,7 +243,4 @@ def from_ldif(ldif_str):
 
 class FilterModule(object):
     def filters(self):
-        return {
-            'to_ldif': to_ldif,
-            'from_ldif': from_ldif
-        }
+        return {'to_ldif': to_ldif, 'from_ldif': from_ldif}

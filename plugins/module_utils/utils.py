@@ -122,7 +122,9 @@ Utility functions for dettonville.utils collection.
 """
 
 
-def remove_keys_from_object(obj: Any, key_patterns: List[str], log_level: str = "INFO") -> Any:
+def remove_keys_from_object(
+    obj: Any, key_patterns: List[str], log_level: str = "INFO"
+) -> Any:
     """
     Recursively traverse the object and remove keys matching the patterns.
     Modifies the object in place.
@@ -140,7 +142,9 @@ def remove_keys_from_object(obj: Any, key_patterns: List[str], log_level: str = 
                     # Optional logging; adjust as needed
                     pass  # Could add print or logging here if required
             # Recurse if value is a container (even if key was deleted, value reference is still valid)
-            if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)):
+            if isinstance(value, (Mapping, Sequence)) and not isinstance(
+                value, (str, bytes)
+            ):
                 remove_keys_from_object(value, key_patterns, log_level)
     elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
@@ -148,7 +152,9 @@ def remove_keys_from_object(obj: Any, key_patterns: List[str], log_level: str = 
     return obj
 
 
-def redact_sensitive_values_from_object(obj: Any, key_patterns: list, log_level: str = "INFO") -> Any:
+def redact_sensitive_values_from_object(
+    obj: Any, key_patterns: list, log_level: str = "INFO"
+) -> Any:
     """
     Recursively traverse the object and redact values for keys matching the patterns.
     """
@@ -160,7 +166,9 @@ def redact_sensitive_values_from_object(obj: Any, key_patterns: list, log_level:
                 if log_level == "INFO":
                     # Optional logging; adjust as needed
                     pass  # Could add print or logging here if required
-            if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)):
+            if isinstance(value, (Mapping, Sequence)) and not isinstance(
+                value, (str, bytes)
+            ):
                 redact_sensitive_values_from_object(value, key_patterns, log_level)
     elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
@@ -181,7 +189,12 @@ def sort_dict_keys(obj: Any, reverse: bool = False) -> Any:
         sorted_items = sorted(obj.items(), key=lambda x: x[0], reverse=reverse)
         new_dict = {}
         for key, value in sorted_items:
-            new_dict[key] = sort_dict_keys(value, reverse) if isinstance(value, (Mapping, Sequence)) and not isinstance(value, (str, bytes)) else value
+            new_dict[key] = (
+                sort_dict_keys(value, reverse)
+                if isinstance(value, (Mapping, Sequence))
+                and not isinstance(value, (str, bytes))
+                else value
+            )
         return new_dict
     elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         return [sort_dict_keys(item, reverse) for item in obj]
@@ -222,6 +235,7 @@ def sort_single_key(dict_list: List[dict], sort_key: str) -> List[dict]:
     Sort a list of dicts by a single key.
     Handles missing keys by treating them as empty string.
     """
+
     def get_key(item: dict) -> str:
         value = item.get(sort_key)
         return value if value is not None else ''
@@ -234,6 +248,7 @@ def sort_multi_key(dict_list: List[dict], sort_keys: List[str]) -> List[dict]:
     Sort a list of dicts by multiple keys.
     Handles missing keys by treating them as empty string.
     """
+
     def get_multi_key(item: dict) -> tuple:
         return tuple(item.get(key, '') for key in sort_keys)
 
@@ -306,7 +321,9 @@ def list_of_dicts_to_markdown(lst: list) -> str:
     if not isinstance(lst[0], dict):
         return "\n".join(str(item) for item in lst)
     keys = list(lst[0].keys())
-    headers = "| " + " | ".join(keys) + " |\n| " + " | ".join(["---"] * len(keys)) + " |"
+    headers = (
+        "| " + " | ".join(keys) + " |\n| " + " | ".join(["---"] * len(keys)) + " |"
+    )
     rows = []
     for item in lst:
         row = "| " + " | ".join(str(item.get(k, '')) for k in keys) + " |"

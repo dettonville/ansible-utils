@@ -19,7 +19,9 @@ def filter_module():
 def test_ruamel_version_warning_legacy(mock_warning, filter_module):
     """Verify that a warning is logged when a legacy version of ruamel.yaml is detected."""
     # Temporarily force the mock module layout environment to mimic an older library version
-    with patch('ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils.yaml') as mock_yaml:
+    with patch(
+        'ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils.yaml'
+    ) as mock_yaml:
         mock_yaml.__version__ = "0.16.12"
         filter_module._check_ruamel_version()
         assert mock_warning.called
@@ -29,7 +31,9 @@ def test_ruamel_version_warning_legacy(mock_warning, filter_module):
 @patch('ansible.utils.display.Display.warning')
 def test_ruamel_version_warning_modern(mock_warning, filter_module):
     """Verify that no warning is logged when a modern version of ruamel.yaml is detected."""
-    with patch('ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils.yaml') as mock_yaml:
+    with patch(
+        'ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils.yaml'
+    ) as mock_yaml:
         mock_yaml.__version__ = "0.18.5"
         filter_module._check_ruamel_version()
         assert not mock_warning.called
@@ -43,15 +47,11 @@ def test_custom_indentation_formatting(filter_module):
     except ImportError:
         import ruamel_yaml as yaml
 
-    input_data = {
-        "config": {
-            "services": [
-                {"name": "nginx", "port": 80}
-            ]
-        }
-    }
+    input_data = {"config": {"services": [{"name": "nginx", "port": 80}]}}
 
-    yaml_output = filter_module.to_nice_yaml(input_data, mapping=4, sequence=6, offset=3)
+    yaml_output = filter_module.to_nice_yaml(
+        input_data, mapping=4, sequence=6, offset=3
+    )
     lines = yaml_output.splitlines()
 
     # Assert structural content invariants exist
@@ -95,10 +95,10 @@ def test_allow_unicode_option(filter_module):
 
 def test_lists_of_primitives(filter_module):
     """Verify that a sequence of flat scalar primitives converts correctly."""
-    input_data = {
-        "items": ["apple", "banana", "cherry"]
-    }
-    yaml_output = filter_module.to_nice_yaml(input_data, mapping=2, sequence=4, offset=2)
+    input_data = {"items": ["apple", "banana", "cherry"]}
+    yaml_output = filter_module.to_nice_yaml(
+        input_data, mapping=2, sequence=4, offset=2
+    )
     lines = yaml_output.splitlines()
 
     assert "items:" in lines[0]
@@ -108,16 +108,10 @@ def test_lists_of_primitives(filter_module):
 
 def test_deeply_nested_structures(filter_module):
     """Test alignment consistency down multiple nesting tiers."""
-    input_data = {
-        "tier1": {
-            "tier2": {
-                "tier3": [
-                    {"element": "value"}
-                ]
-            }
-        }
-    }
-    yaml_output = filter_module.to_nice_yaml(input_data, mapping=4, sequence=5, offset=2)
+    input_data = {"tier1": {"tier2": {"tier3": [{"element": "value"}]}}}
+    yaml_output = filter_module.to_nice_yaml(
+        input_data, mapping=4, sequence=5, offset=2
+    )
     assert "tier1:" in yaml_output
     assert "element: value" in yaml_output
 
@@ -126,9 +120,7 @@ def test_offset_greater_than_sequence_edge_case(filter_module):
     """Verify that when offset is greater than sequence, the filter automatically
     adjusts sequence to match offset to prevent layout engine format crashes.
     """
-    input_data = {
-        "items": [{"name": "test"}]
-    }
+    input_data = {"items": [{"name": "test"}]}
 
     # Pass arguments where offset (4) exceeds sequence (2)
     yaml_output = filter_module.to_nice_yaml(input_data, sequence=2, offset=4)
@@ -155,8 +147,12 @@ def test_primitive_types_handling(filter_module):
 
 def test_empty_collection_structures(filter_module):
     """Verify empty objects return valid empty syntax blocks."""
-    assert "{}" in filter_module.to_nice_yaml({}) or "null" in filter_module.to_nice_yaml({})
-    assert "[]" in filter_module.to_nice_yaml([]) or "null" in filter_module.to_nice_yaml([])
+    assert "{}" in filter_module.to_nice_yaml(
+        {}
+    ) or "null" in filter_module.to_nice_yaml({})
+    assert "[]" in filter_module.to_nice_yaml(
+        []
+    ) or "null" in filter_module.to_nice_yaml([])
 
 
 def test_ansible_jinja_proxy_wrapper_structures(filter_module):
@@ -188,15 +184,17 @@ def test_ansible_jinja_proxy_wrapper_structures(filter_module):
             return 1 if self.val else 0
 
     # Recreate a scenario featuring structural proxies and custom wrapped primitives (like the '15' error)
-    failing_payload = MockAnsibleMapping({
-        'attachable': True,
-        'timeout': MockAnsibleInt(15),  # Triggers the 'cannot represent an object: 15' flaw
-        'ipam': MockAnsibleMapping({
-            'config': MockAnsibleSequence([
-                {'subnet': '192.168.10.0/24'}
-            ])
-        })
-    })
+    failing_payload = MockAnsibleMapping(
+        {
+            'attachable': True,
+            'timeout': MockAnsibleInt(
+                15
+            ),  # Triggers the 'cannot represent an object: 15' flaw
+            'ipam': MockAnsibleMapping(
+                {'config': MockAnsibleSequence([{'subnet': '192.168.10.0/24'}])}
+            ),
+        }
+    )
 
     yaml_output = filter_module.to_nice_yaml(failing_payload, sort_keys=True)
 
@@ -208,12 +206,7 @@ def test_ansible_jinja_proxy_wrapper_structures(filter_module):
 def test_nested_sequence_default_indentation(filter_module):
     """Verify that by default, nested lists are indented 2 spaces deeper than their parent keys."""
     input_data = {
-        "deploy": {
-            "labels": [
-                "traefik.enable=true",
-                "traefik.swarm.lbswarm=true"
-            ]
-        }
+        "deploy": {"labels": ["traefik.enable=true", "traefik.swarm.lbswarm=true"]}
     }
 
     yaml_output = filter_module.to_nice_yaml(input_data, sort_keys=False)
@@ -258,7 +251,7 @@ def test_nested_sequence_with_child_mappings_indentation(filter_module):
                                 {
                                     "discrete_resource_spec": {
                                         "kind": "NVIDIA-GPU",
-                                        "value": 1
+                                        "value": 1,
                                     }
                                 }
                             ]
@@ -285,9 +278,15 @@ def test_nested_sequence_with_child_mappings_indentation(filter_module):
         elif "value: 1" in line:
             value_line = line
 
-    assert spec_line is not None, "Could not find list entry '- discrete_resource_spec:' in output"
-    assert kind_line is not None, "Could not find child mapping element 'kind: NVIDIA-GPU' in output"
-    assert value_line is not None, "Could not find child mapping element 'value: 1' in output"
+    assert spec_line is not None, (
+        "Could not find list entry '- discrete_resource_spec:' in output"
+    )
+    assert kind_line is not None, (
+        "Could not find child mapping element 'kind: NVIDIA-GPU' in output"
+    )
+    assert value_line is not None, (
+        "Could not find child mapping element 'value: 1' in output"
+    )
 
     spec_indent = len(spec_line) - len(spec_line.lstrip(' '))
     kind_indent = len(kind_line) - len(kind_line.lstrip(' '))
@@ -304,6 +303,12 @@ def test_nested_sequence_with_child_mappings_indentation(filter_module):
     #                 kind: NVIDIA-GPU (Expected: 16 spaces - child mapping indented 4 spaces forward)
     #                 value: 1 (Expected: 16 spaces - child mapping indented 4 spaces forward)
 
-    assert spec_indent == 12, f"Parent sequence element indent was {spec_indent}, expected 12"
-    assert kind_indent == 16, f"Nested child key 'kind' indent was {kind_indent}, expected 16"
-    assert value_indent == 16, f"Nested child key 'value' indent was {value_indent}, expected 16"
+    assert spec_indent == 12, (
+        f"Parent sequence element indent was {spec_indent}, expected 12"
+    )
+    assert kind_indent == 16, (
+        f"Nested child key 'kind' indent was {kind_indent}, expected 16"
+    )
+    assert value_indent == 16, (
+        f"Nested child key 'value' indent was {value_indent}, expected 16"
+    )

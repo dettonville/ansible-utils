@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
-    sort_dict_keys
+    sort_dict_keys,
 )
 
 __metaclass__ = type

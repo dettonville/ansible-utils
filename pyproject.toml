@@ -1,0 +1,50 @@
+[tool.ruff]
+# Target the lowest Python version running on your target hosts, NOT your controller.
+# This prevents pyupgrade (UP) from injecting modern syntax that older nodes can't run.
+target-version = "py38"  # Adjust based on your target systems' Python version
+
+[tool.ruff.format]
+# 1. Force single quotes across string literals
+quote-style = "preserve"
+
+# 2. Prevent collapsing multi-line parenthesized blocks onto single lines
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+# 1. Choose safe rule groups. Avoid 'ALL' for Ansible-facing code.
+select = [
+    "E", "W",  # pycodestyle
+    "F",        # Pyflakes
+    "B",        # flake8-bugbear
+    "I",        # isort (import sorting)
+]
+
+# 2. Global Ignores that commonly clash with Ansible's patterns
+ignore = [
+    "E402",  # Module level import not at top of file (essential for some module_utils patterns)
+]
+
+# 3. Path-specific overrides to safeguard modules and module_utils
+[tool.ruff.lint.per-file-ignores]
+# Protect plugins/modules and module_utils from aggressive autofixes
+"**/plugins/modules/**/*.py" = [
+    "D",      # Ignores all pydocstyle rules so it won't mess with DOCUMENTATION string
+    "F401",  # Unused imports (often required for side-effect loading or module_utils)
+    "F841",  # Unused local variables (sometimes kept for documentation/argspecs)
+    "UP",    # Disable pyupgrade entirely for target-executed code
+]
+
+"**/plugins/module_utils/**/*.py" = [
+    "D",      # Ignores all pydocstyle rules here as well
+    "E402",  # Allow nested/late imports for platform-specific utilities
+    "F401",  # module_utils libraries often expose imports for modules to consume
+    "UP",    # Do not auto-modernize module_utils, they must remain compatible
+]
+
+[tool.ruff.lint.isort]
+# Ensure Ansible's system packages are recognized properly so they don't get
+# rearranged in a way that breaks packaging
+known-first-party = ["ansible_collections"]
+known-third-party = ["ansible"]
+# Keep imports grouped tightly, but don't let Ruff sort imports above your __metaclass__ blocks
+required-imports = []

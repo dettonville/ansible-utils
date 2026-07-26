@@ -2,7 +2,9 @@
 
 import pytest
 from unittest.mock import MagicMock
-from ansible_collections.dettonville.utils.plugins.action.debug_sanitized import ActionModule
+from ansible_collections.dettonville.utils.plugins.action.debug_sanitized import (
+    ActionModule,
+)
 
 
 class MockTemplar:
@@ -29,7 +31,9 @@ def action_module():
     shared_loader_obj = MagicMock()
 
     # ActionModule constructor syntax: (task, connection, play_context, loader, templar, shared_loader_obj)
-    plugin = ActionModule(task, connection, play_context, loader, templar, shared_loader_obj)
+    plugin = ActionModule(
+        task, connection, play_context, loader, templar, shared_loader_obj
+    )
     return plugin
 
 
@@ -62,11 +66,14 @@ def test_debug_sanitized_var_resolution(action_module):
 
 def test_debug_sanitized_with_custom_additional_patterns(action_module):
     """Verify that specifying additional key patterns redacts unexpected custom domain metadata."""
-    secret_payload = {"account_identifier": "id-1", "custom_secret_field": "sensitive-data"}
+    secret_payload = {
+        "account_identifier": "id-1",
+        "custom_secret_field": "sensitive-data",
+    }
 
     action_module._task.args = {
         "var": secret_payload,
-        "additional_key_patterns": ["(?i).*secret.*"]
+        "additional_key_patterns": ["(?i).*secret.*"],
     }
 
     result = action_module.run(task_vars={})

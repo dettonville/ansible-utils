@@ -11,4 +11,3 @@ regenerate-module-docs.sh shellcheck:SC2016
 regenerate-module-docs.sh shellcheck:SC2034
 tests/integration/targets/run-pytest.sh shellcheck:SC2034
 tests/integration/targets/run-role-tests.sh shellcheck:SC2034
-tests/run_tests.sh shellcheck:SC2034

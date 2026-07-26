@@ -466,9 +466,7 @@ try:
             logging.info(
                 "%s unsupported test_suites type: %s", log_prefix, type(test_suites)
             )
-            raise ValueError(
-                f"unsupported test_suites type: {type(test_suites)}"
-            )
+            raise ValueError(f"unsupported test_suites type: {type(test_suites)}")
 
         # https://realpython.com/python-multiple-constructors/
         @__init__.register(object)

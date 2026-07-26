@@ -16,17 +16,9 @@ def filter_module():
 
 def test_sort_simple_dict(filter_module):
     """Test sorting keys in a simple dict."""
-    input_dict = {
-        "c": "value_c",
-        "a": "value_a",
-        "b": "value_b"
-    }
+    input_dict = {"c": "value_c", "a": "value_a", "b": "value_b"}
     result = filter_module.sort_dict_keys(input_dict)
-    expected = {
-        "a": "value_a",
-        "b": "value_b",
-        "c": "value_c"
-    }
+    expected = {"a": "value_a", "b": "value_b", "c": "value_c"}
     assert result == expected
 
 
@@ -35,63 +27,39 @@ def test_sort_nested_dict(filter_module):
     input_dict = {
         "user": {
             "z_name": "admin",
-            "credentials": {
-                "y_token": "token123",
-                "x_password": "secret"
-            }
+            "credentials": {"y_token": "token123", "x_password": "secret"},
         },
-        "other": "value"
+        "other": "value",
     }
     result = filter_module.sort_dict_keys(input_dict)
     expected = {
         "other": "value",
         "user": {
-            "credentials": {
-                "x_password": "secret",
-                "y_token": "token123"
-            },
-            "z_name": "admin"
-        }
+            "credentials": {"x_password": "secret", "y_token": "token123"},
+            "z_name": "admin",
+        },
     }
     assert result == expected
 
 
 def test_sort_list_of_dicts(filter_module):
     """Test sorting in a list of dicts."""
-    input_list = [
-        {"c": "c1", "a": "a1", "b": "b1"},
-        {"z": "z2", "x": "x2", "y": "y2"}
-    ]
+    input_list = [{"c": "c1", "a": "a1", "b": "b1"}, {"z": "z2", "x": "x2", "y": "y2"}]
     result = filter_module.sort_dict_keys(input_list)
-    expected = [
-        {"a": "a1", "b": "b1", "c": "c1"},
-        {"x": "x2", "y": "y2", "z": "z2"}
-    ]
+    expected = [{"a": "a1", "b": "b1", "c": "c1"}, {"x": "x2", "y": "y2", "z": "z2"}]
     assert result == expected
 
 
 def test_sort_mixed_structure(filter_module):
     """Test sorting in mixed dict/list structure."""
     input_obj = {
-        "accounts": [
-            {"id": 2, "name": "bob"},
-            {"id": 1, "name": "alice"}
-        ],
-        "z_settings": {
-            "y_vault": "vault",
-            "x_token": "token"
-        }
+        "accounts": [{"id": 2, "name": "bob"}, {"id": 1, "name": "alice"}],
+        "z_settings": {"y_vault": "vault", "x_token": "token"},
     }
     result = filter_module.sort_dict_keys(input_obj)
     expected = {
-        "accounts": [
-            {"id": 2, "name": "bob"},
-            {"id": 1, "name": "alice"}
-        ],
-        "z_settings": {
-            "x_token": "token",
-            "y_vault": "vault"
-        }
+        "accounts": [{"id": 2, "name": "bob"}, {"id": 1, "name": "alice"}],
+        "z_settings": {"x_token": "token", "y_vault": "vault"},
     }
     assert result == expected
 
@@ -102,7 +70,7 @@ def test_sort_nested_list(filter_module):
         "top": [
             {"level1": {"z": "z", "x": "x", "y": "y"}},
             "string",
-            [{"nested": {"b": "b", "a": "a"}}]
+            [{"nested": {"b": "b", "a": "a"}}],
         ]
     }
     result = filter_module.sort_dict_keys(input_obj)
@@ -110,7 +78,7 @@ def test_sort_nested_list(filter_module):
         "top": [
             {"level1": {"x": "x", "y": "y", "z": "z"}},
             "string",
-            [{"nested": {"a": "a", "b": "b"}}]
+            [{"nested": {"a": "a", "b": "b"}}],
         ]
     }
     assert result == expected
@@ -140,31 +108,15 @@ def test_sort_primitive_values(filter_module):
 
 def test_sort_case_sensitive(filter_module):
     """Test case-sensitive sorting (default alphabetical order)."""
-    input_dict = {
-        "Z": "z_value",
-        "a": "a_value",
-        "B": "b_value"
-    }
+    input_dict = {"Z": "z_value", "a": "a_value", "B": "b_value"}
     result = filter_module.sort_dict_keys(input_dict)
-    expected = {
-        "B": "b_value",
-        "Z": "z_value",
-        "a": "a_value"
-    }
+    expected = {"B": "b_value", "Z": "z_value", "a": "a_value"}
     assert result == expected
 
 
 def test_sort_with_reverse_option(filter_module):
     """Test with reverse sorting if the filter supports it (assuming optional param)."""
-    input_dict = {
-        "a": "value_a",
-        "b": "value_b",
-        "c": "value_c"
-    }
+    input_dict = {"a": "value_a", "b": "value_b", "c": "value_c"}
     result = filter_module.sort_dict_keys(input_dict, reverse=True)
-    expected = {
-        "c": "value_c",
-        "b": "value_b",
-        "a": "value_a"
-    }
+    expected = {"c": "value_c", "b": "value_b", "a": "value_a"}
     assert result == expected

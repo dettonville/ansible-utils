@@ -103,7 +103,6 @@ $ run-playbook.sh test_export_dicts.yml
 $ run-playbook.sh test_debug_sanitized_playbook.yml
 ```
 
-
 ```shell
 $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
 $ cd collections/ansible_collections/dettonville/utils/tests/integration/targets

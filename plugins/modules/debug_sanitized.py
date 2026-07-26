@@ -3,7 +3,8 @@
 # Copyright: (c) 2026, Lee Johnson (@lj020326)
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 DOCUMENTATION = """
@@ -85,7 +86,13 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
-    default_patterns = ['(?i).*vault.*', '(?i).*token.*', '(?i).*password.*', '(?i).*key.*', '(?i).*ssh.*']
+    default_patterns = [
+        '(?i).*vault.*',
+        '(?i).*token.*',
+        '(?i).*password.*',
+        '(?i).*key.*',
+        '(?i).*ssh.*',
+    ]
 
     module = AnsibleModule(
         argument_spec=dict(
@@ -93,16 +100,9 @@ def main():
             var=dict(type='raw'),
             verbosity=dict(type='int', default=0),
             key_patterns=dict(
-                type='list',
-                elements='str',
-                default=default_patterns,
-                no_log=True
+                type='list', elements='str', default=default_patterns, no_log=True
             ),
-            additional_key_patterns=dict(
-                type='list',
-                elements='str',
-                no_log=True
-            ),
+            additional_key_patterns=dict(type='list', elements='str', no_log=True),
         ),
         mutually_exclusive=[['msg', 'var']],
         supports_check_mode=True,

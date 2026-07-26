@@ -20,7 +20,7 @@ def test_keep_keys_flat_dict(filter_module):
     input_dict = {
         "username": "admin",
         "password": "secret123",
-        "email": "admin@example.com"
+        "email": "admin@example.com",
     }
     # Keep only username and email
     result = filter_module.keep_keys(input_dict, ["username", "email"])
@@ -35,12 +35,9 @@ def test_keep_keys_non_recursive_default(filter_module):
     input_dict = {
         "user": {
             "name": "admin",
-            "credentials": {
-                "password": "secret",
-                "api_key": "key123"
-            }
+            "credentials": {"password": "secret", "api_key": "key123"},
         },
-        "other_key": "value"
+        "other_key": "value",
     }
     # Using default behavior (recursive=False)
     result = filter_module.keep_keys(input_dict, ["user"])
@@ -56,15 +53,9 @@ def test_keep_keys_recursive(filter_module):
         "user": {
             "name": "admin",
             "password": "secret_password",
-            "profile": {
-                "name": "Administrator",
-                "token": "token123"
-            }
+            "profile": {"name": "Administrator", "token": "token123"},
         },
-        "settings": {
-            "name": "global_config",
-            "debug": True
-        }
+        "settings": {"name": "global_config", "debug": True},
     }
     result = filter_module.keep_keys(input_dict, ["name"], recursive=True)
 
@@ -81,12 +72,7 @@ def test_keep_keys_recursive(filter_module):
 
 def test_keep_keys_regex_patterns(filter_module):
     """Test keeping keys based on regex patterns (e.g., case insensitivity)."""
-    input_dict = {
-        "account_id": 111,
-        "UserID": 222,
-        "name": "test_user",
-        "token": "abc"
-    }
+    input_dict = {"account_id": 111, "UserID": 222, "name": "test_user", "token": "abc"}
     # Match any key containing 'id' case-insensitively, plus 'name'
     patterns = ["(?i).*id.*", "name"]
     result = filter_module.keep_keys(input_dict, patterns)
@@ -101,7 +87,7 @@ def test_keep_keys_list_of_dicts(filter_module):
     """Test filtering an array containing dictionaries."""
     input_list = [
         {"id": 1, "name": "app1", "env": "prod"},
-        {"id": 2, "name": "app2", "env": "dev"}
+        {"id": 2, "name": "app2", "env": "dev"},
     ]
     result = filter_module.keep_keys(input_list, ["id", "name"])
 

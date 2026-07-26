@@ -1,8 +1,14 @@
 ## library module requirements
 coverage
-cryptography >= 1.5
+bcrypt==4.3.0
+cryptography>=1.5
 packaging
+passlib
 pyopenssl
+pytest
+pytest-mock
 pytest-xdist
 pyyaml
+requests
+requests-ntlm
 ruamel.yaml

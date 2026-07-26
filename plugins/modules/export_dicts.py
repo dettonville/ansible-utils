@@ -3,7 +3,8 @@
 # Copyright: (c) 2025, Lee Johnson (ljohnson@dettonville.com)
 # MIT license (https://opensource.org/license/mit/)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -127,16 +128,16 @@ changed:
 
 """  # NOQA
 
+import logging
+import os
+import pprint
+import sys
+
 from ansible.module_utils.basic import AnsibleModule
 
-import os
-import sys
-import logging
-import pprint
-
 from ansible_collections.dettonville.utils.plugins.module_utils.export_dict_utils import (
-    write_markdown_file,
     write_csv_file,
+    write_markdown_file,
 )
 
 # define available arguments/parameters a user can pass to the module
@@ -161,10 +162,7 @@ def get_file_format(file):
 
 # ref: https://docs.ansible.com/ansible/latest/dev_guide/testing_units_modules.html#restructuring-modules-to-enable-testing-module-set-up-and-other-processes
 def setup_module_object():
-    module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True
-    )
+    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
     return module
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 import io
 from collections.abc import Mapping, Sequence
 from ansible.errors import AnsibleFilterError
@@ -8,10 +8,12 @@ from ansible.utils.display import Display
 
 try:
     from ruamel import yaml
+
     HAS_RUAMEL = True
 except ImportError:
     try:
         import ruamel_yaml as yaml
+
         HAS_RUAMEL = True
     except ImportError:
         HAS_RUAMEL = False
@@ -159,15 +161,15 @@ class FilterModule(object):
         return str(data)
 
     def to_nice_yaml(
-            self,
-            input_object: any,
-            mapping: int = 2,
-            sequence: int = 4,
-            offset: int = 2,
-            width: int = 120,
-            explicit_start: bool = False,
-            sort_keys: bool = False,
-            allow_unicode: bool = True
+        self,
+        input_object: any,
+        mapping: int = 2,
+        sequence: int = 4,
+        offset: int = 2,
+        width: int = 120,
+        explicit_start: bool = False,
+        sort_keys: bool = False,
+        allow_unicode: bool = True,
     ) -> str:
         if not HAS_RUAMEL:
             raise AnsibleFilterError(
@@ -221,7 +223,10 @@ class FilterModule(object):
 
                         # If the list hyphen starts flat at the exact same margin level as its parent key,
                         # it means ruamel dropped the hanging block list formatting.
-                        if next_line.lstrip().startswith('- ') and next_indent == current_indent:
+                        if (
+                            next_line.lstrip().startswith('- ')
+                            and next_indent == current_indent
+                        ):
                             lookahead_idx = idx + 1
 
                             # Shift the initial list entry and EVERYTHING nested underneath it
@@ -231,7 +236,9 @@ class FilterModule(object):
                                     lookahead_idx += 1
                                     continue
 
-                                check_indent = len(check_line) - len(check_line.lstrip(' '))
+                                check_indent = len(check_line) - len(
+                                    check_line.lstrip(' ')
+                                )
 
                                 # Break out if we hit a line that belongs to an outer context boundary
                                 if check_indent < current_indent:
@@ -239,7 +246,10 @@ class FilterModule(object):
 
                                 # If it's at the same indentation level but NOT a list item,
                                 # we have hit a sibling dictionary key under the original parent map.
-                                if check_indent == current_indent and not check_line.lstrip().startswith('- '):
+                                if (
+                                    check_indent == current_indent
+                                    and not check_line.lstrip().startswith('- ')
+                                ):
                                     break
 
                                 # Shift the sequence line or its nested dictionary child lines forward cleanly by 2 spaces
@@ -253,4 +263,6 @@ class FilterModule(object):
             return raw_yaml
 
         except Exception as e:
-            raise AnsibleFilterError(f"Failed parsing and formatting object into customized YAML: {e}")
+            raise AnsibleFilterError(
+                f"Failed parsing and formatting object into customized YAML: {e}"
+            )

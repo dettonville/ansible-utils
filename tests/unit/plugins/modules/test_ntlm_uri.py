@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch, ANY
 class StopExecution(Exception):
     pass
 
+
 # No need for explicit import of main here; it's imported via patches in conftest.py or tests.
 # Assuming conftest.py with mock_ntlm_uri_imports fixture is in place to handle global import checks.
 
@@ -22,7 +23,9 @@ def mock_module():
     """Fixture to mock AnsibleModule and capture exit_json/fail_json calls."""
     mock_exit_json = Mock()
     mock_fail_json = Mock()
-    with patch('ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.AnsibleModule') as mock_ansible_module:
+    with patch(
+        'ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.AnsibleModule'
+    ) as mock_ansible_module:
         mock_instance = Mock()
         mock_instance.params = {}
         mock_instance.check_mode = False
@@ -47,7 +50,7 @@ def test_basic_get_success(mock_requests, mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_response = Mock()
     mock_response.status_code = 200
@@ -65,8 +68,13 @@ def test_basic_get_success(mock_requests, mock_module):
     # Note: Bug in module - always passes json=body, but body is None here
     assert call_args[1]['json'] is None
     assert call_args[1]['headers'] == {}
-    mock_module[1].assert_called_once_with(changed=False, headers={
-                                           'Server': 'TestServer'}, msg='OK', status=200, url='http://example.com')
+    mock_module[1].assert_called_once_with(
+        changed=False,
+        headers={'Server': 'TestServer'},
+        msg='OK',
+        status=200,
+        url='http://example.com',
+    )
     mock_module[2].assert_not_called()
 
 
@@ -84,7 +92,7 @@ def test_post_json_body(mock_requests, mock_module):
         'return_content': True,
         'body_format': 'json',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_response = Mock()
     mock_response.status_code = 201
@@ -107,7 +115,7 @@ def test_post_json_body(mock_requests, mock_module):
         json={'id': 123},
         msg='OK',
         status=201,
-        url='http://example.com'
+        url='http://example.com',
     )
     mock_module[2].assert_not_called()
 
@@ -126,7 +134,7 @@ def test_post_raw_body(mock_requests, mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {'Content-Type': 'text/plain'},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_response = Mock()
     mock_response.status_code = 200
@@ -143,7 +151,8 @@ def test_post_raw_body(mock_requests, mock_module):
     # Bug: json=raw_body instead of data=raw_body
     assert call_args[1]['json'] == 'raw data'
     mock_module[1].assert_called_once_with(
-        changed=False, headers={}, msg='OK', status=200, url='http://example.com')
+        changed=False, headers={}, msg='OK', status=200, url='http://example.com'
+    )
     mock_module[2].assert_not_called()
 
 
@@ -160,7 +169,7 @@ def test_status_code_failure(mock_requests, mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_response = Mock()
     mock_response.status_code = 404
@@ -177,7 +186,7 @@ def test_status_code_failure(mock_requests, mock_module):
         headers={},
         msg='Status code 404 not in accepted status codes [200]',
         status=404,
-        url='http://example.com'
+        url='http://example.com',
     )
 
 
@@ -193,7 +202,7 @@ def test_invalid_method(mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
 
     with pytest.raises(StopExecution):
@@ -201,7 +210,8 @@ def test_invalid_method(mock_module):
 
     mock_module[1].assert_not_called()
     mock_module[2].assert_called_once_with(
-        msg="Parameter 'method' needs to be a single word in uppercase, like GET or POST.")
+        msg="Parameter 'method' needs to be a single word in uppercase, like GET or POST."
+    )
 
 
 def test_check_mode_get(mock_module):
@@ -216,11 +226,13 @@ def test_check_mode_get(mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_module[0].check_mode = True
 
-    with patch('ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.requests') as mock_requests:
+    with patch(
+        'ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.requests'
+    ) as mock_requests:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.headers = {}
@@ -232,11 +244,7 @@ def test_check_mode_get(mock_module):
         # In check_mode, for GET, it should still call requests (as per code: only mocks if method != GET)
         mock_requests.request.assert_called_once()
         mock_module[1].assert_called_once_with(
-            changed=False,
-            headers={},
-            msg='OK',
-            status=200,
-            url='http://example.com'
+            changed=False, headers={}, msg='OK', status=200, url='http://example.com'
         )
         mock_module[2].assert_not_called()
 
@@ -253,12 +261,14 @@ def test_check_mode_post(mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_module[0].check_mode = True
 
     # Patch requests to ensure it's not called
-    with patch('ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.requests') as mock_requests:
+    with patch(
+        'ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.requests'
+    ) as mock_requests:
         with pytest.raises(StopExecution):
             main()
         mock_requests.request.assert_not_called()
@@ -270,7 +280,7 @@ def test_check_mode_post(mock_module):
         json={'content': 'sample content for check mode'},
         msg='OK',
         status=201,  # Takes first status_code
-        url='http://example.com'
+        url='http://example.com',
     )
     mock_module[2].assert_not_called()
 
@@ -288,7 +298,7 @@ def test_return_content_true(mock_requests, mock_module):
         'return_content': True,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_response = Mock()
     mock_response.status_code = 200
@@ -305,7 +315,7 @@ def test_return_content_true(mock_requests, mock_module):
         json={'data': 'content'},
         msg='OK',
         status=200,
-        url='http://example.com'
+        url='http://example.com',
     )
     mock_module[2].assert_not_called()
 
@@ -323,7 +333,7 @@ def test_validate_certs_false(mock_requests, mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': False
+        'validate_certs': False,
     }
     mock_response = Mock()
     mock_response.status_code = 200
@@ -337,7 +347,8 @@ def test_validate_certs_false(mock_requests, mock_module):
     call_args = mock_requests.request.call_args
     assert call_args[1]['verify'] is False
     mock_module[1].assert_called_once_with(
-        changed=False, headers={}, msg='OK', status=200, url='https://example.com')
+        changed=False, headers={}, msg='OK', status=200, url='https://example.com'
+    )
     mock_module[2].assert_not_called()
 
 
@@ -355,7 +366,7 @@ def test_method_validation_uppercase(mock_re, mock_requests, mock_module):
         'return_content': False,
         'body_format': 'raw',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_re.match.return_value = True  # Matches ^[A-Z]+$
     mock_response = Mock()
@@ -369,7 +380,8 @@ def test_method_validation_uppercase(mock_re, mock_requests, mock_module):
     # No failure
     mock_module[2].assert_not_called()
     mock_module[1].assert_called_once_with(
-        changed=False, headers={}, msg='OK', status=200, url='http://example.com')
+        changed=False, headers={}, msg='OK', status=200, url='http://example.com'
+    )
 
 
 @patch('ansible_collections.dettonville.utils.plugins.modules.ntlm_uri.json')
@@ -387,7 +399,7 @@ def test_json_string_body(mock_requests, mock_json, mock_module):
         'return_content': False,
         'body_format': 'json',
         'headers': {},
-        'validate_certs': True
+        'validate_certs': True,
     }
     mock_response = Mock()
     mock_response.status_code = 200
@@ -405,8 +417,9 @@ def test_json_string_body(mock_requests, mock_json, mock_module):
         auth=ANY,
         verify=True,
         headers={'Content-Type': 'application/json'},
-        json='{"key": "value"}'
+        json='{"key": "value"}',
     )
     mock_module[1].assert_called_once_with(
-        changed=False, headers={}, msg='OK', status=200, url='http://example.com')
+        changed=False, headers={}, msg='OK', status=200, url='http://example.com'
+    )
     mock_module[2].assert_not_called()

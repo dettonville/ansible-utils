@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -9,7 +9,7 @@ from ansible.utils.display import Display
 
 # Import the core sanitization logic directly from your collection's module_utils
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
-    redact_sensitive_values_from_object
+    redact_sensitive_values_from_object,
 )
 
 display = Display()
@@ -42,8 +42,9 @@ class ActionModule(ActionBase):
         # If the display verbosity level isn't high enough, skip execution silently
         if self._display.verbosity < verbosity:
             result['skipped'] = True
-            result[
-                'skipped_reason'] = f"Verbosity threshold not met. (Requires {verbosity}, currently {self._display.verbosity})"
+            result['skipped_reason'] = (
+                f"Verbosity threshold not met. (Requires {verbosity}, currently {self._display.verbosity})"
+            )
             return result
 
         # 2. Parse arguments safely out of the task spec definition
@@ -86,7 +87,9 @@ class ActionModule(ActionBase):
                 resolved_var = self._templar.template(var)
 
             # Apply the sanitizing in-place mutation function directly to the resolved structure
-            redact_sensitive_values_from_object(resolved_var, key_patterns, log_level="INFO")
+            redact_sensitive_values_from_object(
+                resolved_var, key_patterns, log_level="INFO"
+            )
             result[var if isinstance(var, str) else 'var'] = resolved_var
 
         else:
@@ -98,7 +101,9 @@ class ActionModule(ActionBase):
 
             # If the evaluated message block maps down into a dict or array context, scrub it
             if isinstance(resolved_msg, (dict, list)):
-                redact_sensitive_values_from_object(resolved_msg, key_patterns, log_level="INFO")
+                redact_sensitive_values_from_object(
+                    resolved_msg, key_patterns, log_level="INFO"
+                )
             elif isinstance(resolved_msg, str):
                 # If a single string contains embedded passwords or matching secrets directly,
                 # we also scrub any strings if your utility layout allows, otherwise keep string handling clean:

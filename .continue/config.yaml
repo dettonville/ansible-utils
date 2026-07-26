@@ -1,16 +1,13 @@
 name: dettonville.utils Collection Config
 version: 1.0.0
-schema: v1
 
 rules:
-  - "This is the dettonville.utils Ansible Collection — maintain high code quality, test coverage, and collection best practices"
   - "All modules and filters must be well-documented with proper DOCUMENTATION strings"
-  - "Prioritize idempotency, error handling, and clear logging in all modules"
-  - "Maintain 100% test coverage goal for unit + integration tests"
-  - "Use ansible-test, molecule, and sanity tests rigorously"
+  - "Prioritize idempotency, modularity (DRY), error handling, and clear logging in all modules"
+  - "Use ansible-test tests rigorously"
   - "Follow Ansible Collection development standards (FQCNs, structure, versioning)"
   - "Keep Python code clean, use type hints where appropriate, follow PEP 8"
-  - "Favor open source tooling and community contribution patterns"
+  - "Favor open source tooling and community contribution best patterns and conventions"
 
 prompts:
   - name: ansible-module

@@ -3,7 +3,7 @@
 # Copyright: (c) 2025, Lee Johnson (ljohnson@dettonville.com)
 # MIT license
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -165,25 +165,38 @@ except ImportError:
 def main():
     argument_spec = {
         "body": {"type": "raw", "required": False},
-        "body_format": {"type": "str", "default": "raw", "choices": ["raw", "json"], "required": False},
+        "body_format": {
+            "type": "str",
+            "default": "raw",
+            "choices": ["raw", "json"],
+            "required": False,
+        },
         "headers": {"type": "dict", "default": {}, "required": False},
         "method": {"type": "str", "default": "GET", "required": False},
-        "password": {"type": "str", "aliases": ["url_password"], "no_log": True, "required": True},
+        "password": {
+            "type": "str",
+            "aliases": ["url_password"],
+            "no_log": True,
+            "required": True,
+        },
         "return_content": {"type": "bool", "default": False, "required": False},
-        "status_code": {"type": "list", "elements": "int", "default": [200], "required": False},
+        "status_code": {
+            "type": "list",
+            "elements": "int",
+            "default": [200],
+            "required": False,
+        },
         "url": {"type": "str", "required": True},
         "user": {"type": "str", "aliases": ["url_username"], "required": True},
-        "validate_certs": {"type": "bool", "default": True, "required": False}
+        "validate_certs": {"type": "bool", "default": True, "required": False},
     }
 
-    module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True
-    )
+    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
 
     if requests is None or HttpNtlmAuth is None:
         module.fail_json(
-            msg="Missing required libraries: requests and/or requests-ntlm. Install with 'pip install requests requests-ntlm'.")
+            msg="Missing required libraries: requests and/or requests-ntlm. Install with 'pip install requests requests-ntlm'."
+        )
 
     result = {"changed": False}
 
@@ -201,17 +214,21 @@ def main():
     if module.check_mode and method != 'GET':
         if isinstance(status_code, list):
             status_code = status_code[0]
-        result.update({
-            "headers": headers,
-            "json": {"content": "sample content for check mode"},
-            "msg": "OK",
-            "status": status_code,
-            "url": url
-        })
+        result.update(
+            {
+                "headers": headers,
+                "json": {"content": "sample content for check mode"},
+                "msg": "OK",
+                "status": status_code,
+                "url": url,
+            }
+        )
         module.exit_json(**result)
 
     if not re.match('^[A-Z]+$', method):
-        module.fail_json(msg="Parameter 'method' needs to be a single word in uppercase, like GET or POST.")
+        module.fail_json(
+            msg="Parameter 'method' needs to be a single word in uppercase, like GET or POST."
+        )
 
     # Encode the body unless its a string, then assume it is pre-formatted JSON
     if body_format == "json":
@@ -227,21 +244,25 @@ def main():
         auth=auth,
         verify=validate_certs,
         headers=headers,
-        json=body
+        json=body,
     )
 
     if return_content:
         result["json"] = response.json()
 
-    result.update({
-        "headers": dict(response.headers),
-        "msg": "OK",
-        "status": response.status_code,
-        "url": url
-    })
+    result.update(
+        {
+            "headers": dict(response.headers),
+            "msg": "OK",
+            "status": response.status_code,
+            "url": url,
+        }
+    )
 
     if response.status_code not in status_code:
-        result['msg'] = f"Status code {response.status_code} not in accepted status codes {status_code}"
+        result['msg'] = (
+            f"Status code {response.status_code} not in accepted status codes {status_code}"
+        )
         module.fail_json(**result)
 
     module.exit_json(**result)
