@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
+from typing import Any
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
     remove_keys_from_object,
 )
@@ -9,11 +13,14 @@ __metaclass__ = type
 
 DOCUMENTATION = """
   name: remove_dict_keys
-  short_description: Remove key(s) with specified list of regex patterns from nested dict/array
+  short_description: >-
+    Remove key(s) with specified list of regex patterns from nested dict/array
   version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
-    - Remove key(s) with specified list of regex patterns from nested dict/array.
+    - >-
+      Remove key(s) with specified list of regex patterns from
+      nested dict/array.
   positional: key_patterns
   options:
     _input:
@@ -28,7 +35,9 @@ DOCUMENTATION = """
 """
 
 EXAMPLES = """
-- name: Remove keys from list of dictionaries based on a single specified key to be removed
+- name: >-
+    Remove keys from list of dictionaries based on a single specified key
+    to be removed
   ansible.builtin.debug:
     msg: "{{ my_list | dettonville.utils.remove_dict_keys('foo') }}"
   vars:
@@ -131,7 +140,8 @@ EXAMPLES = """
 
 - name: Produce a list of dictionaries based on multiple keys to be removed
   ansible.builtin.debug:
-    msg: "{{ my_list | dettonville.utils.remove_dict_keys(['platform_id','address','username']) }}"
+    msg: "{{ my_list| dettonville.utils.remove_dict_keys(
+        ['platform_id','address','username']) }}"
   vars:
     my_list:
       - address: 10.31.25.54
@@ -217,12 +227,14 @@ EXAMPLES = """
 
 RETURN = """
   _value:
-    description: A dict or list containing the results of removing the specified key patterns.
+    description: >-
+      A dict or list containing the results of removing the specified
+      key patterns.
     type: any
 """
 
 # from ansible.errors import AnsibleFilterError
-# from ansible.module_utils.common._collections_compat import Mapping, Sequence
+# from collections.abc import Mapping, Sequence
 
 # noinspection PyUnresolvedReferences
 
@@ -231,9 +243,10 @@ class FilterModule(object):
     def filters(self):
         return {"remove_dict_keys": self.remove_dict_keys}
 
+    @staticmethod
     def remove_dict_keys(
-        self, input_object: any, key_patterns: list, log_level: str = "INFO"
-    ) -> any:
+        input_object: Any, key_patterns: list, log_level: str = "INFO"
+    ) -> Any:
         # Create copy of original object to update as needed
         # ref: https://stackoverflow.com/questions/3975376/why-updating-shallow-copy-dictionary-doesnt-update-original-dictionary/3975388#3975388
         # return_obj = copy.deepcopy(input_object)

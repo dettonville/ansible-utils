@@ -2,15 +2,15 @@
 
 - name: "{{ __test_component__log_run_test }} Set __test_component__test_case_args"
   ansible.builtin.set_fact:
-    __test_component__test_case_args: "key_patterns={{ 
+    __test_component__test_case_args: "key_patterns={{
       __test_data.key_patterns|d([]) }}, additional_key_patterns={{ __test_data.additional_key_patterns|d([]) }}"
 
 - name: "{{ __test_component__log_run_test }} Run test on {{ __test_component__collection }}.{{ __test_component }} for defined key_patterns and additional_key_patterns"
   ignore_errors: true
   ansible.builtin.set_fact:
-    __test_filter_result: "{{ __test_data.test_object 
+    __test_filter_result: "{{ __test_data.test_object
       | dettonville.utils.remove_sensitive_keys(
-        key_patterns=__test_data.key_patterns|d([]), 
+        key_patterns=__test_data.key_patterns|d([]),
         additional_key_patterns=__test_data.additional_key_patterns|d([])) }}"
   register: __test_component__test_result
 
@@ -21,7 +21,7 @@
 - name: "{{ __test_component__log_run_test }} Sort keys if __test_data.sort_keys defined"
   when: __test_data['sort_keys'] is defined
   ansible.builtin.set_fact:
-    __test_filter_result: "{{ __test_filter_result 
+    __test_filter_result: "{{ __test_filter_result
       | dettonville.utils.sort_dict_list(__test_data.sort_keys) }}"
 
 - name: "{{ __test_component__log_run_test }} Display __test_filter_result"

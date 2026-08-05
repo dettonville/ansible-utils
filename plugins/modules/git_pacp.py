@@ -13,7 +13,7 @@ module: git_pacp
 version_added: "2.20.0"
 author:
     - "Lee Johnson (@lj020326)"
-short_description: Perform git 'clone', 'pull', 'acp', and 'pacp' (pull, add, commit and push) operations. 
+short_description: Perform git 'clone', 'pull', 'acp', and 'pacp' (pull, add, commit and push) operations.
 description:
     - Manage git C(clone), C(pull), C(acp), C(pacp), C(config) user name and email on a local
       or remote git repository.
@@ -227,21 +227,26 @@ output:
     type: list
     returned: always
     sample: [
-        "[main 99830f4] Remove [ test.txt, tax.txt ]\n 4 files changed, 26 insertions(+)..."
+        "[main 99830f4] Remove [ test.txt, tax.txt ]\n 4 files changed,
+        26 insertions(+)..."
     ]
 """
 
 import logging
 import pprint
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule
 
 try:
     from module_utils.git_actions import Git
 except ImportError:
     try:
+        # noinspection PyPackageRequirements
         from ansible.module_utils.git_actions import Git
     except ImportError:
-        from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import (
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
+        from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import (  # noqa: E501
             Git,
         )
 
@@ -252,7 +257,9 @@ argument_spec = dict(
     action=dict(choices=["acp", "pacp", "pull", "clone"], default="pacp"),
     executable=dict(default=None, type="path"),
     logging_level=dict(
-        type="str", choices=["NOTSET", "DEBUG", "INFO", "ERROR"], default="INFO"
+        type="str",
+        choices=["NOTSET", "DEBUG", "INFO", "ERROR"],
+        default="INFO",
     ),
     comment=dict(default=None, type="str"),
     add=dict(type="list", elements="str", default=["."]),
@@ -303,7 +310,8 @@ def run_module():
     return:
         * result:
             type: dict()
-            description: returned output from git commands and updated changed status.
+            description: returned output from git commands
+            and updated changed status.
     """
 
     module = setup_module_object()
@@ -346,10 +354,14 @@ def run_module():
 
     if mode == "local":
         if url.startswith(("https://", "git", "ssh://git")):
-            module.fail_json(msg='SSH or HTTPS mode selected but repo is "local')
+            module.fail_json(
+                msg='SSH or HTTPS mode selected but repo is "local'
+            )
 
         if push_option:
-            module.fail_json(msg='"--push-option" not supported with mode "local"')
+            module.fail_json(
+                msg='"--push-option" not supported with mode "local"'
+            )
 
         if ssh_params:
             module.warn('SSH Parameters will be ignored as mode "local"')
@@ -374,7 +386,8 @@ def run_module():
 
         if url.startswith("ssh://git@github.com"):
             module.fail_json(
-                msg='GitHub does not support "ssh://" URL. Please remove it from url'
+                msg='GitHub does not support "ssh://" URL. '
+                'Please remove it from url'
             )
 
     result = dict(changed=False)

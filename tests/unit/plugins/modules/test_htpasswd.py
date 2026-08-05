@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 
 from unittest.mock import MagicMock, patch
+
+# noinspection PyPackageRequirements
 import pytest
 
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.modules import htpasswd
 
-
-class AnsibleExitJson(Exception):
-    """Exception subclass to catch module.exit_json calls cleanly."""
-
-    def __init__(self, kwargs):
-        self.kwargs = kwargs
-
-
-class AnsibleFailJson(Exception):
-    """Exception subclass to catch module.fail_json calls cleanly."""
-
-    def __init__(self, kwargs):
-        self.kwargs = kwargs
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.tests.unit.plugins.modules.utils import (  # noqa: E501
+    MODULES_IMPORT_PATH,
+    AnsibleExitJson,
+    exit_json,
+    fail_json,
+    make_absolute,
+)
 
 
 @pytest.fixture
@@ -32,12 +30,6 @@ def mock_ansible_module():
         mock.load_file_common_arguments.return_value = {}
         mock.set_fs_attributes_if_different.return_value = False
 
-        def exit_json(**kwargs):
-            raise AnsibleExitJson(kwargs)
-
-        def fail_json(**kwargs):
-            raise AnsibleFailJson(kwargs)
-
         mock.exit_json.side_effect = exit_json
         mock.fail_json.side_effect = fail_json
         return mock
@@ -45,10 +37,8 @@ def mock_ansible_module():
     return _generator
 
 
-@patch(
-    "ansible_collections.dettonville.utils.plugins.modules.htpasswd.HAS_PASSLIB", True
-)
-@patch("ansible_collections.dettonville.utils.plugins.modules.htpasswd.HtpasswdFile")
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HAS_PASSLIB"), True)
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HtpasswdFile"))
 @patch("builtins.open")
 @patch("os.path.exists", return_value=True)
 def test_htpasswd_add_user(
@@ -73,7 +63,7 @@ def test_htpasswd_add_user(
 
     module_mock = mock_ansible_module(params)
     with patch(
-        "ansible_collections.dettonville.utils.plugins.modules.htpasswd.AnsibleModule",
+        make_absolute(MODULES_IMPORT_PATH, "htpasswd.AnsibleModule"),
         return_value=module_mock,
     ):
         with pytest.raises(AnsibleExitJson) as exc_info:
@@ -85,10 +75,8 @@ def test_htpasswd_add_user(
     mock_htfile.save.assert_called_once()
 
 
-@patch(
-    "ansible_collections.dettonville.utils.plugins.modules.htpasswd.HAS_PASSLIB", True
-)
-@patch("ansible_collections.dettonville.utils.plugins.modules.htpasswd.HtpasswdFile")
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HAS_PASSLIB"), True)
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HtpasswdFile"))
 @patch("builtins.open")
 @patch("os.path.exists", return_value=True)
 def test_htpasswd_overwrite_prunes_legacy_users(
@@ -113,7 +101,7 @@ def test_htpasswd_overwrite_prunes_legacy_users(
 
     module_mock = mock_ansible_module(params)
     with patch(
-        "ansible_collections.dettonville.utils.plugins.modules.htpasswd.AnsibleModule",
+        make_absolute(MODULES_IMPORT_PATH, "htpasswd.AnsibleModule"),
         return_value=module_mock,
     ):
         with pytest.raises(AnsibleExitJson) as exc_info:
@@ -126,10 +114,8 @@ def test_htpasswd_overwrite_prunes_legacy_users(
     mock_htfile.save.assert_called_once()
 
 
-@patch(
-    "ansible_collections.dettonville.utils.plugins.modules.htpasswd.HAS_PASSLIB", True
-)
-@patch("ansible_collections.dettonville.utils.plugins.modules.htpasswd.HtpasswdFile")
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HAS_PASSLIB"), True)
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HtpasswdFile"))
 @patch("builtins.open")
 @patch("os.path.exists", return_value=True)
 def test_htpasswd_delete_user(
@@ -153,7 +139,7 @@ def test_htpasswd_delete_user(
 
     module_mock = mock_ansible_module(params)
     with patch(
-        "ansible_collections.dettonville.utils.plugins.modules.htpasswd.AnsibleModule",
+        make_absolute(MODULES_IMPORT_PATH, "htpasswd.AnsibleModule"),
         return_value=module_mock,
     ):
         with pytest.raises(AnsibleExitJson) as exc_info:
@@ -165,10 +151,8 @@ def test_htpasswd_delete_user(
     mock_htfile.save.assert_called_once()
 
 
-@patch(
-    "ansible_collections.dettonville.utils.plugins.modules.htpasswd.HAS_PASSLIB", True
-)
-@patch("ansible_collections.dettonville.utils.plugins.modules.htpasswd.HtpasswdFile")
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HAS_PASSLIB"), True)
+@patch(make_absolute(MODULES_IMPORT_PATH, "htpasswd.HtpasswdFile"))
 @patch("builtins.open")
 @patch("os.path.exists", return_value=True)
 def test_htpasswd_user_list_overwrite(
@@ -177,8 +161,8 @@ def test_htpasswd_user_list_overwrite(
     """Test managing multiple users via user_list with overwrite option."""
     mock_htfile = MagicMock()
     mock_htfile.users.return_value = ["alice", "stale_user"]
-    mock_htfile.check_password.side_effect = (
-        lambda u, p: u == "alice" and p == "secret1"
+    mock_htfile.check_password.side_effect = lambda u, p: (
+        u == "alice" and p == "secret1"
     )
     mock_htfile_cls.return_value = mock_htfile
 
@@ -197,7 +181,7 @@ def test_htpasswd_user_list_overwrite(
 
     module_mock = mock_ansible_module(params)
     with patch(
-        "ansible_collections.dettonville.utils.plugins.modules.htpasswd.AnsibleModule",
+        make_absolute(MODULES_IMPORT_PATH, "htpasswd.AnsibleModule"),
         return_value=module_mock,
     ):
         with pytest.raises(AnsibleExitJson) as exc_info:

@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
 import io
 from collections.abc import Mapping, Sequence
+from typing import Any
+
+# noinspection PyPackageRequirements
 from ansible.errors import AnsibleFilterError
+
+# noinspection PyPackageRequirements
 from ansible.utils.display import Display
 
 try:
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     from ruamel import yaml
 
     HAS_RUAMEL = True
 except ImportError:
     try:
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
         import ruamel_yaml as yaml
 
         HAS_RUAMEL = True
@@ -22,13 +30,20 @@ __metaclass__ = type
 
 DOCUMENTATION = """
   name: to_nice_yaml
-  short_description: Convert data structure to custom-indented YAML using ruamel.yaml
+  short_description: >-
+    Convert data structure to custom-indented YAML using ruamel.yaml
   version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
-    - Serializes an input data object down to a cleanly formatted YAML string representation.
-    - Exposes configuration control for explicit mapping spaces, sequence blocks, and indicator offsets.
-    - Supports common serialization flags such as key sorting, unicode preservation, and explicit document boundaries.
+    - >-
+      Serializes an input data object down to a cleanly formatted
+      YAML string representation.
+    - >-
+      Exposes configuration control for explicit mapping spaces,
+      sequence blocks, and indicator offsets.
+    - >-
+      Supports common serialization flags such as key sorting,
+      unicode preservation, and explicit document boundaries.
   positional: mapping, sequence, offset
   options:
     _input:
@@ -40,11 +55,14 @@ DOCUMENTATION = """
       type: integer
       default: 2
     sequence:
-      description: Number of spaces for sequence indentations (including prefix spacing).
+      description: >-
+        Number of spaces for sequence indentations (including prefix spacing).
       type: integer
       default: 4
     offset:
-      description: Number of spaces to offset the sequence dash indicator token inside the block.
+      description: >-
+        Number of spaces to offset the sequence dash indicator token
+        inside the block.
       type: integer
       default: 2
     width:
@@ -60,7 +78,9 @@ DOCUMENTATION = """
       type: boolean
       default: false
     allow_unicode:
-      description: Whether to allow unicode characters directly instead of escaping them to ASCII.
+      description: >-
+        Whether to allow unicode characters directly instead of escaping
+        them to ASCII.
       type: boolean
       default: true
 """
@@ -68,7 +88,8 @@ DOCUMENTATION = """
 EXAMPLES = """
 - name: Format nested configurations with custom structural spacing
   ansible.builtin.debug:
-    msg: "{{ my_dict | dettonville.utils.to_nice_yaml(mapping=4, sequence=6, offset=3) }}"
+    msg: "{{ my_dict | dettonville.utils.to_nice_yaml(
+        mapping=4, sequence=6, offset=3) }}"
   vars:
     my_dict:
       config:
@@ -112,31 +133,42 @@ class FilterModule(object):
 
     @staticmethod
     def _check_ruamel_version():
-        """Check for legacy ruamel library versions and log an Ansible display warning if found."""
+        """Check for legacy ruamel library versions and log an Ansible
+        display warning if found."""
         if not HAS_RUAMEL or not hasattr(yaml, '__version__'):
             return
 
         try:
-            # Parse version into comparable integers (e.g., "0.17.4" -> [0, 17, 4])
-            version_parts = [int(p) for p in yaml.__version__.split('.') if p.isdigit()]
+            # Parse version into comparable integers
+            # e.g., "0.17.4" -> [0, 17, 4]
+            version_parts = [
+                int(p) for p in yaml.__version__.split('.') if p.isdigit()
+            ]
             if version_parts and version_parts < [0, 17, 22]:
                 Display().warning(
-                    f"The installed 'ruamel.yaml' version ({yaml.__version__}) is a legacy version. "
-                    "Custom block sequence indentation options ('mapping', 'sequence', 'offset') may exhibit layout formatting anomalies. "
-                    "Upgrading to 'ruamel.yaml>=0.17.22' is recommended for consistent geometry engine outputs."
+                    f"The installed 'ruamel.yaml' version "
+                    f"({yaml.__version__}) is a legacy version. "
+                    "Custom block sequence indentation options "
+                    "('mapping', 'sequence', 'offset') may exhibit layout "
+                    "formatting anomalies. "
+                    "Upgrading to 'ruamel.yaml>=0.17.22' is recommended for "
+                    "consistent geometry engine outputs."
                 )
-        except Exception:
-            # Fallback defensively if version string parsing encounters unexpected vendor modifications
+        except (AttributeError, ValueError, TypeError, IndexError):
+            # Fallback defensively if version string parsing encounters
+            # unexpected vendor modifications
             pass
 
-    def _normalize_data(self, data: any, sort_keys: bool = False) -> any:
+    def _normalize_data(self, data: Any, sort_keys: bool = False) -> Any:
         """
         Recursively unpacks internal Ansible/Jinja wrapper proxy objects
         into standard, primitive Python built-in types.
         """
         if isinstance(data, Mapping):
             items = sorted(data.items()) if sort_keys else data.items()
-            return {str(k): self._normalize_data(v, sort_keys) for k, v in items}
+            return {
+                str(k): self._normalize_data(v, sort_keys) for k, v in items
+            }
 
         elif isinstance(data, (str, bytes)):
             return str(data)
@@ -145,7 +177,8 @@ class FilterModule(object):
             return [self._normalize_data(item, sort_keys) for item in data]
 
         elif isinstance(data, bool):
-            # Check bool first because isinstance(True, int) evaluates to True in Python
+            # Check bool first because isinstance(True, int) evaluates
+            # to True in Python
             return bool(data)
 
         elif isinstance(data, int):
@@ -162,7 +195,7 @@ class FilterModule(object):
 
     def to_nice_yaml(
         self,
-        input_object: any,
+        input_object: Any,
         mapping: int = 2,
         sequence: int = 4,
         offset: int = 2,
@@ -173,7 +206,8 @@ class FilterModule(object):
     ) -> str:
         if not HAS_RUAMEL:
             raise AnsibleFilterError(
-                "The 'ruamel.yaml' library is required to use the custom dettonville.utils.to_nice_yaml filter plugin."
+                "The 'ruamel.yaml' library is required to use the "
+                "custom dettonville.utils.to_nice_yaml filter plugin."
             )
 
         # Notify user if their execution environment runs an old version
@@ -184,8 +218,11 @@ class FilterModule(object):
         o = int(offset)
 
         try:
-            # 1. Cleanse and normalize the data first to strip all proxy wrappers
-            clean_object = self._normalize_data(input_object, sort_keys=sort_keys)
+            # 1. Cleanse and normalize the data first to strip
+            #    all proxy wrappers
+            clean_object = self._normalize_data(
+                input_object, sort_keys=sort_keys
+            )
 
             # 2. Configure the safe Pure-YAML block engine
             ryaml = yaml.YAML(typ='safe')
@@ -195,7 +232,8 @@ class FilterModule(object):
             ryaml.allow_unicode = bool(allow_unicode)
 
             # Since _normalize_data handled sort-ordering at the dict level,
-            # we tell ruamel's internal constructor engine to maintain that order
+            # we tell ruamel's internal constructor engine to maintain
+            # that order
             if sort_keys:
                 ryaml.constructor.setting_to_sort_keys = True
 
@@ -206,8 +244,9 @@ class FilterModule(object):
             ryaml.dump(clean_object, stream)
             raw_yaml = stream.getvalue()
 
-            # Handle the ruamel block mapping layout anomaly where nested sequence blocks
-            # are aligned flat against their mapping keys when offset fits inside mapping boundary.
+            # Handle the ruamel block mapping layout anomaly where nested
+            # sequence blocks are aligned flat against their mapping keys
+            # when offset fits inside mapping boundary.
             if m == 2 and s == 4 and o == 2:
                 lines = raw_yaml.splitlines()
                 idx = 0
@@ -216,20 +255,25 @@ class FilterModule(object):
                     line = lines[idx]
                     current_indent = len(line) - len(line.lstrip(' '))
 
-                    # Look for map keys ending in ':' that contain a nested sequence right below them
+                    # Look for map keys ending in ':' that contain a nested
+                    # sequence right below them
                     if line.rstrip().endswith(':') and idx + 1 < len(lines):
                         next_line = lines[idx + 1]
-                        next_indent = len(next_line) - len(next_line.lstrip(' '))
+                        next_indent = len(next_line) - len(
+                            next_line.lstrip(' ')
+                        )
 
-                        # If the list hyphen starts flat at the exact same margin level as its parent key,
-                        # it means ruamel dropped the hanging block list formatting.
+                        # If the list hyphen starts flat at the exact same
+                        # margin level as its parent key, it means ruamel
+                        # dropped the hanging block list formatting.
                         if (
                             next_line.lstrip().startswith('- ')
                             and next_indent == current_indent
                         ):
                             lookahead_idx = idx + 1
 
-                            # Shift the initial list entry and EVERYTHING nested underneath it
+                            # Shift the initial list entry and EVERYTHING
+                            # nested underneath it
                             while lookahead_idx < len(lines):
                                 check_line = lines[lookahead_idx]
                                 if not check_line.strip():
@@ -240,19 +284,25 @@ class FilterModule(object):
                                     check_line.lstrip(' ')
                                 )
 
-                                # Break out if we hit a line that belongs to an outer context boundary
+                                # Break out if we hit a line that belongs to
+                                # an outer context boundary
                                 if check_indent < current_indent:
                                     break
 
-                                # If it's at the same indentation level but NOT a list item,
-                                # we have hit a sibling dictionary key under the original parent map.
+                                # If it's at the same indentation level but
+                                # NOT a list item, we have hit a sibling
+                                # dictionary key under the original parent map.
                                 if (
                                     check_indent == current_indent
-                                    and not check_line.lstrip().startswith('- ')
+                                    and not check_line.lstrip().startswith(
+                                        '- '
+                                    )
                                 ):
                                     break
 
-                                # Shift the sequence line or its nested dictionary child lines forward cleanly by 2 spaces
+                                # Shift the sequence line or its nested
+                                # dictionary child lines forward cleanly
+                                # by 2 spaces
                                 lines[lookahead_idx] = "  " + check_line
                                 lookahead_idx += 1
 
@@ -262,7 +312,13 @@ class FilterModule(object):
 
             return raw_yaml
 
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError, yaml.YAMLError) as e:
             raise AnsibleFilterError(
-                f"Failed parsing and formatting object into customized YAML: {e}"
-            )
+                f"Failed parsing and formatting object into customized "
+                f"YAML: {e}"
+            ) from e
+        # except Exception as e:
+        #     raise AnsibleFilterError(
+        #         f"Failed parsing and formatting object into customized "
+        #         f"YAML: {e}"
+        #     )

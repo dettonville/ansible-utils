@@ -3,10 +3,13 @@
 Unit tests for the sort_dict_list filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
-from ansible_collections.dettonville.utils.plugins.filter.sort_dict_list import (
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.filter.sort_dict_list import (  # noqa: E501
     FilterModule,
-)  # Adjust import path as needed
+)
 
 
 @pytest.fixture
@@ -138,7 +141,8 @@ def test_sort_empty_list(filter_module):
 
 
 def test_sort_list_with_missing_keys(filter_module):
-    """Test sorting when some dicts miss the key (should handle gracefully, e.g., treat as None)."""
+    """Test sorting when some dicts miss the key (should handle gracefully,
+    e.g., treat as None)."""
     input_list = [
         {"name": "alice"},
         {"age": 25},  # Missing name

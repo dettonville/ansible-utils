@@ -1,22 +1,19 @@
 
-
 ```shell
 $ ansible --version
-ansible [core 2.20.1]
+ansible [core 2.21.2]
   config file = None
-  configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
+  configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
-  pyyaml version = 6.0.2 (with libyaml v0.2.5)
-$
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
-$
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_dict_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_dict_keys.md
-> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
+> FILTER dettonville.utils.remove_dict_keys (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/filter/remove_dict_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.
@@ -37,7 +34,9 @@ NAME: remove_dict_keys
 POSITIONAL: key_patterns
 
 EXAMPLES:
-- name: Remove keys from list of dictionaries based on a single specified key to be removed
+- name: >-
+    Remove keys from list of dictionaries based on a single specified key
+    to be removed
   ansible.builtin.debug:
     msg: "{{ my_list | dettonville.utils.remove_dict_keys('foo') }}"
   vars:
@@ -140,7 +139,8 @@ EXAMPLES:
 
 - name: Produce a list of dictionaries based on multiple keys to be removed
   ansible.builtin.debug:
-    msg: "{{ my_list | dettonville.utils.remove_dict_keys(['platform_id','address','username']) }}"
+    msg: "{{ my_list| dettonville.utils.remove_dict_keys(
+        ['platform_id','address','username']) }}"
   vars:
     my_list:
       - address: 10.31.25.54

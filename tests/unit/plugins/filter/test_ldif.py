@@ -3,11 +3,21 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from ansible_collections.dettonville.utils.plugins.filter.ldif import to_ldif, from_ldif
+# # noinspection PyUnresolvedReferences,PyPackageRequirements
+# from ansible_collections.dettonville.utils.plugins.filter.ldif import (
+#     from_ldif,
+#     to_ldif,
+# )
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
+    from_ldif,
+    to_ldif,
+)
 
 
 def test_to_ldif_basic_and_ordering():
-    """Verify standard mapping, key presence, and ordering layout constraints."""
+    """Verify standard mapping, key presence, and ordering layout."""
     entry = {
         'changetype': 'add',
         'objectClass': 'posixGroup',
@@ -28,7 +38,7 @@ def test_to_ldif_basic_and_ordering():
 
 
 def test_to_ldif_lists_and_multivalue():
-    """Verify multi-valued arrays (member, objectClass) render multiple distinct lines."""
+    """Verify multi-valued arrays render multiple lines."""
     entry = {
         'dn': 'cn=wheel,ou=groups,dc=dettonville,dc=int',
         'objectClass': ['top', 'posixGroup'],
@@ -44,20 +54,22 @@ def test_to_ldif_lists_and_multivalue():
 
 
 def test_to_ldif_explicit_base64():
-    """Verify fields terminating with explicit double colons are base64-encoded automatically."""
+    """Verify fields with explicit double colons are base64-encoded."""
     entry = {
         'dn': 'cn=search,dc=dettonville,dc=int',
         'userPassword::': '{SSHA}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     }
     output = to_ldif(entry)
-    # {SSHA}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx encodes exactly to e1NTSEF9eFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFg=
+    # {SSHA}xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx encodes exactly
+    # to e1NTSEF9eFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFg=
     assert (
-        "userPassword:: e1NTSEF9eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=" in output
+        "userPassword:: e1NTSEF9eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg="
+        in output
     )
 
 
 def test_to_ldif_skips_none_values():
-    """Verify dictionary fields evaluated to None are silently skipped instead of breaking."""
+    """Verify dictionary fields set to None are silently skipped."""
     entry = {
         'dn': 'cn=sudo.root,ou=SUDOers,dc=dettonville,dc=int',
         'gidNumber': None,
@@ -69,7 +81,7 @@ def test_to_ldif_skips_none_values():
 
 
 def test_from_ldif_basic_parsing():
-    """Verify basic LDIF records accurately turn back into native python dictionaries."""
+    """Verify basic LDIF records turn back into native dictionaries."""
     ldif_str = (
         "dn: cn=admins,ou=groups,dc=dettonville,dc=int\n"
         "changetype: add\n"
@@ -85,7 +97,7 @@ def test_from_ldif_basic_parsing():
 
 
 def test_from_ldif_multivalue_collapsing():
-    """Verify repeating keys are reassembled back into structural lists."""
+    """Verify repeating keys reassemble into structural lists."""
     ldif_str = (
         "dn: cn=wheel,ou=groups,dc=dettonville,dc=int\n"
         "objectClass: top\n"
@@ -103,7 +115,7 @@ def test_from_ldif_multivalue_collapsing():
 
 
 def test_from_ldif_base64_decoding():
-    """Verify base64 values parse back out to human-readable strings."""
+    """Verify base64 values parse back to human-readable strings."""
     ldif_str = (
         "dn: cn=search,dc=dettonville,dc=int\n"
         "description:: TERBUCBSZWFkIE9ubHkgVXNlcg==\n"
@@ -113,9 +125,9 @@ def test_from_ldif_base64_decoding():
 
 
 def test_to_ldif_from_ldif_roundtrip():
-    """Verify round-trip conversion: dict → LDIF → dict produces equivalent data.
+    """Verify round-trip conversion: dict → LDIF → dict.
 
-    Tests both explicit base64 (:: suffix with plain text value) and auto-detected base64 (non-ASCII).
+    Tests explicit base64 and auto-detected base64 (non-ASCII).
     """
     original = {
         'dn': 'cn=john.doe,ou=people,dc=dettonville,dc=int',
@@ -130,12 +142,10 @@ def test_to_ldif_from_ldif_roundtrip():
         'uidNumber': 5000,
         'homeDirectory': '/home/john.doe',
         'loginShell': '/bin/bash',
-        'description': 'LDAP Test User with special chars: éñ@',  # auto base64
-        'userPassword::': '{SSHA}secure123',  # explicit base64 (pass plain-text!)
+        'description': 'LDAP Test User with special chars: éñ@',
+        'userPassword::': '{SSHA}secure123',
         'jpegPhoto::': 'PixelData',
-        # explicit base64 binary
         'employeeNumber': '12345',
-        # Test None value (should be skipped)
         'inactive': None,
     }
 
@@ -169,16 +179,16 @@ def test_to_ldif_from_ldif_roundtrip():
     ]:
         assert reconstructed.get(key) == original[key]
 
-    # Check integer values (come back as strings from LDIF strings)
+    # Check integer values (come back as strings from LDIF)
     assert int(reconstructed['gidNumber']) == original['gidNumber']
     assert int(reconstructed['uidNumber']) == original['uidNumber']
 
-    # Verify both explicit base64 target fields decoded cleanly back to source plain-text
+    # Verify base64 target fields decoded back to plain-text
     assert reconstructed['userPassword'] == '{SSHA}secure123'
     assert reconstructed['jpegPhoto'] == 'PixelData'
 
     # Verify None was skipped
     assert 'inactive' not in reconstructed
 
-    # Optional: Verify that description was base64 encoded/decoded correctly
+    # Verify description encoding/decoding preserved special characters
     assert 'éñ@' in reconstructed['description']

@@ -3,10 +3,13 @@
 Unit tests for the redact_sensitive_values filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
-from ansible_collections.dettonville.utils.plugins.filter.redact_sensitive_values import (
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.filter.redact_sensitive_values import (  # noqa: E501
     FilterModule,
-)  # Adjust import path as needed
+)
 
 # Assuming the FilterModule is in the correct path; adjust if necessary
 
@@ -113,7 +116,11 @@ def test_no_patterns(filter_module):
 
 def test_non_matching_keys(filter_module):
     """Test that non-matching keys are unchanged."""
-    input_dict = {"username": "admin", "description": "some desc", "password": "secret"}
+    input_dict = {
+        "username": "admin",
+        "description": "some desc",
+        "password": "secret",
+    }
     result = filter_module.redact_sensitive_values(input_dict)
     assert result["username"] == "admin"
     assert result["description"] == "some desc"
@@ -132,7 +139,8 @@ def test_empty_input(filter_module):
 
 
 def test_primitive_values(filter_module):
-    """Test that primitive values (non-container) are handled correctly (only if key matches)."""
+    """Test that primitive values (non-container) are handled
+    correctly (only if key matches)."""
     input_dict = {"password": "secret", "number": 123, "bool": True}
     result = filter_module.redact_sensitive_values(input_dict)
     assert result["password"] == "<redacted_password>"

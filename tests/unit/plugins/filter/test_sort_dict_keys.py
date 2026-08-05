@@ -3,10 +3,13 @@
 Unit tests for the sort_dict_keys filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
-from ansible_collections.dettonville.utils.plugins.filter.sort_dict_keys import (
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.filter.sort_dict_keys import (  # noqa: E501
     FilterModule,
-)  # Adjust import path as needed
+)
 
 
 @pytest.fixture
@@ -44,9 +47,15 @@ def test_sort_nested_dict(filter_module):
 
 def test_sort_list_of_dicts(filter_module):
     """Test sorting in a list of dicts."""
-    input_list = [{"c": "c1", "a": "a1", "b": "b1"}, {"z": "z2", "x": "x2", "y": "y2"}]
+    input_list = [
+        {"c": "c1", "a": "a1", "b": "b1"},
+        {"z": "z2", "x": "x2", "y": "y2"},
+    ]
     result = filter_module.sort_dict_keys(input_list)
-    expected = [{"a": "a1", "b": "b1", "c": "c1"}, {"x": "x2", "y": "y2", "z": "z2"}]
+    expected = [
+        {"a": "a1", "b": "b1", "c": "c1"},
+        {"x": "x2", "y": "y2", "z": "z2"},
+    ]
     assert result == expected
 
 
@@ -97,7 +106,12 @@ def test_sort_empty_input(filter_module):
 
 def test_sort_primitive_values(filter_module):
     """Test that primitive values (non-dict) are unchanged."""
-    input_obj = {"key": "value", "number": 123, "bool": True, "list": [1, 2, 3]}
+    input_obj = {
+        "key": "value",
+        "number": 123,
+        "bool": True,
+        "list": [1, 2, 3],
+    }
     result = filter_module.sort_dict_keys(input_obj)
     # Assuming it only sorts dict keys, leaves others intact
     assert result["key"] == "value"
@@ -115,7 +129,8 @@ def test_sort_case_sensitive(filter_module):
 
 
 def test_sort_with_reverse_option(filter_module):
-    """Test with reverse sorting if the filter supports it (assuming optional param)."""
+    """Test with reverse sorting if the filter supports
+    it (assuming optional param)."""
     input_dict = {"a": "value_a", "b": "value_b", "c": "value_c"}
     result = filter_module.sort_dict_keys(input_dict, reverse=True)
     expected = {"c": "value_c", "b": "value_b", "a": "value_a"}

@@ -1,21 +1,31 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
-import re
+
 import copy
+import re
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+# noinspection PyPackageRequirements
 from ansible.errors import AnsibleFilterError
-from ansible.module_utils.common._collections_compat import Mapping, Sequence
 
 __metaclass__ = type
 
 DOCUMENTATION = """
   name: keep_keys
-  short_description: Keep only specified key names from a dict or list of dicts
+  short_description: >-
+    Keep only specified key names from a dict or list of dicts.
   version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
-    - Traverses a dictionary or a list of dictionaries and retains only the keys that match the provided list of regex patterns.
-    - Can operate recursively or only on the first level of the data structure.
+    - >-
+      Traverses a dictionary or a list of dictionaries
+      and retains only the keys that match the provided
+      list of regex patterns.
+    - >-
+      Can operate recursively or only on the first
+      level of the data structure.
   positional: key_patterns
   options:
     _input:
@@ -27,7 +37,9 @@ DOCUMENTATION = """
       type: list
       required: true
     recursive:
-      description: Whether to apply the filter recursively to nested dictionaries.
+      description: >-
+        Whether to apply the filter recursively to nested
+        dictionaries.
       type: boolean
       default: false
 """
@@ -46,7 +58,9 @@ EXAMPLES = """
 
 - name: Keep keys recursively using regex matching
   ansible.builtin.debug:
-    msg: "{{ my_list | dettonville.utils.keep_keys(['(?i).*id.*', 'name'], recursive=true) }}"
+    msg: >-
+      {{ my_list | dettonville.utils.keep_keys(
+         ['(?i).*id.*', 'name'], recursive=true) }}
   vars:
     my_list:
       - account_id: 12345
@@ -69,10 +83,12 @@ class FilterModule(object):
         return {"keep_keys": self.keep_keys}
 
     def keep_keys(
-        self, input_object: any, key_patterns: list, recursive: bool = False
-    ) -> any:
+        self, input_object: Any, key_patterns: list, recursive: bool = False
+    ) -> Any:
         if not isinstance(key_patterns, list):
-            raise AnsibleFilterError("The 'key_patterns' option must be a list.")
+            raise AnsibleFilterError(
+                "The 'key_patterns' option must be a list."
+            )
 
         # Compile regex patterns
         compiled_patterns = []
@@ -80,10 +96,14 @@ class FilterModule(object):
             try:
                 compiled_patterns.append(re.compile(pattern))
             except re.error as e:
-                raise AnsibleFilterError(f"Invalid regex pattern '{pattern}': {e}")
+                raise AnsibleFilterError(
+                    f"Invalid regex pattern '{pattern}': {e}"
+                ) from e
 
         def _should_keep(key: str) -> bool:
-            return any(pattern.match(str(key)) for pattern in compiled_patterns)
+            return any(
+                pattern.match(str(key)) for pattern in compiled_patterns
+            )
 
         def _process_object(obj, is_recursive, parent_matched=True):
             if isinstance(obj, Mapping):
@@ -99,15 +119,19 @@ class FilterModule(object):
                         else:
                             new_dict[k] = copy.deepcopy(v)
                     elif is_recursive:
-                        if isinstance(v, (Mapping, Sequence)) and not isinstance(
-                            v, (str, bytes)
-                        ):
-                            res = _process_object(v, is_recursive, parent_matched=False)
+                        if isinstance(
+                            v, (Mapping, Sequence)
+                        ) and not isinstance(v, (str, bytes)):
+                            res = _process_object(
+                                v, is_recursive, parent_matched=False
+                            )
                             if res or res == {} or res == []:
                                 new_dict[k] = res
                 return new_dict
 
-            elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
+            elif isinstance(obj, Sequence) and not isinstance(
+                obj, (str, bytes)
+            ):
                 new_list = []
                 for item in obj:
                     res = _process_object(item, is_recursive, parent_matched)
@@ -122,5 +146,6 @@ class FilterModule(object):
 
             return obj if parent_matched else None
 
-        # Root invocation defaults parent_matched to True so top-level primitives pass out cleanly
+        # Root invocation defaults parent_matched to True
+        # so top-level primitives pass out cleanly
         return _process_object(input_object, recursive, parent_matched=True)

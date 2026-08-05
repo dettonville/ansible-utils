@@ -3,8 +3,13 @@
 Unit tests for the keep_keys filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
+
+# noinspection PyPackageRequirements
 from ansible.errors import AnsibleFilterError
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.filter.keep_keys import (
     FilterModule,
 )
@@ -16,7 +21,8 @@ def filter_module():
 
 
 def test_keep_keys_flat_dict(filter_module):
-    """Test keeping specific keys on a single flat dictionary (default non-recursive)."""
+    """Test keeping specific keys on a single flat
+    dictionary (default non-recursive)."""
     input_dict = {
         "username": "admin",
         "password": "secret123",
@@ -31,7 +37,8 @@ def test_keep_keys_flat_dict(filter_module):
 
 
 def test_keep_keys_non_recursive_default(filter_module):
-    """Test recursive=False retains all nested child nodes if top-level key matches."""
+    """Test recursive=False retains all nested child nodes if top-level
+    key matches."""
     input_dict = {
         "user": {
             "name": "admin",
@@ -48,7 +55,8 @@ def test_keep_keys_non_recursive_default(filter_module):
 
 
 def test_keep_keys_recursive(filter_module):
-    """Test recursive=True filters out nested elements that don't match patterns."""
+    """Test recursive=True filters out nested elements that don't
+    match patterns."""
     input_dict = {
         "user": {
             "name": "admin",
@@ -72,7 +80,12 @@ def test_keep_keys_recursive(filter_module):
 
 def test_keep_keys_regex_patterns(filter_module):
     """Test keeping keys based on regex patterns (e.g., case insensitivity)."""
-    input_dict = {"account_id": 111, "UserID": 222, "name": "test_user", "token": "abc"}
+    input_dict = {
+        "account_id": 111,
+        "UserID": 222,
+        "name": "test_user",
+        "token": "abc",
+    }
     # Match any key containing 'id' case-insensitively, plus 'name'
     patterns = ["(?i).*id.*", "name"]
     result = filter_module.keep_keys(input_dict, patterns)

@@ -65,7 +65,7 @@
 
 - name: "Set __test_component__test_var_file_paths"
   ansible.builtin.set_fact:
-    __test_component__test_var_file_paths: "{{ __test_component__test_var_files.files 
+    __test_component__test_var_file_paths: "{{ __test_component__test_var_files.files
       | map(attribute='path') | list | sort }}"
 
 - name: "Display __test_component__test_var_file_paths"
@@ -74,7 +74,7 @@
 
 - name: "Set __test_component__test_case_id_run_list"
   ansible.builtin.set_fact:
-    __test_component__test_case_id_run_list: "{{ __test_component__test_var_file_paths 
+    __test_component__test_case_id_run_list: "{{ __test_component__test_var_file_paths
       | map('basename') | map('regex_replace', '^testdata_(.*).yml$', '\\1') | list | map('string') | sort }}"
 
 - name: "Display __test_component__test_case_id_run_list"

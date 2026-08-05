@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
+from typing import Any
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
     sort_dict_keys,
 )
@@ -85,12 +89,13 @@ EXAMPLES = """
 
 RETURN = """
   _value:
-    description: A sorted list containing the dictionaries from the original list.
+    description: >-
+      A sorted list containing the dictionaries from the original list.
     type: list
 """
 
 # from ansible.errors import AnsibleFilterError
-# from ansible.module_utils.common._collections_compat import Mapping, Sequence
+# from collections.abc import Mapping, Sequence
 
 # from operator import itemgetter as i
 # from functools import cmp_to_key
@@ -102,5 +107,6 @@ class FilterModule(object):
     def filters(self):
         return {"sort_dict_keys": self.sort_dict_keys}
 
-    def sort_dict_keys(self, my_dict, reverse=False):
+    @staticmethod
+    def sort_dict_keys(my_dict: Any, reverse=False) -> Any:
         return sort_dict_keys(my_dict, reverse)

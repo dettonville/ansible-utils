@@ -5,8 +5,14 @@ permissions:
   checks: write
 
 on:
-  workflow_call:  # allow this workflow to be called from other workflows
-  workflow_dispatch:  # allow this workflow to be called from user
+  workflow_call:
+    inputs:
+      collection_path:
+        type: string
+        required: true
+
+env:
+  COLLECTION_PATH: ${{ inputs.collection_path }}
 
 jobs:
   ansible_test_sanity:
@@ -22,13 +28,16 @@ jobs:
           # oldest versions of each that we support
           - { python: "3.14", ansible: "stable-2.21" }
           - { python: "3.13", ansible: "stable-2.20" }
-#          - { python: "3.13", ansible: "stable-2.19" }
-#          - { python: "3.11", ansible: "stable-2.19" }
+          # - { python: "3.13", ansible: "stable-2.19" }
+          # - { python: "3.11", ansible: "stable-2.19" }
           - { python: "3.12", ansible: "stable-2.16" }
           - { python: "3.10", ansible: "stable-2.16" }
-#          - { python: "3.13", ansible: devel }
+          # - { python: "3.13", ansible: devel }
 
     steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
       # Run sanity tests inside a Docker container.
       # The docker container has all the pinned dependencies that are
       # required and all Python versions Ansible supports.
@@ -54,7 +63,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            ansible_collections/dettonville/utils/tests/output/junit/*.xml
+            ${{ env.COLLECTION_PATH }}/tests/output/junit/*.xml
 
   # This job does nothing and is only used for the branch protection
   # or multi-stage CI jobs, like making sure that all tests pass before

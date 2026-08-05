@@ -33,7 +33,7 @@
         that:
           - version_extracted == runtime_version
         fail_msg: >
-          Collection source mismatch error! 
+          Collection source mismatch error!
           galaxy.yml version ({{ version_extracted }}) does not match the integration environment execution runtime context ({{ runtime_version }}).
 
     - name: "TEST debug_sanitized | Display collection version information"

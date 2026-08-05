@@ -1,0 +1,112 @@
+name: Release Ansible Collection
+permissions:
+  contents: write
+  checks: write
+
+on:
+  workflow_call:
+    inputs:
+      lint_result:
+        type: string
+        required: true
+      sanity_result:
+        type: string
+        required: true
+      units_result:
+        type: string
+        required: true
+      namespace:
+        type: string
+        required: true
+      collection_name:
+        type: string
+        required: true
+      collection_version:
+        type: string
+        required: true
+    secrets:
+      ANSIBLE_GALAXY_API_KEY:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Verify Upstream Job Results
+        env:
+          LINT_RES: ${{ inputs.lint_result }}
+          SANITY_RES: ${{ inputs.sanity_result }}
+          UNITS_RES: ${{ inputs.units_result }}
+        run: >-
+          python -c "assert set([
+          '$LINT_RES',
+          '$SANITY_RES',
+          '$UNITS_RES'
+          ]) == {'success'}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible passlib distlib
+
+      - name: Configure Git Identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply Version Tag & Set Outputs
+        id: meta
+        env:
+          NAMESPACE: ${{ inputs.namespace }}
+          COLLECTION_NAME: ${{ inputs.collection_name }}
+          COLLECTION_VERSION: ${{ inputs.collection_version }}
+        run: |
+          SHORT_HASH=$(git rev-parse --short HEAD)
+          TARBALL_NAME="${NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}.tar.gz"
+
+          echo "short_hash=$SHORT_HASH" >> $GITHUB_OUTPUT
+          echo "release_tarball=$TARBALL_NAME" >> $GITHUB_OUTPUT
+
+          TAG_NAME="v${COLLECTION_VERSION}"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Processing tag: $TAG_NAME for commit $SHORT_HASH"
+
+          # Force move tag locally if it already exists
+          git tag -f "$TAG_NAME"
+
+          # Force push the updated tag to remote (overwriting existing tag)
+          git push origin "$TAG_NAME" --force
+
+      - name: Create Collection Archive
+        run: |
+          ansible-galaxy collection build
+
+      - name: Publish Collection to Galaxy
+        run: |
+          echo "Publishing ${{ steps.meta.outputs.release_tarball }} to Galaxy..."
+          ansible-galaxy collection publish "${{ steps.meta.outputs.release_tarball }}" --api-key ${{ secrets.ANSIBLE_GALAXY_API_KEY }}
+
+      #      - name: Prepare Tagged Release Asset with Commit Hash
+      #        run: |
+      #          HASHED_TAR="${NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}+${{ steps.meta.outputs.short_hash }}.tar.gz"
+      #
+      #          cp "${{ steps.meta.outputs.release_tarball }}" "$HASHED_TAR"
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          name: Release ${{ steps.meta.outputs.tag_name }}
+          #          name: Release ${{ steps.meta.outputs.tag_name }} (${{ steps.meta.outputs.short_hash }})
+          files: |
+            ${{ steps.meta.outputs.release_tarball }}
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

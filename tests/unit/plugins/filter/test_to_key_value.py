@@ -3,10 +3,13 @@
 Unit tests for the to_key_value filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.filter.to_key_value import (
     FilterModule,
-)  # Adjust import path as needed
+)
 
 
 @pytest.fixture
@@ -70,7 +73,9 @@ def test_to_key_value_single_quote(filter_module):
     data = {'API_KEY': 'secret123'}
     expected = "API_KEY='secret123'"
 
-    result = filter_module.filters()['to_key_value'](data, quote=True, quote_char="'")
+    result = filter_module.filters()['to_key_value'](
+        data, quote=True, quote_char="'"
+    )
     assert result == expected
 
 

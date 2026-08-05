@@ -12,56 +12,63 @@ __metaclass__ = type
 import csv
 import io
 import os
-import tempfile
 import shutil
-
+import tempfile
 import unittest
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, mock_open, patch
 
+# noinspection PyPackageRequirements
 from ansible.module_utils import basic
 
-
-from ansible_collections.dettonville.utils.tests.unit.plugins.modules.utils import (
-    AnsibleExitJson,
-    AnsibleFailJson,
-    ModuleTestCase,
-    MockAnsibleModule,
-    exit_json,
-    fail_json,
-)
-
-from ansible_collections.dettonville.utils.plugins.module_utils.export_dict_utils import (
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.export_dict_utils import (  # noqa: E501
     get_headers_and_fields,
-    write_csv_string,
     write_csv_file,
-    write_markdown_string,
+    write_csv_string,
     write_markdown_file,
+    write_markdown_string,
 )
-from ansible_collections.dettonville.utils.plugins.modules.export_dicts import (
-    main as module_main,
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.modules.export_dicts import (  # noqa: E501
     get_file_format,
     setup_module_object,
 )
 
-MODULES_IMPORT_PATH = "ansible_collections.dettonville.utils.plugins.modules"
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.modules.export_dicts import (  # noqa: E501
+    main as module_main,
+)
 
-
-def make_absolute(base_path, name):
-    return ".".join([base_path, name])
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.tests.unit.plugins.modules.utils import (  # noqa: E501
+    MODULES_IMPORT_PATH,
+    AnsibleExitJson,
+    AnsibleFailJson,
+    MockAnsibleModule,
+    ModuleTestCase,
+    exit_json,
+    fail_json,
+    make_absolute,
+)
 
 
 # Mock the export_dict_utils functions for isolated testing
 def mock_write_csv_file(module, output_file, export_list, column_list):
     return {
         "changed": True,
-        "message": f"The csv file has been created successfully at {output_file}",
+        "message": (
+            f"The csv file has been created successfully at {output_file}"
+        ),
     }
 
 
 def mock_write_markdown_file(module, output_file, export_list, column_list):
     return {
         "changed": True,
-        "message": f"The markdown file has been created successfully at {output_file}",
+        "message": (
+            f"The markdown file has been created successfully at {output_file}"
+        ),
     }
 
 
@@ -91,7 +98,9 @@ class TestExportDictUtils(ModuleTestCase):
 
     def test_get_headers_and_fields(self):
         """Test extracting headers and field names from column list."""
-        headers, fieldnames = self.get_headers_and_fields(self.sample_column_list)
+        headers, fieldnames = self.get_headers_and_fields(
+            self.sample_column_list
+        )
 
         expected_headers = ["Key #1", "Key #2", "Key #3"]
         expected_fieldnames = ["key1", "key2", "key3"]
@@ -107,7 +116,9 @@ class TestExportDictUtils(ModuleTestCase):
             {"name": "key3", "header": ""},
         ]
 
-        headers, fieldnames = self.get_headers_and_fields(column_list_no_headers)
+        headers, fieldnames = self.get_headers_and_fields(
+            column_list_no_headers
+        )
 
         # Should fallback to fieldnames when headers are empty
         self.assertEqual(headers, fieldnames)
@@ -216,7 +227,7 @@ class TestExportDictUtils(ModuleTestCase):
         mock_module = MockAnsibleModule()
         output_file = "/tmp/test.md"
 
-        with patch("codecs.open", mock_open()) as mock_file:
+        with patch("builtins.open", mock_open()) as mock_file:
             result = self.write_markdown_file(
                 mock_module,
                 output_file,
@@ -225,7 +236,9 @@ class TestExportDictUtils(ModuleTestCase):
             )
 
             # Verify file was opened with UTF-8 encoding
-            mock_file.assert_called_once_with(output_file, "w", encoding="utf-8")
+            mock_file.assert_called_once_with(
+                output_file, "w", encoding="utf-8"
+            )
 
             # Verify result
             self.assertTrue(result["changed"])
@@ -237,7 +250,7 @@ class TestExportDictUtils(ModuleTestCase):
         mock_module = MockAnsibleModule()
         output_file = "/tmp/test.md"
 
-        with patch("codecs.open", side_effect=IOError("Permission denied")):
+        with patch("builtins.open", side_effect=IOError("Permission denied")):
             self.write_markdown_file(
                 mock_module,
                 output_file,
@@ -273,7 +286,9 @@ class TestExportDictUtils(ModuleTestCase):
             {"key1": "value31", "key2": "value32", "key3": "ḃâŗ"},
         ]
 
-        csv_string = self.write_csv_string(unicode_export_list, self.sample_column_list)
+        csv_string = self.write_csv_string(
+            unicode_export_list, self.sample_column_list
+        )
         print(f"csv_string: {csv_string}")
 
         # Unicode characters should be preserved
@@ -353,13 +368,16 @@ class TestExportDictsModule(ModuleTestCase):
         # Verify choices
         self.assertEqual(arg_spec["format"]["choices"], ["md", "csv"])
         self.assertEqual(
-            arg_spec["logging_level"]["choices"], ["NOTSET", "DEBUG", "INFO", "ERROR"]
+            arg_spec["logging_level"]["choices"],
+            ["NOTSET", "DEBUG", "INFO", "ERROR"],
         )
 
     @patch(make_absolute(MODULES_IMPORT_PATH, "export_dicts.write_csv_file"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "export_dicts.AnsibleModule"))
     @patch("os.path.exists")
-    def test_main_csv_export(self, mock_exists, mock_ansible_module, mock_write_csv):
+    def test_main_csv_export(
+        self, mock_exists, mock_ansible_module, mock_write_csv
+    ):
         """Test main function with CSV export."""
         mock_module = Mock()
         mock_ansible_module.return_value = mock_module
@@ -376,7 +394,9 @@ class TestExportDictsModule(ModuleTestCase):
 
         mock_write_csv.return_value = {
             "changed": True,
-            "message": "The csv file has been created successfully at /tmp/test.csv",
+            "message": (
+                "The csv file has been created successfully at /tmp/test.csv"
+            ),
         }
 
         self.main()
@@ -392,7 +412,9 @@ class TestExportDictsModule(ModuleTestCase):
         # Verify exit_json was called with correct result
         mock_module.exit_json.assert_called_once()
 
-    @patch(make_absolute(MODULES_IMPORT_PATH, "export_dicts.write_markdown_file"))
+    @patch(
+        make_absolute(MODULES_IMPORT_PATH, "export_dicts.write_markdown_file")
+    )
     @patch(make_absolute(MODULES_IMPORT_PATH, "export_dicts.AnsibleModule"))
     @patch("os.path.exists")
     def test_main_markdown_export(
@@ -414,7 +436,10 @@ class TestExportDictsModule(ModuleTestCase):
 
         mock_write_markdown.return_value = {
             "changed": True,
-            "message": "The markdown file has been created successfully at /tmp/test.md",
+            "message": (
+                "The markdown file has been created successfully at "
+                "/tmp/test.md"
+            ),
         }
 
         self.main()
@@ -504,7 +529,9 @@ class TestExportDictsModule(ModuleTestCase):
 
         mock_write_csv.return_value = {
             "changed": True,
-            "message": "The csv file has been created successfully at /tmp/test.csv",
+            "message": (
+                "The csv file has been created successfully at /tmp/test.csv"
+            ),
         }
 
         self.main()
@@ -534,7 +561,9 @@ class TestExportDictsModule(ModuleTestCase):
 
         mock_write_csv.return_value = {
             "changed": True,
-            "message": "The csv file has been created successfully at /tmp/test.csv",
+            "message": (
+                "The csv file has been created successfully at /tmp/test.csv"
+            ),
         }
 
         self.main()
@@ -606,7 +635,9 @@ class TestExportDictsModule(ModuleTestCase):
 
         mock_write_csv.return_value = {
             "changed": True,
-            "message": "The csv file has been created successfully at /tmp/test.csv",
+            "message": (
+                "The csv file has been created successfully at /tmp/test.csv"
+            ),
         }
 
         self.main()
@@ -670,7 +701,9 @@ class TestExportDictsIntegration(ModuleTestCase):
             self.assertIn("successfully", result["message"])
 
         except ImportError:
-            self.skipTest("export_dict_utils not available for integration test")
+            self.skipTest(
+                "export_dict_utils not available for integration test"
+            )
 
     def test_markdown_export_integration(self):
         """Test complete Markdown export workflow."""
@@ -701,7 +734,9 @@ class TestExportDictsIntegration(ModuleTestCase):
             self.assertIn("successfully", result["message"])
 
         except ImportError:
-            self.skipTest("export_dict_utils not available for integration test")
+            self.skipTest(
+                "export_dict_utils not available for integration test"
+            )
 
     def test_large_dataset_export(self):
         """Test exporting large datasets."""
@@ -720,7 +755,9 @@ class TestExportDictsIntegration(ModuleTestCase):
 
         try:
             mock_module = MockAnsibleModule()
-            result = write_csv_file(mock_module, output_file, large_data, columns)
+            result = write_csv_file(
+                mock_module, output_file, large_data, columns
+            )
 
             # Verify file was created
             self.assertTrue(os.path.exists(output_file))
@@ -735,7 +772,9 @@ class TestExportDictsIntegration(ModuleTestCase):
             self.assertTrue(result["changed"])
 
         except ImportError:
-            self.skipTest("export_dict_utils not available for integration test")
+            self.skipTest(
+                "export_dict_utils not available for integration test"
+            )
 
 
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ It also passes all sanity tests.
 
 ## Motivation
 
-Having both `issuer_path` and `chain_path` as separate module parameters is redundant. 
-In practice, a single parameter (e.g., `issuer_ca_path`) should suffice, with the module logic determining whether the provided path points to a single issuer certificate or a chain of certificates (e.g., by parsing the file and checking for multiple `-----BEGIN CERTIFICATE-----` markers). 
+Having both `issuer_path` and `chain_path` as separate module parameters is redundant.
+In practice, a single parameter (e.g., `issuer_ca_path`) should suffice, with the module logic determining whether the provided path points to a single issuer certificate or a chain of certificates (e.g., by parsing the file and checking for multiple `-----BEGIN CERTIFICATE-----` markers).
 
 This would simplify the module's interface and make it more intuitive for users.
 
@@ -13,7 +13,7 @@ This would simplify the module's interface and make it more intuitive for users.
 
 ### Refactoring Module Parameters (`issuer_path` and `chain_path`)
 
-Merging `issuer_path` and `chain_path` into a single `issuer_ca_path` parameter is the objective. 
+Merging `issuer_path` and `chain_path` into a single `issuer_ca_path` parameter is the objective.
 Here's a proposed approach to refactor the `x509_certificate_verify` module:
 
 ### Replace Parameters
@@ -63,12 +63,12 @@ def main():
     )
     cert = _parse_certificate(module.params['path'])
     ca_certs = load_ca_certs(module.params['issuer_ca_path'])
-    
+
     # Build X509Store
     store = crypto.X509Store()
     for ca_cert in ca_certs:
         store.add_cert(crypto.load_certificate(crypto.FILETYPE_PEM, ca_cert.public_bytes()))
-    
+
     store_ctx = crypto.X509StoreContext(
         store, crypto.load_certificate(crypto.FILETYPE_PEM, cert.public_bytes())
     )
@@ -100,12 +100,12 @@ Update the module's documentation to reflect the new `issuer_ca_path` parameter 
 - Only incrementally enhance the unit test file logic in order to achieve the highest test pass rate with lowest regression fail rate
 - Use a `test-driven-development` (`TDD`) approach
 - Use `don't-repeat-yourself` (`DRY`) methods whenever possible
-- The enhancement(s) should pass all existing unit tests to `validate regression feature success`. 
+- The enhancement(s) should pass all existing unit tests to `validate regression feature success`.
 - The enhancement(s) should pass all new feature tests to `validate new feature success`.
 - Only remove test cases if they are acceptably deemed functionally redundant
 - Maintain all unit test functions in alphanumeric sort order facilitating ease of code-difference comparison between versions
-- When enhancing `module_utils` class methods, maintain all class methods in alphanumeric sort order facilitating ease of diff comparison between versions 
+- When enhancing `module_utils` class methods, maintain all class methods in alphanumeric sort order facilitating ease of diff comparison between versions
 - ONLY make minimal/incremental changes made to the existing regression unit tests.
-- In most cases for minor enhancements, it is expected that there should be no or minimal changes to the existing unit tests. 
-- Make the necessary updates to the module README.md to reflect the new argument(s) and feature(s). 
+- In most cases for minor enhancements, it is expected that there should be no or minimal changes to the existing unit tests.
+- Make the necessary updates to the module README.md to reflect the new argument(s) and feature(s).
 - Make sure all module source and unit test file changes sanity-test acceptable.

@@ -35,43 +35,71 @@ on: # yamllint disable-line rule:truthy
     - cron: '29 10 * * *'
 
 jobs:
-  lint:
-    uses: ./.github/workflows/ansible-lint.yml # use the callable linters job to run tests
-  sanity:
-    uses: ./.github/workflows/ansible-test-sanity.yml # use the callable sanity job to run tests
-  units:
-    uses: ./.github/workflows/ansible-test-units.yml # use the callable units job to run tests
-  publish:
-    if: github.ref == 'refs/heads/main'
-    needs:
-      - lint
-      - sanity
-      - units
+  extract-metadata:
+    name: Extract Galaxy Metadata
     runs-on: ubuntu-latest
+    outputs:
+      namespace: ${{ steps.meta.outputs.namespace }}
+      name: ${{ steps.meta.outputs.name }}
+      version: ${{ steps.meta.outputs.version }}
+      collection_path: ${{ steps.meta.outputs.collection_path }}
     steps:
-      - run: >-
-          python -c "assert set([
-          '${{ needs.lint.result }}',
-          '${{ needs.sanity.result }}',
-          '${{ needs.units.result }}'
-          ]) == {'success'}"
-
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible passlib distlib
+      - name: Install yq
+        run: pip install yq
 
-      - name: Create Collection Archive
+      - name: Parse galaxy.yml
+        id: meta
         run: |
-          ansible-galaxy collection build
+          # Strip surrounding quotes from yq output using tr or xargs
+          NAMESPACE=$(yq '.namespace' galaxy.yml | tr -d '"')
+          NAME=$(yq '.name' galaxy.yml | tr -d '"')
+          VERSION=$(yq '.version' galaxy.yml | tr -d '"')
 
-      - name: Publish Collection to Galaxy
-        run: |
-          MODULE_VERSION=$(yq e '.version' galaxy.yml)
-          MODULE_NAMESPACE=$(yq e '.namespace' galaxy.yml)
-          MODULE_NAME=$(yq e '.name' galaxy.yml)
-          echo "Module : [Namespace : $MODULE_NAMESPACE, Name : $MODULE_NAME, Version: $MODULE_VERSION]"
-          ansible-galaxy collection publish $MODULE_NAMESPACE-$MODULE_NAME-$MODULE_VERSION.tar.gz --api-key ${{ secrets.ANSIBLE_GALAXY_API_KEY}}
+          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "collection_path=ansible_collections/$NAMESPACE/$NAME" >> $GITHUB_OUTPUT
+
+  lint:
+    uses: ./.github/workflows/ansible-lint.yml
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+      issues: write
+
+  sanity:
+    needs: [ extract-metadata ]
+    uses: ./.github/workflows/ansible-test-sanity.yml
+    with:
+      collection_path: ${{ needs.extract-metadata.outputs.collection_path }}
+
+  units:
+    needs: [ extract-metadata ]
+    uses: ./.github/workflows/ansible-test-units.yml
+    with:
+      collection_path: ${{ needs.extract-metadata.outputs.collection_path }}
+
+  publish:
+    needs:
+      - extract-metadata
+      - lint
+      - sanity
+      - units
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/release-collection.yml
+    with:
+      lint_result: ${{ needs.lint.result }}
+      sanity_result: ${{ needs.sanity.result }}
+      units_result: ${{ needs.units.result }}
+      namespace: ${{ needs.extract-metadata.outputs.namespace }}
+      collection_name: ${{ needs.extract-metadata.outputs.name }}
+      collection_version: ${{ needs.extract-metadata.outputs.version }}
+    permissions:
+      contents: write
+      checks: write
+    secrets:
+      ANSIBLE_GALAXY_API_KEY: ${{ secrets.ANSIBLE_GALAXY_API_KEY }}

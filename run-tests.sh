@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-VERSION="2026.7.13"
-PYTHON_TEST_VERSION="3.13"
+VERSION="2026.8.3"
 
 SCRIPT_DIR="$(dirname "$0")"
 SCRIPT_NAME="$(basename "$0")"
@@ -26,8 +25,8 @@ cleanup_tmpdir() {
 trap cleanup_tmpdir INT TERM EXIT
 
 # Emulate official collection directory layout structures required by ansible-test
-TEST_COLLECTION_BASE_DIR="${TEMP_DIR}"
-TEST_COLLECTION_SOURCE_DIR="${TEMP_DIR}/ansible_collections/${COLLECTION_NAMESPACE}/${COLLECTION_NAME}"
+TEST_COLLECTION_BASE_DIR="${TEMP_DIR}/ansible_collections"
+TEST_COLLECTION_SOURCE_DIR="${TEST_COLLECTION_BASE_DIR}/${COLLECTION_NAMESPACE}/${COLLECTION_NAME}"
 
 #### LOGGING METHODS
 LOG_ERROR=0; LOG_WARN=1; LOG_INFO=2; LOG_DEBUG=4
@@ -113,6 +112,21 @@ function execute_test_command() {
   return $RETURN_STATUS
 }
 
+detect_env_python_version() {
+  local py_cmd=""
+  if command -v python3 >/dev/null 2>&1; then
+    py_cmd="python3"
+  elif command -v python >/dev/null 2>&1; then
+    py_cmd="python"
+  else
+    log_error "Neither python3 nor python could be found in current PATH."
+    exit 1
+  fi
+
+  # Extract Major.Minor (e.g. "3.13") from active environment interpreter
+  "${py_cmd}" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'
+}
+
 setup_test_env() {
   log_info "Setting up local workspace testing sandboxes..."
 
@@ -134,10 +148,41 @@ setup_test_env() {
     # Fallback: tar pipeline using git ls-files
     log_info "rsync not found, using git + tar fallback..."
     (cd "${PROJECT_DIR}" && git ls-files --cached --others --exclude-standard) | tar -cf - -C "${PROJECT_DIR}" -T - | tar -xf - -C "${TEST_COLLECTION_SOURCE_DIR}"
-#    # Enable dotglob in bash so '*' includes hidden files/dotfiles like .ansible-lint
-#    shopt -s dotglob
-#    cp -R "${PROJECT_DIR}"/* "${TEST_COLLECTION_SOURCE_DIR}/"
-#    shopt -u dotglob
+  fi
+
+  # Install collection dependencies matching setupTestDependencies logic
+  mkdir -p "${TEST_COLLECTION_BASE_DIR}"
+
+  local REQUIREMENTS_FILE=""
+  if [[ -f "${PROJECT_DIR}/requirements.yml" ]]; then
+    REQUIREMENTS_FILE="${PROJECT_DIR}/requirements.yml"
+  elif [[ -f "${PROJECT_DIR}/tests/requirements.yml" ]]; then
+    REQUIREMENTS_FILE="${PROJECT_DIR}/tests/requirements.yml"
+  fi
+
+  GALAXY_INSTALL_OPTS+="--clear-response-cache --force"
+
+  GALAXY_INSTALL_CMD=("ansible-galaxy" "collection" "install")
+  GALAXY_INSTALL_CMD+=("--force")
+  GALAXY_INSTALL_CMD+=("--clear-response-cache")
+  if [[ -n "${REQUIREMENTS_FILE}" ]]; then
+    log_info "Found requirements file: ${REQUIREMENTS_FILE}. Installing collection dependencies..."
+    log_info "Installing collection to: ${TEST_COLLECTION_BASE_DIR}"
+    set -x
+    eval "${GALAXY_INSTALL_CMD[*]} -r ${REQUIREMENTS_FILE} -p ${TEST_COLLECTION_BASE_DIR}" || abort "Failed to install dependencies from ${REQUIREMENTS_FILE}"
+    set +x
+  elif [[ -n "${TEST_DEPS:-}" ]]; then
+    log_info "Installing test dependencies defined in TEST_DEPS: ${TEST_DEPS}"
+    IFS=',' read -ra DEPS <<< "${TEST_DEPS}"
+    for dep in "${DEPS[@]}"; do
+      dep_trimmed=$(echo "${dep}" | xargs)
+      if [[ -n "${dep_trimmed}" ]]; then
+        log_info "installing collection: ${dep_trimmed} to ${TEST_COLLECTION_BASE_DIR}"
+        set -x
+        eval "${GALAXY_INSTALL_CMD[*]} ${dep_trimmed} -p ${TEST_COLLECTION_BASE_DIR}" || abort "Failed to install dependency ${dep_trimmed}"
+        set +x
+      fi
+    done
   fi
 
   # Export path context explicitly pointing to the physical temporary base for Ansible ecosystem
@@ -151,27 +196,45 @@ setup_test_env() {
 
 run_collection_tests() {
   local TARGET_TYPE=${1:-"sanity"}
-  local TARGET_PATH=${2}
+  local HAS_EXPLICIT_PYTHON=${2}
+  shift 2
+  local PASSTHROUGH_ARGS=("$@")
   local CMD=""
 
   cd "${TEST_COLLECTION_SOURCE_DIR}" || abort "Failed to change directory to ${TEST_COLLECTION_SOURCE_DIR}"
 
   case "${TARGET_TYPE}" in
     sanity)
-      CMD="ansible-test sanity -v --python ${PYTHON_TEST_VERSION} ${TARGET_PATH}"
+      CMD="ansible-test sanity"
+      if [[ "${HAS_EXPLICIT_PYTHON}" == "false" ]]; then
+        local ENV_PY_VERSION
+        ENV_PY_VERSION=$(detect_env_python_version)
+        log_info "No explicit --python flag provided for unit tests. Detected active environment Python: ${ENV_PY_VERSION}"
+        CMD="${CMD} --python ${ENV_PY_VERSION}"
+      fi
       ;;
     units|unit)
-      CMD="ansible-test units -v --python ${PYTHON_TEST_VERSION} ${TARGET_PATH}"
+      CMD="ansible-test units --requirements"
+      if [[ "${HAS_EXPLICIT_PYTHON}" == "false" ]]; then
+        local ENV_PY_VERSION
+        ENV_PY_VERSION=$(detect_env_python_version)
+        log_info "No explicit --python flag provided for unit tests. Detected active environment Python: ${ENV_PY_VERSION}"
+        CMD="${CMD} --python ${ENV_PY_VERSION}"
+      fi
       ;;
     integration)
-      CMD="ansible-test integration -v --python ${PYTHON_TEST_VERSION} ${TARGET_PATH}"
+      CMD="ansible-test integration"
+      if [[ "${HAS_EXPLICIT_PYTHON}" == "false" ]]; then
+        local ENV_PY_VERSION
+        ENV_PY_VERSION=$(detect_env_python_version)
+        log_info "No explicit --python flag provided for unit tests. Detected active environment Python: ${ENV_PY_VERSION}"
+        CMD="${CMD} --python ${ENV_PY_VERSION}"
+      fi
       ;;
     pytest)
-      # Native isolated execution mapping across the temporary workspace architecture
-      if [[ -n "${TARGET_PATH}" ]]; then
-        CMD="pytest -q --tb=short ${TARGET_PATH}"
-      else
-        CMD="pytest -q --tb=short --log-level=CRITICAL tests/"
+      CMD="pytest -q --tb=short"
+      if [[ ${#PASSTHROUGH_ARGS[@]} -eq 0 ]]; then
+        PASSTHROUGH_ARGS=("--log-level=CRITICAL" "tests/")
       fi
       ;;
     *)
@@ -180,21 +243,30 @@ run_collection_tests() {
       ;;
   esac
 
+  # Append all raw passthrough options preserving original order
+  if [[ ${#PASSTHROUGH_ARGS[@]} -gt 0 ]]; then
+    CMD="${CMD} $(shell_join "${PASSTHROUGH_ARGS[@]}")"
+  fi
+
   execute_test_command "${CMD}"
 }
 
 function usage() {
-  echo "Usage: ${0} [options] [all|sanity|integration|unit|pytest] [target_path|module_name]"
+  echo "Usage: ${0} [options] [all|sanity|integration|unit|pytest] [target_path|module_name] [-- extra_args]"
   echo ""
   echo "  Options:"
   echo "       -L [ERROR|WARN|INFO|DEBUG] : Run with specified log level (default INFO)"
   echo "       -v, --version              : Show script version"
   echo "       -h, --help                 : Show this help manual"
+  echo "       [extra options]            : Any extra flags pass directly to test runner (e.g. --test, --python)"
   echo ""
   echo "  Examples:"
-  echo "       ${0}"
-  echo "       ${0} sanity"
   echo "       ${0} unit export_dicts"
+  echo "       ${0} unit export_dicts --python 3.11"
+  echo "       ${0} sanity --test validate-modules"
+  echo "       ${0} sanity --test line-endings"
+  echo "       ${0} unit export_dicts --docker"
+  echo "       ${0} pytest -- -k test_my_function"
   echo "       ${0} pytest tests/unit/plugins/modules/test_prefix_validation.py"
   echo "       ${0} -L DEBUG integration"
   echo "       ${0} -v"
@@ -205,9 +277,10 @@ function main() {
   command -v yq >/dev/null 2>&1 || { log_error "yq is required."; exit 1; }
 
   local TEST_TYPE=""
-  local SPECIFIC_TARGET=""
+  local HAS_EXPLICIT_PYTHON="false"
+  local PASSTHROUGH_ARGS=()
 
-  # Robust options and arguments parsing
+  # Parse CLI Arguments while preserving original argument sequence
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -h|--help)
@@ -232,28 +305,43 @@ function main() {
           usage 1
         fi
         ;;
-      -*)
-        log_error "Unknown flag / option: $1"
-        usage 1
+      --python|--python=*)
+        HAS_EXPLICIT_PYTHON="true"
+        PASSTHROUGH_ARGS+=("$1")
+        shift
         ;;
-      *)
+      --)
+        # Explicit separator: everything remaining is passed through strictly as-is
+        shift
+        # Check if remaining arguments contain --python
+        for arg in "$@"; do
+          if [[ "${arg}" == "--python" || "${arg}" == --python=* ]]; then
+            HAS_EXPLICIT_PYTHON="true"
+            break
+          fi
+        done
+        PASSTHROUGH_ARGS+=("$@")
+        break
+        ;;
+      sanity|unit|units|integration|pytest)
         if [[ -z "${TEST_TYPE}" ]]; then
           TEST_TYPE="$1"
-        elif [[ -z "${SPECIFIC_TARGET}" ]]; then
-          SPECIFIC_TARGET="$1"
         else
-          log_error "Unexpected positional argument: $1"
-          usage 1
+          PASSTHROUGH_ARGS+=("$1")
         fi
+        shift
+        ;;
+      *)
+        PASSTHROUGH_ARGS+=("$1")
         shift
         ;;
     esac
   done
 
-  # Fallback to default check configuration if none defined
+  # Fallback to default check configuration
   [[ -z "${TEST_TYPE}" ]] && TEST_TYPE="sanity"
 
-  # Prerequisite sanity verification based on target choice
+  # Prerequisite verification based on target choice
   if [[ "${TEST_TYPE}" == "pytest" ]]; then
     command -v pytest >/dev/null 2>&1 || { log_error "pytest execution was requested but pytest is missing from the active path environment."; exit 1; }
   else
@@ -262,13 +350,8 @@ function main() {
 
   setup_test_env
 
-  if [ -n "${SPECIFIC_TARGET}" ]; then
-    log_info "Running target [${TEST_TYPE}] test for: ${SPECIFIC_TARGET}"
-    run_collection_tests "${TEST_TYPE}" "${SPECIFIC_TARGET}"
-  else
-    log_info "No specific target path defined. Executing base [${TEST_TYPE}] context routing array..."
-    run_collection_tests "${TEST_TYPE}" ""
-  fi
+  log_info "Executing target [${TEST_TYPE}] test context..."
+  run_collection_tests "${TEST_TYPE}" "${HAS_EXPLICIT_PYTHON}" "${PASSTHROUGH_ARGS[@]}"
 
   log_success "All requested targets completed successfully."
 }

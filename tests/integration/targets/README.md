@@ -7,7 +7,7 @@
 
 ## Check test inventory
 
-### Check correct hosts appear in the test groups 
+### Check correct hosts appear in the test groups
 
 ```shell
 ansible-inventory -i _test_inventory/ --graph --yaml testgroup_app123_platforms
@@ -16,7 +16,7 @@ ansible-inventory -i _test_inventory/ --graph --yaml dcc_app123_platform_lnx_man
 ansible-inventory -i _test_inventory/ --graph --yaml dmz
 ```
 
-### Check the host variable values are correctly set  
+### Check the host variable values are correctly set
 
 Variable value/state query based on group:
 
@@ -55,7 +55,7 @@ $ ansible -e @../integration_config.vault.yml --vault-password-file ${PROJECT_DI
 ```
 
 
-Query with vault and vars files variables (e.g., `./test-vars.yml`) 
+Query with vault and vars files variables (e.g., `./test-vars.yml`)
 
 ```shell
 $ PROJECT_DIR="$( git rev-parse --show-toplevel )"
@@ -113,7 +113,7 @@ $ find -L test_component/vars/sort_dict_list -name "test_*.yml" | sort
 $ runme.sh -v -t sort_dict_list
 $ runme.sh -v -t export_dicts
 $ runme.sh -v -t test_debug_sanitized
-## OR 
+## OR
 $ run-module-tests.sh -v -t export_dicts
 $ run-module-tests.sh -v -t sort_dict_list
 ```
@@ -174,16 +174,16 @@ $ run-module-tests.sh -v
 
 The pytest wrapper method uses the ['pytest-shell'](https://pytest-shell-utilities.readthedocs.io/en/latest/index.html#usage) plugin to launch the `run-module-tests.sh` script.
 
-Using the pytest wrapper has the benefit of generating the test results in a junit format for pipeline utilization. 
+Using the pytest wrapper has the benefit of generating the test results in a junit format for pipeline utilization.
 
 ```shell
-## To list all the module test cases: 
+## To list all the module test cases:
 $ run-pytest.sh -l
 
-## To run all the module test cases for the `export_dicts` plugin: 
+## To run all the module test cases for the `export_dicts` plugin:
 $ run-pytest.sh export_dicts
 
-## To run the module test for the `export_dicts` plugin and for only test case '01' 
+## To run the module test for the `export_dicts` plugin and for only test case '01'
 $ run-pytest.sh export_dicts-01
 
 ```
@@ -205,7 +205,7 @@ $ run-role-tests.sh -v -t display-dettonville-utils-vars -l testd1s4.example.org
 $ cd ${HOME}/.ansible/tmp/
 
 ## find last 10 export_dicts module execs sorted order
-## use gfind if using MacOS brew installed gnu utils 
+## use gfind if using MacOS brew installed gnu utils
 $ find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 -nk2 | grep export_dicts | tail -10
 ```
 
@@ -220,7 +220,7 @@ $ cd $(dirname $(find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td 
 $ ./AnsiballZ_export_dicts.py explode
 $ ./AnsiballZ_export_dicts.py execute | jq
 ## if wanting to capture the log for reference
-$ ./AnsiballZ_export_dicts.py execute 2>&1 | tee test-case.log 
+$ ./AnsiballZ_export_dicts.py execute 2>&1 | tee test-case.log
 ```
 
 Define function to perform regular/repetitive debug tasks
@@ -242,7 +242,7 @@ Then use as follows:
 $ ls -Fla ../$(ls -Fla ../ | tail -2 | head -1 | cut -d':' -f2 | cut -d' ' -f2)
 $ cd $(ls -Fla ../ | tail -2 | head -1 | cut -d':' -f2 | cut -d' ' -f2)
 $ export ANSIBLE_DEBUG=1
-## perform debug_dir steps 
+## perform debug_dir steps
 $ explode_ansible_test
 ```
 
@@ -264,7 +264,7 @@ $ ./AnsiballZ_export_dicts.py execute | jq
 ```shell
 $ cd ~/.ansible/tmp
 ## NOTE:
-## below navigate to the 2nd to last instance of invocation since the module is ALSO invoked/used 
+## below navigate to the 2nd to last instance of invocation since the module is ALSO invoked/used
 ## by the test harness itself for storing/logging the test results
 $ cd $(dirname $(find . -maxdepth 2 -name "*.py" -type f -printf "\n%TY-%Tm-%Td %AT %p" | sort -nk1 | grep test_results_logger.py | tail -2 | head -1 | cut -d' ' -f3))
 $ code .

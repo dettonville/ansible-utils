@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
+from typing import Any
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
     remove_keys_from_object,
 )
@@ -9,11 +13,14 @@ __metaclass__ = type
 
 DOCUMENTATION = """
   name: remove_sensitive_keys
-  short_description: Remove key(s) with specified list of regex patterns from nested dict/array
+  short_description: >-
+    Remove key(s) with specified list of regex patterns from nested dict/array
   version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
-    - Remove key(s) with specified list of regex patterns from nested dict/array.
+    - >-
+      Remove key(s) with specified list of regex patterns from
+      nested dict/array.
   positional: key_patterns
   options:
     _input:
@@ -24,7 +31,12 @@ DOCUMENTATION = """
     key_patterns:
       description: List of key patterns to use to remove keys.
       type: list
-      default: ['(?i).*vault.*', '(?i).*token.*', '(?i).*password.*', '(?i).*key.*', '(?i).*ssh.*']
+      default:
+        - '(?i).*vault.*'
+        - '(?i).*token.*'
+        - '(?i).*password.*'
+        - '(?i).*key.*'
+        - '(?i).*ssh.*'
       required: false
     additional_key_patterns:
       description: List of additional key patterns to use to remove keys.
@@ -52,7 +64,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       administrator-10.31.25.54:
         address: 10.31.25.54
         automatic_management_enabled: true
@@ -67,7 +79,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       careconlocal-10.21.33.8:
         address: 10.21.33.8
         automatic_management_enabled: true
@@ -78,7 +90,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       careconlocal-10.31.25.54:
         address: 10.31.25.54
         automatic_management_enabled: true
@@ -89,7 +101,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
   # Produces the dict:
   #
   #  my_dict:
@@ -156,7 +168,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
@@ -170,7 +182,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
@@ -180,7 +192,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
@@ -194,7 +206,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
   # Produces the list:
   #
   #  my_list:
@@ -247,7 +259,9 @@ EXAMPLES = """
 
 RETURN = """
   _value:
-    description: A dict or list containing the results of removing the specified key patterns.
+    description: >-
+        A dict or list containing the results of removing the specified
+        key patterns.
     type: any
 """
 
@@ -266,11 +280,11 @@ class FilterModule(object):
 
     @staticmethod
     def remove_sensitive_keys(
-        input_object: any,
+        input_object: Any,
         key_patterns: list = None,
         additional_key_patterns: list = None,
         log_level: str = "INFO",
-    ) -> any:
+    ) -> Any:
         if key_patterns is None:
             key_patterns = []
 

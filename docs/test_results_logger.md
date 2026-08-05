@@ -1,22 +1,19 @@
 
-
 ```shell
 $ ansible --version
-ansible [core 2.20.1]
+ansible [core 2.21.2]
   config file = None
-  configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
+  configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
-  pyyaml version = 6.0.2 (with libyaml v0.2.5)
-$
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
-$
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.test_results_logger | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/test_results_logger.md
-> MODULE dettonville.utils.test_results_logger (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/modules/test_results_logger.py)
+> MODULE dettonville.utils.test_results_logger (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/test_results_logger.py)
 
   Renders test results specified in dict format into junit xml.
 
@@ -177,7 +174,7 @@ RETURN VALUES:
 
 - message  Status message for update
         returned: always
-        sample: The test_junit_report_file has been created successfully at /foo/bar/junit-report.xml
+        sample: '"The test_junit_report_file has been created successfully at /foo/bar/junit-report.xml"'
         type: str
 
 ```

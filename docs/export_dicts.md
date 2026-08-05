@@ -1,22 +1,19 @@
 
-
 ```shell
 $ ansible --version
-ansible [core 2.20.1]
+ansible [core 2.21.2]
   config file = None
-  configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
+  configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
-  pyyaml version = 6.0.2 (with libyaml v0.2.5)
-$
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
-$
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.export_dicts | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/export_dicts.md
-> MODULE dettonville.utils.export_dicts (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/modules/export_dicts.py)
+> MODULE dettonville.utils.export_dicts (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/export_dicts.py)
 
   Write a list of flat dictionaries (a dictionary mapping fieldnames
   to strings or numbers) to a flat file using a specified format
@@ -26,10 +23,11 @@ $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.export_dicts 
 OPTIONS (= indicates it is required):
 
 - column_list  List of column dictionary specifications for each
-                column in the file. Each column element should contain
-                a dict specifying values for the 'name' and 'header'
-                keys. If the 'column_list' is not specified, it will
-                be derived from the keys of the first row in the
+                column in the file.
+                Each column element should contain a dict specifying
+                values for the 'name' and 'header' keys.
+                If the 'column_list' is not specified, it will be
+                derived from the keys of the first row in the
                 export_list.
         aliases: [columns]
         default: []

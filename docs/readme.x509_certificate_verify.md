@@ -23,7 +23,7 @@ For a detailed motivational case study on the `x509_certificate_verify` module, 
 - Provides detailed output on validated properties.
 - `content` and `private_key_content` now accept both **base64-encoded** strings and **raw PEM text** (with BEGIN/END markers).
 - When providing raw PEM content, include the full header/footer lines.
-- **serial_number**: Accepts decimal or hexadecimal input (with or without `0x`/colons).  
+- **serial_number**: Accepts decimal or hexadecimal input (with or without `0x`/colons).
   The returned value in `details.serial_number` is always formatted as lowercase hexadecimal with colon separators (e.g. `01:23:45:67:89:ab:cd:ef`), matching `openssl x509 -serial` and `community.crypto.x509_certificate_info`.
 
 ---

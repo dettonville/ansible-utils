@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
+from typing import Any
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
     redact_sensitive_values_from_object,
 )
@@ -9,11 +13,15 @@ __metaclass__ = type
 
 DOCUMENTATION = """
   name: redact_sensitive_values
-  short_description: Redact sensitive values with specified list of regex patterns from nested dict/array
+  short_description: >-
+    Redact sensitive values with specified list of regex patterns from nested
+    dict/array
   version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
-    - Redact values for key(s) with specified list of regex patterns from nested dict/array by replacing them with a redacted tag.
+    - >-
+      Redact values for key(s) with specified list of regex patterns from
+      nested dict/array by replacing them with a redacted tag.
   positional: key_patterns
   options:
     _input:
@@ -24,7 +32,12 @@ DOCUMENTATION = """
     key_patterns:
       description: List of key patterns to use to redact values.
       type: list
-      default: ['(?i).*vault.*', '(?i).*token.*', '(?i).*password.*', '(?i).*key.*', '(?i).*ssh.*']
+      default:
+        - '(?i).*vault.*'
+        - '(?i).*token.*'
+        - '(?i).*password.*'
+        - '(?i).*key.*'
+        - '(?i).*ssh.*'
       required: false
     additional_key_patterns:
       description: List of additional key patterns to use to redact values.
@@ -52,7 +65,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       administrator-10.31.25.54:
         address: 10.31.25.54
         automatic_management_enabled: true
@@ -67,7 +80,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       careconlocal-10.21.33.8:
         address: 10.21.33.8
         automatic_management_enabled: true
@@ -78,7 +91,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       careconlocal-10.31.25.54:
         address: 10.31.25.54
         automatic_management_enabled: true
@@ -89,7 +102,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
   # Produces the dict:
   #
   #  my_dict:
@@ -160,7 +173,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
@@ -174,7 +187,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
@@ -184,7 +197,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
@@ -198,7 +211,7 @@ EXAMPLES = """
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
   # Produces the list:
   #
   #  my_list:
@@ -255,7 +268,9 @@ EXAMPLES = """
 
 RETURN = """
   _value:
-    description: A dict or list containing the results of redacting the specified key values.
+    description: >-
+        A dict or list containing the results of redacting the specified
+        key values.
     type: any
 """
 
@@ -274,11 +289,11 @@ class FilterModule(object):
 
     @staticmethod
     def redact_sensitive_values(
-        input_object: any,
+        input_object: Any,
         key_patterns: list = None,
         additional_key_patterns: list = None,
         log_level: str = "INFO",
-    ) -> any:
+    ) -> Any:
         if key_patterns is None:
             key_patterns = []
 
@@ -291,5 +306,7 @@ class FilterModule(object):
         if additional_key_patterns:
             key_patterns.extend(additional_key_patterns)
 
-        redact_sensitive_values_from_object(input_object, key_patterns, log_level)
+        redact_sensitive_values_from_object(
+            input_object, key_patterns, log_level
+        )
         return input_object

@@ -19,15 +19,18 @@ description:
 options:
   body:
     description:
-      - The body of the http request/response to the web service. If O(body_format) is set
-        to V(json) it will take an already formatted JSON string or convert a data structure
-        into JSON.
+      - >-
+        The body of the http request/response to the web service.
+        If O(body_format) is set to V(json) it will take an already formatted
+        JSON string or convert a data structure into JSON.
     type: raw
     required: false
   body_format:
     description:
-      - The serialization format of the body. When set to V(json), encodes the body argument,
-        if needed, and automatically sets the Content-Type header accordingly.
+      - >-
+        The serialization format of the body. When set to V(json), encodes
+        the body argument, if needed, and automatically sets the
+        Content-Type header accordingly.
     type: str
     choices: [ raw, json ]
     default: raw
@@ -59,7 +62,9 @@ options:
     default: false
   status_code:
     description:
-      - A list of valid, numeric, HTTP status codes that signifies success of the request.
+      - >-
+        A list of valid, numeric, HTTP status codes that signifies success
+        of the request.
     type: list
     elements: int
     default: [ 200 ]
@@ -78,17 +83,18 @@ options:
   validate_certs:
     description:
       - If V(false), SSL certificates will not be validated.
-      - This should only set to V(false) used on personally controlled sites using self-signed certificates.
+      - >-
+        This should only set to V(false) used on personally controlled
+        sites using self-signed certificates.
     type: bool
     default: true
     required: false
 
 notes:
   - Windows targets are not supported.
-
-seealso: []
 """
 
+# noinspection HttpUrlsUsage
 EXAMPLES = r"""
 - name: Check that you can connect (GET) to a page and it returns a status 200
   dettonville.utils.ntlm_uri:
@@ -96,7 +102,9 @@ EXAMPLES = r"""
     user: your_username
     password: p@ssw0rd
 
-- name: Check that a page returns successfully but fail if the word AWESOME is not in the page contents
+- name: >-
+    Check that a page returns successfully but fail if the word AWESOME
+    is not in the page contents
   dettonville.utils.ntlm_uri:
     url: http://www.example.com
     return_content: true
@@ -121,7 +129,8 @@ headers:
   description: The headers used in the request.
   returned: on success
   type: dict
-  sample: {"Content-Type": "application/json; charset=utf-8", "Server": "Microsoft-HTTPAPI/2.0"}
+  sample: {"Content-Type": "application/json; charset=utf-8",
+    "Server": "Microsoft-HTTPAPI/2.0"}
 json:
   description: The json response from the request.
   returned: return_content set to true
@@ -144,19 +153,23 @@ url:
   sample: https://www.ansible.com/
 """
 
+import json
+import re
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule
 
-import re
-import json
-
 try:
+    # noinspection PyPackageRequirements
     import requests
 
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     requests.packages.urllib3.disable_warnings()
 except ImportError:
     requests = None
 
 try:
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     from requests_ntlm import HttpNtlmAuth
 except ImportError:
     HttpNtlmAuth = None
@@ -179,7 +192,11 @@ def main():
             "no_log": True,
             "required": True,
         },
-        "return_content": {"type": "bool", "default": False, "required": False},
+        "return_content": {
+            "type": "bool",
+            "default": False,
+            "required": False,
+        },
         "status_code": {
             "type": "list",
             "elements": "int",
@@ -191,11 +208,14 @@ def main():
         "validate_certs": {"type": "bool", "default": True, "required": False},
     }
 
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     if requests is None or HttpNtlmAuth is None:
         module.fail_json(
-            msg="Missing required libraries: requests and/or requests-ntlm. Install with 'pip install requests requests-ntlm'."
+            msg="Missing required libraries: requests and/or requests-ntlm. "
+            "Install with 'pip install requests requests-ntlm'."
         )
 
     result = {"changed": False}
@@ -227,10 +247,12 @@ def main():
 
     if not re.match('^[A-Z]+$', method):
         module.fail_json(
-            msg="Parameter 'method' needs to be a single word in uppercase, like GET or POST."
+            msg="Parameter 'method' needs to be a single word in uppercase, "
+            "like GET or POST."
         )
 
-    # Encode the body unless its a string, then assume it is pre-formatted JSON
+    # Encode the body unless it's a string, then assume it is
+    # pre-formatted JSON
     if body_format == "json":
         if not isinstance(body, str):
             body = json.dumps(body)
@@ -261,7 +283,8 @@ def main():
 
     if response.status_code not in status_code:
         result['msg'] = (
-            f"Status code {response.status_code} not in accepted status codes {status_code}"
+            f"Status code {response.status_code} not in accepted status "
+            f"codes {status_code}"
         )
         module.fail_json(**result)
 

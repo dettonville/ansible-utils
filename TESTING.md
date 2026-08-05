@@ -52,7 +52,7 @@ pytest tests/unit/plugins/modules/test_export_dicts.py
 
 ## 2. Ansible-Test Suite (`ansible-test`)
 
-Passing execution utilizing the **`ansible-test`** framework is required before deploying modifications or merging pull requests. 
+Passing execution utilizing the **`ansible-test`** framework is required before deploying modifications or merging pull requests.
 
 `ansible-test` strictly requires execution from within an Ansible Collection directory tree matching the Fully Qualified Collection Name (FQCN):
 `.../ansible_collections/{namespace}/{collection}/`
@@ -133,6 +133,45 @@ ansible-test sanity --docker --python 3.13
 
 ---
 
+## Pre-commit hooks
+
+Git requires the hook scripts to be explicitly written into the repository's `.git/hooks/` directory.
+
+### How to Set Up
+
+1. **Navigate to the repository root**:
+```bash
+cd path/to/dettonville.utils
+```
+
+2. **Install the git hook scripts**:
+Run the following command to register pre-commit into your local `.git/hooks/` directory:
+```bash
+pre-commit install
+```
+
+
+3. **Verify it works**:
+You can manually test that the hooks fire across all files without needing to make a commit:
+```bash
+pre-commit run --all-files
+```
+
+### Additional Things to Check If It Fails:
+
+* **Global hooks path:** If you use a custom global hooks template path via `git config --global core.hooksPath`, ensure it isn't intercepting or overriding local repository hooks.
+* **Commit flags:** Ensure you aren't accidentally passing `--no-verify` (or `-n`), which explicitly tells git to skip the pre-commit hook execution.
+
+Run the following commands to clear the cache and verify the environment:
+```shell
+pre-commit clean
+pre-commit run --all-files
+## or just a specified test
+pre-commit run ansible-lint --all-files
+```
+
+---
+
 ## Code Quality Standards & Auto-Formatting
 
 Before dispatching validation testing passes, run standard linting formatters to automatically patch structural, variable formatting, or import style syntax exceptions:
@@ -150,8 +189,8 @@ pip install autoflake && autoflake -r --in-place --remove-unused-variables --rem
 
 ## Quick Reference Summary
 
-| Method | Execution Location | Bootstrapping Setup Required | Target Command |
-| :--- | :--- | :--- | :--- |
-| **Pytest** | Repo Root (`/path/to/repo`) | **None** (handled by root `conftest.py`) | `pytest tests/unit/` |
-| **Script Wrapper** | Repo Root (`/path/to/repo`) | **Automated** (managed dynamically by script) | `./run-tests.sh units` |
-| **Direct `ansible-test`** | Symlink Directory (`~/.ansible/.../utils`) | **One-time manual symlink** setup | `ansible-test units --python 3.13 [module]` |
+| Method                    | Execution Location                         | Bootstrapping Setup Required                  | Target Command                              |
+|:--------------------------|:-------------------------------------------|:----------------------------------------------|:--------------------------------------------|
+| **Pytest**                | Repo Root (`/path/to/repo`)                | **None** (handled by root `conftest.py`)      | `pytest tests/unit/`                        |
+| **Script Wrapper**        | Repo Root (`/path/to/repo`)                | **Automated** (managed dynamically by script) | `./run-tests.sh units`                      |
+| **Direct `ansible-test`** | Symlink Directory (`~/.ansible/.../utils`) | **One-time manual symlink** setup             | `ansible-test units --python 3.13 [module]` |

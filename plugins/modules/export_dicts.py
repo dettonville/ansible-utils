@@ -41,10 +41,15 @@ options:
     column_list:
         aliases: ['columns']
         description:
-            - List of column dictionary specifications for each column in the file.  
-              Each column element should contain a dict specifying values for the 'name' and 'header' keys.
-              If the 'column_list' is not specified, it will be derived from the keys of the first row in the
-              export_list.
+            - >-
+              List of column dictionary specifications for each column
+              in the file.
+            - >-
+              Each column element should contain a dict specifying values for
+              the 'name' and 'header' keys.
+            - >-
+              If the 'column_list' is not specified, it will be derived from
+              the keys of the first row in the export_list.
         required: false
         default: []
         type: list
@@ -112,16 +117,16 @@ EXAMPLES = r"""
 """  # NOQA
 
 RETURN = r"""
-message: 
+message:
     description: Status message for export
     type: str
     returned: always
     sample: "The markdown file has been created successfully at /foo/bar/test.md"
-failed: 
+failed:
     description: True if export failed
     type: bool
     returned: always
-changed: 
+changed:
     description: True if successful
     type: bool
     returned: always
@@ -133,9 +138,11 @@ import os
 import pprint
 import sys
 
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule
 
-from ansible_collections.dettonville.utils.plugins.module_utils.export_dict_utils import (
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.export_dict_utils import (  # noqa: E501
     write_csv_file,
     write_markdown_file,
 )
@@ -144,10 +151,16 @@ from ansible_collections.dettonville.utils.plugins.module_utils.export_dict_util
 argument_spec = dict(
     file=dict(required=True, type="path"),
     format=dict(choices=["md", "csv"], default=None),
-    export_list=dict(required=True, aliases=["list"], type="list", elements="dict"),
-    column_list=dict(aliases=["columns"], type="list", elements="dict", default=[]),
+    export_list=dict(
+        required=True, aliases=["list"], type="list", elements="dict"
+    ),
+    column_list=dict(
+        aliases=["columns"], type="list", elements="dict", default=[]
+    ),
     logging_level=dict(
-        type="str", choices=["NOTSET", "DEBUG", "INFO", "ERROR"], default="INFO"
+        type="str",
+        choices=["NOTSET", "DEBUG", "INFO", "ERROR"],
+        default="INFO",
     ),
 )
 
@@ -162,7 +175,9 @@ def get_file_format(file):
 
 # ref: https://docs.ansible.com/ansible/latest/dev_guide/testing_units_modules.html#restructuring-modules-to-enable-testing-module-set-up-and-other-processes
 def setup_module_object():
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
     return module
 
 
@@ -175,8 +190,6 @@ def run_module():
     result = dict(changed=False, message="")
 
     module = setup_module_object()
-
-    export_result = None
 
     loglevel = module.params.get("logging_level")
     logging.basicConfig(level=loglevel)
@@ -192,7 +205,8 @@ def run_module():
     destination_path = os.path.dirname(file)
     if not os.path.exists(destination_path):
         module.fail_json(
-            rc=257, msg="Destination directory %s does not exist!" % destination_path
+            rc=257,
+            msg="Destination directory %s does not exist!" % destination_path,
         )
 
     # file_format = module.params.get('format', get_file_format(file))
@@ -204,17 +218,18 @@ def run_module():
     logging.info("export_list => %s", pprint.pformat(export_list))
 
     if len(column_list) == 0 and len(export_list) > 0:
-        column_list = []
         # Derive column_list for the csv file based on first row of
         # export_list.
 
         if sys.version_info >= (3, 7):
             column_keys = list(export_list[0].keys())
         else:
-            # the insertion-order preservation nature of dict objects has been declared to be an official part
+            # the insertion-order preservation nature of dict objects
+            # has been declared to be an official part
             #  of the Python language spec for versions 3.7+
             # ref:
             # https://stackoverflow.com/questions/5629023/order-of-keys-in-dictionaries-in-old-versions-of-python
+            # noinspection PyUnusedLocal
             column_keys = sorted(list(export_list[0].keys()))
 
         for column_name in column_keys:
@@ -228,11 +243,16 @@ def run_module():
             module.fail_json(msg="Column name not found", **result)
 
     if file_format == "md":
-        export_result = write_markdown_file(module, file, export_list, column_list)
+        export_result = write_markdown_file(
+            module, file, export_list, column_list
+        )
     elif file_format == "csv":
         export_result = write_csv_file(module, file, export_list, column_list)
-
-    # print('export_result: {export_result}')
+    else:
+        export_result = {
+            "changed": False,
+            "message": f"Unsupported format: {file_format}",
+        }
 
     result["changed"] = export_result["changed"]
     result["message"] = export_result["message"]

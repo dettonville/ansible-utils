@@ -10,36 +10,42 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 import pprint
-
 import unittest
 from unittest.mock import Mock, patch
 
 # from unittest.mock import Mock, patch, MagicMock, call
-
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule
 
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import (  # noqa: E501
+    Git,
+)
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.modules import (
     git_pacp,
 )
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.modules.git_pacp import (
     main as module_main,
+)
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.modules.git_pacp import (
     setup_module_object,
 )
 
-from ansible_collections.dettonville.utils.tests.unit.plugins.modules.utils import (
-    set_module_args,
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.tests.unit.plugins.modules.utils import (  # noqa: E501
+    MODULE_UTILS_IMPORT_PATH,
+    MODULES_IMPORT_PATH,
     AnsibleFailJson,
     ModuleTestCase,
+    make_absolute,
+    set_module_args,
 )
-
-from ansible_collections.dettonville.utils.plugins.module_utils.git_actions import Git
-
-MODULES_IMPORT_PATH = "ansible_collections.dettonville.utils.plugins.modules"
-MODULE_UTILS_IMPORT_PATH = "ansible_collections.dettonville.utils.plugins.module_utils"
-
-
-def make_absolute(base_path, name):
-    return ".".join([base_path, name])
 
 
 class TestGitPacpModule(ModuleTestCase):
@@ -124,9 +130,12 @@ class TestGitPacpModule(ModuleTestCase):
         self.assertEqual(
             arg_spec["action"]["choices"], ["acp", "pacp", "pull", "clone"]
         )
-        self.assertEqual(arg_spec["mode"]["choices"], ["ssh", "https", "local"])
         self.assertEqual(
-            arg_spec["logging_level"]["choices"], ["NOTSET", "DEBUG", "INFO", "ERROR"]
+            arg_spec["mode"]["choices"], ["ssh", "https", "local"]
+        )
+        self.assertEqual(
+            arg_spec["logging_level"]["choices"],
+            ["NOTSET", "DEBUG", "INFO", "ERROR"],
         )
 
         # Verify defaults
@@ -136,7 +145,9 @@ class TestGitPacpModule(ModuleTestCase):
 
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
-    def test_main_pacp_action_with_changes(self, mock_git_class, mock_ansible_module):
+    def test_main_pacp_action_with_changes(
+        self, mock_git_class, mock_ansible_module
+    ):
         """Test main function with pacp action when there are changes"""
         self.setUp()
         mock_ansible_module.return_value = self.mock_module
@@ -147,13 +158,22 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance.status.return_value = {"file1.txt"}
         mock_git_instance.check_uncommitted_changes.return_value = False
         mock_git_instance.set_user_config.return_value = {"changed": True}
-        mock_git_instance.pull.return_value = {"changed": True, "message": "pulled"}
-        mock_git_instance.add.return_value = {"changed": True, "message": "added"}
+        mock_git_instance.pull.return_value = {
+            "changed": True,
+            "message": "pulled",
+        }
+        mock_git_instance.add.return_value = {
+            "changed": True,
+            "message": "added",
+        }
         mock_git_instance.commit.return_value = {
             "changed": True,
             "message": "committed",
         }
-        mock_git_instance.push.return_value = {"changed": True, "message": "pushed"}
+        mock_git_instance.push.return_value = {
+            "changed": True,
+            "message": "pushed",
+        }
 
         self.main()
 
@@ -169,7 +189,9 @@ class TestGitPacpModule(ModuleTestCase):
 
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
-    def test_main_acp_action_with_changes(self, mock_git_class, mock_ansible_module):
+    def test_main_acp_action_with_changes(
+        self, mock_git_class, mock_ansible_module
+    ):
         """Test main function with acp action when there are changes"""
         self.mock_module.params["action"] = "acp"
         mock_ansible_module.return_value = self.mock_module
@@ -179,18 +201,25 @@ class TestGitPacpModule(ModuleTestCase):
         # Mock git methods
         mock_git_instance.status.return_value = {"file1.txt"}
         mock_git_instance.set_user_config.return_value = {"changed": True}
-        mock_git_instance.add.return_value = {"changed": True, "message": "added"}
+        mock_git_instance.add.return_value = {
+            "changed": True,
+            "message": "added",
+        }
         mock_git_instance.commit.return_value = {
             "changed": True,
             "message": "committed",
         }
-        mock_git_instance.push.return_value = {"changed": True, "message": "pushed"}
+        mock_git_instance.push.return_value = {
+            "changed": True,
+            "message": "pushed",
+        }
 
         self.main()
 
         # Verify git operations were called in correct order (no pull for acp)
         mock_git_instance.status.assert_called_once()
-        mock_git_instance.pull.assert_not_called()  # Should not be called for acp
+        # Should not be called for acp
+        mock_git_instance.pull.assert_not_called()
         mock_git_instance.add.assert_called_once()
         mock_git_instance.commit.assert_called_once_with("test commit")
         mock_git_instance.push.assert_called_once()
@@ -225,7 +254,10 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance = Mock()
         mock_git_class.return_value = mock_git_instance
 
-        mock_git_instance.clone.return_value = {"changed": True, "message": "cloned"}
+        mock_git_instance.clone.return_value = {
+            "changed": True,
+            "message": "cloned",
+        }
 
         self.main()
 
@@ -242,7 +274,10 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance = Mock()
         mock_git_class.return_value = mock_git_instance
 
-        mock_git_instance.pull.return_value = {"changed": True, "message": "pulled"}
+        mock_git_instance.pull.return_value = {
+            "changed": True,
+            "message": "pulled",
+        }
 
         self.main()
 
@@ -250,19 +285,14 @@ class TestGitPacpModule(ModuleTestCase):
         mock_git_instance.pull.assert_called_once()
         mock_git_instance.status.assert_not_called()
 
-    # @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command")) # Mock execute_git_command directly
-    # @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
     def test_main_validation_https_mode(self, mock_git_class):
         """Test main function parameter validation for HTTPS mode"""
         module_args = self.mock_module.params
-        module_args.update({"url": "git@github.com:test/repo.git", "mode": "https"})
+        module_args.update(
+            {"url": "git@github.com:test/repo.git", "mode": "https"}
+        )
 
-        # Expect fail_json to be called with a specific message
-        # Make it raise for testing
-        # self.mock_module.fail_json.side_effect = Exception("AnsibleFailJson")
-
-        # with self.assertRaises(Exception) as exc:
         with set_module_args(module_args):
             with self.assertRaises(AnsibleFailJson) as exc:
                 self.module.main()
@@ -274,21 +304,18 @@ class TestGitPacpModule(ModuleTestCase):
         self.assertTrue(result["failed"])
         self.assertEqual(
             result["msg"],
-            'HTTPS mode selected but url (git@github.com:test/repo.git) not starting with "https"',
+            "HTTPS mode selected but url (git@github.com:test/repo.git) "
+            'not starting with "https"',
         )
 
-    # @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
     @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
     def test_main_validation_ssh_mode(self, mock_git_class):
         """Test main function parameter validation for SSH mode"""
         module_args = self.mock_module.params
-        module_args.update({"url": "https://github.com/test/repo.git", "mode": "ssh"})
+        module_args.update(
+            {"url": "https://github.com/test/repo.git", "mode": "ssh"}
+        )
 
-        # Expect fail_json to be called with a specific message
-        # Make it raise for testing
-        # self.mock_module.fail_json.side_effect = Exception("AnsibleFailJson")
-
-        # with self.assertRaises(Exception) as exc:
         with set_module_args(module_args):
             with self.assertRaises(AnsibleFailJson) as exc:
                 self.module.main()
@@ -300,7 +327,8 @@ class TestGitPacpModule(ModuleTestCase):
         self.assertTrue(result["failed"])
         self.assertEqual(
             result["msg"],
-            'SSH mode selected but url (https://github.com/test/repo.git) not starting with "git" or "ssh://git"',
+            "SSH mode selected but url (https://github.com/test/repo.git) "
+            'not starting with "git" or "ssh://git"',
         )
 
 
@@ -334,14 +362,21 @@ class TestGitActions(unittest.TestCase):
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.stat"))
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.chmod"))
     @patch(
-        make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command")
+        make_absolute(
+            MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command"
+        )
     )
     @patch(
         make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.environ"),
         new_callable=dict,
     )
     def test_add(
-        self, mock_environ, mock_execute_git_command, mock_chmod, mock_stat, mock_fdopen
+        self,
+        mock_environ,
+        mock_execute_git_command,
+        mock_chmod,
+        mock_stat,
+        mock_fdopen,
     ):
         """Test add method"""
         self.setUp()  # Ensure setup is called for each test method
@@ -362,7 +397,6 @@ class TestGitActions(unittest.TestCase):
         # Call add
         result = git.add()
 
-        # result = exc.exception.args[0]
         print("result =>", pprint.pformat(result))
 
         # Assertions
@@ -381,14 +415,21 @@ class TestGitActions(unittest.TestCase):
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.stat"))
     @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.chmod"))
     @patch(
-        make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command")
-    )  # Mock execute_git_command directly
+        make_absolute(
+            MODULE_UTILS_IMPORT_PATH, "git_actions.Git.execute_git_command"
+        )
+    )
     @patch(
         make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.environ"),
         new_callable=dict,
-    )  # Mock os.environ
+    )
     def test_ssh_clone_accept_hostkey(
-        self, mock_environ, mock_execute_git_command, mock_chmod, mock_stat, mock_fdopen
+        self,
+        mock_environ,
+        mock_execute_git_command,
+        mock_chmod,
+        mock_stat,
+        mock_fdopen,
     ):
         """Test SSH clone with accept_hostkey=True"""
         self.setUp()
@@ -406,26 +447,19 @@ class TestGitActions(unittest.TestCase):
             }
         )
 
-        mock_ssh_key_file = repo_config["ssh_params"]["key_file"]
-        mock_ssh_opts_initial = repo_config["ssh_params"]["ssh_opts"]
-
-        # Mock run_command for the clone operation
-        # self.mock_module.run_command.return_value = (0, "Cloning...", "")
-
         # Ensure execute_git_command returns a successful tuple
         mock_execute_git_command.return_value = (0, "Cloning...", "")
 
-        # self.mock_module.fail_json.side_effect = Exception("fail_json
-        # called") # Make fail_json raise an exception
-
         git = Git(self.mock_module, repo_config)
 
-        # Assert that the GIT_SSH_COMMAND is correctly formed in the mocked os.environ
-        # This checks the logic inside Git.__init__
+        # Assert that the GIT_SSH_COMMAND is correctly formed
         expected_ssh_command = (
             "ssh -i /some/path/ansible_repo.key -o IdentitiesOnly=yes"
         )
-        expected_ssh_command += " -o BatchMode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+        expected_ssh_command += (
+            " -o BatchMode=yes -o UserKnownHostsFile=/dev/null"
+            " -o StrictHostKeyChecking=no"
+        )
 
         # Assert that the correct GIT_SSH_COMMAND is set correctly
         self.assertIn("GIT_SSH_COMMAND", git.module.run_command_environ_update)
@@ -434,21 +468,10 @@ class TestGitActions(unittest.TestCase):
             expected_ssh_command,
         )
 
-        # test the clone method itself
-        # rc, stdout, stderr = git.clone("/tmp/test_clone_path", "main", self.repo_config['repo_url'])
-        # with self.assertRaises(Exception) as exc:
-        # # with self.assertRaises(AnsibleFailJson) as exc:
         result = git.clone()
 
-        # result = exc.exception.args[0]
         print("result =>", pprint.pformat(result))
 
-        # Assert that run_command was called with the correct GIT_SSH_COMMAND in its env
-        # Note: We can't directly inspect the 'env' passed to run_command easily without
-        # deeper mocking of run_command itself. The assertion on git.git_ssh_command_env
-        # is the main check here, assuming execute_git_command correctly passes it.
-        # self.mock_module.run_command.assert_called_once() # Just ensure it
-        # was called
         mock_execute_git_command.assert_called_once_with(
             [
                 "clone",
@@ -464,8 +487,6 @@ class TestGitActions(unittest.TestCase):
             check_rc=True,
             cwd="/tmp/test_repo",
         )
-        # You could also get the actual call args and inspect the env dict if
-        # needed
 
         self.assertTrue(result["changed"])
         self.assertEqual(result["message"], "Cloning...")

@@ -3,6 +3,9 @@
 # This prevents pyupgrade (UP) from injecting modern syntax that older nodes can't run.
 target-version = "py38"  # Adjust based on your target systems' Python version
 
+# Set this to match your target line length (e.g., 79 to satisfy Flake8, or 88 if you plan to migrate)
+line-length = 79
+
 [tool.ruff.format]
 # 1. Force single quotes across string literals
 quote-style = "preserve"
@@ -48,3 +51,7 @@ known-first-party = ["ansible_collections"]
 known-third-party = ["ansible"]
 # Keep imports grouped tightly, but don't let Ruff sort imports above your __metaclass__ blocks
 required-imports = []
+
+# Ensure the linter's pycodestyle check respects the line length target
+[tool.ruff.lint.pycodestyle]
+max-line-length = 79

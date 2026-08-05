@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-Expanded unit tests for the custom ruamel-backed to_nice_yaml filter.
-"""
+"""Expanded unit tests for the custom ruamel-backed to_nice_yaml filter."""
 
 from unittest.mock import patch
+
+# noinspection PyPackageRequirements
 import pytest
-from ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils import (
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils import (  # noqa: E501
     FilterModule,
 )
 
@@ -17,22 +19,26 @@ def filter_module():
 
 @patch('ansible.utils.display.Display.warning')
 def test_ruamel_version_warning_legacy(mock_warning, filter_module):
-    """Verify that a warning is logged when a legacy version of ruamel.yaml is detected."""
-    # Temporarily force the mock module layout environment to mimic an older library version
+    """Verify a warning is logged on legacy ruamel.yaml version."""
     with patch(
-        'ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils.yaml'
+        'ansible_collections.dettonville.utils.plugins.filter'
+        '.to_nice_yaml_utils.yaml'
     ) as mock_yaml:
         mock_yaml.__version__ = "0.16.12"
         filter_module._check_ruamel_version()
         assert mock_warning.called
-        assert "Upgrading to 'ruamel.yaml>=0.17.22'" in mock_warning.call_args[0][0]
+        assert (
+            "Upgrading to 'ruamel.yaml>=0.17.22'"
+            in mock_warning.call_args[0][0]
+        )
 
 
 @patch('ansible.utils.display.Display.warning')
 def test_ruamel_version_warning_modern(mock_warning, filter_module):
-    """Verify that no warning is logged when a modern version of ruamel.yaml is detected."""
+    """Verify no warning is logged on modern ruamel.yaml version."""
     with patch(
-        'ansible_collections.dettonville.utils.plugins.filter.to_nice_yaml_utils.yaml'
+        'ansible_collections.dettonville.utils.plugins.filter'
+        '.to_nice_yaml_utils.yaml'
     ) as mock_yaml:
         mock_yaml.__version__ = "0.18.5"
         filter_module._check_ruamel_version()
@@ -40,8 +46,7 @@ def test_ruamel_version_warning_modern(mock_warning, filter_module):
 
 
 def test_custom_indentation_formatting(filter_module):
-    """Verify that custom indentation formats to valid YAML containing the expected structures."""
-    # Dynamically import ruamel safely inside xdist worker scope
+    """Verify custom indentation formats to valid expected YAML structures."""
     try:
         from ruamel import yaml
     except ImportError:
@@ -68,14 +73,14 @@ def test_custom_indentation_formatting(filter_module):
 
 
 def test_explicit_start_option(filter_module):
-    """Verify that explicit_start adds the '---' directive."""
+    """Verify explicit_start adds the '---' directive."""
     input_data = {"key": "value"}
     yaml_output = filter_module.to_nice_yaml(input_data, explicit_start=True)
     assert yaml_output.startswith("---")
 
 
 def test_sort_keys_option(filter_module):
-    """Verify that keys are alphabetically ordered when sort_keys=True."""
+    """Verify keys are alphabetically ordered when sort_keys=True."""
     input_data = {"z_key": 1, "m_key": 2, "a_key": 3}
     yaml_output = filter_module.to_nice_yaml(input_data, sort_keys=True)
     lines = [line.strip() for line in yaml_output.splitlines() if line.strip()]
@@ -94,7 +99,7 @@ def test_allow_unicode_option(filter_module):
 
 
 def test_lists_of_primitives(filter_module):
-    """Verify that a sequence of flat scalar primitives converts correctly."""
+    """Verify a sequence of flat scalar primitives converts correctly."""
     input_data = {"items": ["apple", "banana", "cherry"]}
     yaml_output = filter_module.to_nice_yaml(
         input_data, mapping=2, sequence=4, offset=2
@@ -117,9 +122,7 @@ def test_deeply_nested_structures(filter_module):
 
 
 def test_offset_greater_than_sequence_edge_case(filter_module):
-    """Verify that when offset is greater than sequence, the filter automatically
-    adjusts sequence to match offset to prevent layout engine format crashes.
-    """
+    """Verify offset greater than sequence adjusts sequence to match offset."""
     input_data = {"items": [{"name": "test"}]}
 
     # Pass arguments where offset (4) exceeds sequence (2)
@@ -130,12 +133,15 @@ def test_offset_greater_than_sequence_edge_case(filter_module):
     item_line = [line for line in lines if "- name:" in line][0]
     item_indent = len(item_line) - len(item_line.lstrip(' '))
 
-    # Because our code adjusts sequence to equal offset (4), both ruamel variants
-    # will process this consistently.
-    # On environments where sequence == offset yields the hanging offset (like ruamel_yaml in CI): item_indent will be 4
-    # On environments where sequence == offset falls back to flat block (like community ruamel.yaml locally): item_indent will be 0
+    # Because our code adjusts sequence to equal offset (4), both ruamel
+    # variants will process this consistently.
+    # On environments where sequence == offset yields the hanging offset
+    # (like ruamel_yaml in CI): item_indent will be 4
+    # On environments where sequence == offset falls back to flat block
+    # (like community ruamel.yaml locally): item_indent will be 0
     assert item_indent in [0, 4], (
-        f"Unexpected indentation fallback for safety adjustment boundary test. Got: {item_indent}"
+        f"Unexpected indentation fallback for boundary test. "
+        f"Got: {item_indent}"
     )
 
 
@@ -156,12 +162,10 @@ def test_empty_collection_structures(filter_module):
 
 
 def test_ansible_jinja_proxy_wrapper_structures(filter_module):
-    """
-    Reproduce and verify handling of internal Ansible/Jinja proxy wrappers
-    for both collections and custom scalar primitives (e.g., ints, bools).
-    """
+    """Reproduce and verify handling of internal proxy wrappers."""
 
-    # Define mock proxy structures mimicking Ansible's internal container wrappers
+    # Define mock proxy structures mimicking Ansible's internal
+    # container wrappers
     class MockAnsibleMapping(dict):
         pass
 
@@ -183,15 +187,16 @@ def test_ansible_jinja_proxy_wrapper_structures(filter_module):
         def __index__(self):
             return 1 if self.val else 0
 
-    # Recreate a scenario featuring structural proxies and custom wrapped primitives (like the '15' error)
     failing_payload = MockAnsibleMapping(
         {
             'attachable': True,
-            'timeout': MockAnsibleInt(
-                15
-            ),  # Triggers the 'cannot represent an object: 15' flaw
+            'timeout': MockAnsibleInt(15),
             'ipam': MockAnsibleMapping(
-                {'config': MockAnsibleSequence([{'subnet': '192.168.10.0/24'}])}
+                {
+                    'config': MockAnsibleSequence(
+                        [{'subnet': '192.168.10.0/24'}]
+                    )
+                }
             ),
         }
     )
@@ -204,9 +209,11 @@ def test_ansible_jinja_proxy_wrapper_structures(filter_module):
 
 
 def test_nested_sequence_default_indentation(filter_module):
-    """Verify that by default, nested lists are indented 2 spaces deeper than their parent keys."""
+    """Verify nested lists are indented 2 spaces deeper than parent keys."""
     input_data = {
-        "deploy": {"labels": ["traefik.enable=true", "traefik.swarm.lbswarm=true"]}
+        "deploy": {
+            "labels": ["traefik.enable=true", "traefik.swarm.lbswarm=true"]
+        }
     }
 
     yaml_output = filter_module.to_nice_yaml(input_data, sort_keys=False)
@@ -222,25 +229,24 @@ def test_nested_sequence_default_indentation(filter_module):
         elif "traefik.enable=true" in line:
             item_idx = idx
 
-    assert labels_idx != -1, "Could not find 'labels:' parent key in output string."
-    assert item_idx != -1, "Could not find sequence item element in output string."
+    assert labels_idx != -1, "Could not find 'labels:' parent key."
+    assert item_idx != -1, "Could not find sequence item element."
 
-    # Calculate exact leading indentation characters count
-    labels_indent_count = len(lines[labels_idx]) - len(lines[labels_idx].lstrip(' '))
+    labels_indent_count = len(lines[labels_idx]) - len(
+        lines[labels_idx].lstrip(' ')
+    )
     item_indent_count = len(lines[item_idx]) - len(lines[item_idx].lstrip(' '))
 
-    # Confirm that the list hyphen is placed exactly 2 spaces forward from the key margin
+    # Confirm that the list hyphen is placed exactly 2 spaces forward from
+    # the key margin
     assert item_indent_count == labels_indent_count + 2, (
-        f"Nested list indentation error: parent key indentation is {labels_indent_count}, "
-        f"but list item hyphen indentation is {item_indent_count} (Expected delta of +2)."
+        f"Indentation error: parent is {labels_indent_count}, "
+        f"item is {item_indent_count} (Expected +2 delta)."
     )
 
 
 def test_nested_sequence_with_child_mappings_indentation(filter_module):
-    """Verify that deeply nested dictionaries inside list item blocks are correctly shifted
-    forward along with their parent list hyphen, preserving child property indentation.
-    """
-    # Wrap with a root service container to push 'deploy' down to a 2-space baseline margin
+    """Verify deeply nested dicts inside list items are shifted forward."""
     input_data = {
         "services": {
             "ollama": {
@@ -300,8 +306,8 @@ def test_nested_sequence_with_child_mappings_indentation(filter_module):
     #         reservations: (8 spaces)
     #           generic_resources: (10 spaces)
     #             - discrete_resource_spec: (Expected: 12 spaces)
-    #                 kind: NVIDIA-GPU (Expected: 16 spaces - child mapping indented 4 spaces forward)
-    #                 value: 1 (Expected: 16 spaces - child mapping indented 4 spaces forward)
+    #                 kind: NVIDIA-GPU (Expected: 16 spaces)
+    #                 value: 1 (Expected: 16 spaces)
 
     assert spec_indent == 12, (
         f"Parent sequence element indent was {spec_indent}, expected 12"

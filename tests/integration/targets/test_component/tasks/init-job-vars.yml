@@ -31,14 +31,14 @@
 
 - name: "{{ __test_component__log_init_job_vars }} Set __test_component__job_url"
   ansible.builtin.set_fact:
-    __test_component__job_url: "{{ test_component__test_job_url 
-      | d(__test_component__job_path_awx) 
+    __test_component__job_url: "{{ test_component__test_job_url
+      | d(__test_component__job_path_awx)
       | d(__test_component__job_path_jenkins)
       | d('') }}"
 
 - name: "{{ __test_component__log_init_job_vars }} Set __test_component__job_markdown_link"
   ansible.builtin.set_fact:
-    __test_component__job_markdown_link: "{{ '[test job link](' + __test_component__job_url + ')' 
+    __test_component__job_markdown_link: "{{ '[test job link](' + __test_component__job_url + ')'
       if (__test_component__job_url|d('')|length>0) else __test_component__job_path_cli }}"
 
 - name: "{{ __test_component__log_init_job_vars }} Display job URL info"

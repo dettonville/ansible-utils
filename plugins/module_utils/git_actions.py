@@ -1,18 +1,28 @@
 from __future__ import absolute_import, division, print_function
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import missing_required_lib
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.common.text.converters import to_native
-from ansible_collections.dettonville.utils.plugins.module_utils.utils import PrettyLog
-from ansible_collections.dettonville.utils.plugins.module_utils.messages import (
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.messages import (  # noqa: E501
     FailingMessage,
+)
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
+    PrettyLog,
 )
 
 __metaclass__ = type
 
-import os
-import sys
-import re
 import logging
+import os
 import pprint
+import re
+import sys
 import traceback
 
 # ref: https://discuss.python.org/t/pep-632-deprecate-distutils-module/5134/130?page=7
@@ -22,8 +32,10 @@ import traceback
 # ref: https://packaging.pypa.io/en/latest/version.html#packaging.version.Version
 # from packaging.version import Version
 try:
+    # noinspection PyPackageRequirements
     from packaging.version import Version
 except ImportError:
+    Version = None
     PACKAGING_VERSION_IMPORT_ERROR = traceback.format_exc()
 else:
     PACKAGING_VERSION_IMPORT_ERROR = None
@@ -36,7 +48,9 @@ class Git:
     def __init__(self, module, repo_config):
         self.module = module
 
-        self.loglevel = self.module.params.get("logging_level", _LOGLEVEL_DEFAULT)
+        self.loglevel = self.module.params.get(
+            "logging_level", _LOGLEVEL_DEFAULT
+        )
 
         # # ref:
         # # https://www.tutorialexample.com/fix-python-logging-module-not-writing-to-file-python-tutorial/
@@ -58,7 +72,9 @@ class Git:
             module.fail_json(msg="Git executable not found in PATH.")
 
         log_prefix = "%s.init():" % self.__class__.__name__
-        self.log.debug("%s repo_config => %s", log_prefix, PrettyLog(repo_config))
+        self.log.debug(
+            "%s repo_config => %s", log_prefix, PrettyLog(repo_config)
+        )
 
         self.repo_url = repo_config.get("repo_url")
         self.repo_dir = repo_config.get("repo_dir")
@@ -73,7 +89,9 @@ class Git:
         self.user_email = repo_config.get("user_email")
         self.user_config = {}
 
-        self.log.debug("%s self.git_bin_path=%s", log_prefix, self.git_bin_path)
+        self.log.debug(
+            "%s self.git_bin_path=%s", log_prefix, self.git_bin_path
+        )
         self.log.debug("%s self.repo_url=%s", log_prefix, self.repo_url)
         self.log.debug("%s self.repo_dir=%s", log_prefix, self.repo_dir)
         self.log.debug("%s self.repo_scheme=%s", log_prefix, self.repo_scheme)
@@ -103,8 +121,8 @@ class Git:
                 if "-o StrictHostKeyChecking=no" not in self.ssh_opts:
                     self.ssh_opts += " -o StrictHostKeyChecking=no"
 
-        # Ensure GIT_SSH_COMMAND is constructed and stored in an instance variable
-        # so it can be passed to run_command later.
+        # Ensure GIT_SSH_COMMAND is constructed and stored in an
+        # instance variable so it can be passed to run_command later.
         self.git_ssh_command_env = {}  # Initialize an empty dict
 
         # Construct the GIT_SSH_COMMAND
@@ -130,7 +148,8 @@ class Git:
             )
             self.git_ssh_command = final_ssh_command
             self.log.debug(
-                "Git class initialized with GIT_SSH_COMMAND: %s", self.git_ssh_command
+                "Git class initialized with GIT_SSH_COMMAND: %s",
+                self.git_ssh_command,
             )
 
         # We screen scrape a huge amount of git commands so use C locale
@@ -144,8 +163,8 @@ class Git:
 
     @staticmethod
     def get_url_scheme(url) -> str:
-        # type: (str) -> Optional[str]
         scheme = "local"
+        # noinspection HttpUrlsUsage
         if url.startswith(("http://", "https://")):
             return "https"
         if url.startswith(("git@", "ssh://git@")):
@@ -156,12 +175,16 @@ class Git:
         log_prefix = "%s.execute_git_command():" % self.__class__.__name__
 
         if self.user_name:
-            self.module.run_command_environ_update['GIT_AUTHOR_NAME'] = self.user_name
+            self.module.run_command_environ_update['GIT_AUTHOR_NAME'] = (
+                self.user_name
+            )
             self.module.run_command_environ_update['GIT_COMMITTER_NAME'] = (
                 self.user_name
             )
         if self.user_email:
-            self.module.run_command_environ_update['GIT_AUTHOR_EMAIL'] = self.user_email
+            self.module.run_command_environ_update['GIT_AUTHOR_EMAIL'] = (
+                self.user_email
+            )
             self.module.run_command_environ_update['GIT_COMMITTER_EMAIL'] = (
                 self.user_email
             )
@@ -197,8 +220,9 @@ class Git:
             self.log.debug("%s: decoded_stderr=%s", log_prefix, decoded_stderr)
 
             if rc != 0:
-                FailingMessage(self.module, rc, git_cmd, stdout, stderr)
-                # self.module.fail_json(msg=f"Failed to clone repository: {self.repo_url}", rc=rc, stdout=stdout, stderr=stderr)
+                return FailingMessage(self.module, rc, git_cmd, stdout, stderr)
+                # self.module.fail_json(msg=f"Failed to clone repository:
+                # {self.repo_url}", rc=rc, stdout=stdout, stderr=stderr)
 
             return rc, decoded_stdout, decoded_stderr
         except Exception as e:
@@ -256,7 +280,8 @@ class Git:
         args:
             * module:
                 type: dict()
-                description: Ansible basic module utilities and module arguments.
+                description: Ansible basic module utilities and
+                module arguments.
             * user_config:
                 type: dict()
                 description: Git user config for 'name' and 'email'
@@ -266,25 +291,32 @@ class Git:
                 description: updated changed status.
         """
         log_prefix = "%s.set_user_config():" % self.__class__.__name__
-        self.log.debug("%s user_config => %s", log_prefix, PrettyLog(user_config))
+        self.log.debug(
+            "%s user_config => %s", log_prefix, PrettyLog(user_config)
+        )
 
         user_name = user_config.get("name")
         user_email = user_config.get("email")
 
         result = dict()
 
-        current_user_name_rc, current_user_name, _stderr = self.execute_git_command(
-            ['config', '--local', 'user.name', user_name],
-            check_rc=False,
-            cwd=self.repo_dir,
+        current_user_name_rc, current_user_name, _stderr = (
+            self.execute_git_command(
+                ['config', '--local', 'user.name', user_name],
+                check_rc=False,
+                cwd=self.repo_dir,
+            )
         )
-        current_user_email_rc, current_user_email, _stderr = self.execute_git_command(
-            ['config', '--local', 'user.email', user_email],
-            check_rc=False,
-            cwd=self.repo_dir,
+        current_user_email_rc, current_user_email, _stderr = (
+            self.execute_git_command(
+                ['config', '--local', 'user.email', user_email],
+                check_rc=False,
+                cwd=self.repo_dir,
+            )
         )
 
-        # Set user.name if it's not already configured or if it's different from the desired value
+        # Set user.name if it's not already configured or if it's different
+        # from the desired value
         if current_user_name_rc != 0 or current_user_name.strip() != user_name:
             self.execute_git_command(
                 ['config', '--local', 'user.name', user_name],
@@ -293,20 +325,30 @@ class Git:
             )
             self.log.debug("%s Set git user.name to %s", log_prefix, user_name)
 
-        # Set user.email if it's not already configured or if it's different from the desired value
-        if current_user_email_rc != 0 or current_user_email.strip() != user_email:
+        # Set user.email if it's not already configured or if it's different
+        # from the desired value
+        if (
+            current_user_email_rc != 0
+            or current_user_email.strip() != user_email
+        ):
             self.execute_git_command(
                 ['config', '--local', 'user.email', user_email],
                 check_rc=True,
                 cwd=self.repo_dir,
             )
-            self.log.debug("%s Set git user.email to %s", log_prefix, user_email)
+            self.log.debug(
+                "%s Set git user.email to %s", log_prefix, user_email
+            )
 
         # result.update({"message": stdout, "changed": True})
-        result.update({"changed": True, "message": "Git user configuration updated."})
+        result.update(
+            {"changed": True, "message": "Git user configuration updated."}
+        )
         return result
 
-    def clone(self, shallow=True, bare=False, reference=None, refspec=None) -> dict:
+    def clone(
+        self, shallow=True, bare=False, reference=None, refspec=None
+    ) -> dict:
         """makes a new git repo if it does not already exist"""
         log_prefix = "%s.clone(%s):" % (self.__class__.__name__, self.repo_dir)
 
@@ -346,7 +388,11 @@ class Git:
         )
 
         result.update(
-            {"message": stdout, "git.clone": str(stdout) + str(stderr), "changed": True}
+            {
+                "message": stdout,
+                "git.clone": str(stdout) + str(stderr),
+                "changed": True,
+            }
         )
 
         if bare and self.remote != "origin":
@@ -383,7 +429,11 @@ class Git:
         )
 
         result.update(
-            {"message": stdout, "git.pull": str(stdout) + str(stderr), "changed": True}
+            {
+                "message": stdout,
+                "git.pull": str(stdout) + str(stderr),
+                "changed": True,
+            }
         )
 
         self.log.debug("%s result => %s", log_prefix, pprint.pformat(result))
@@ -396,7 +446,8 @@ class Git:
         args:
             * module:
                 type: dict()
-                descrition: Ansible basic module utilities and module arguments.
+                description: Ansible basic module utilities and
+                module arguments.
 
         return: null
         """
@@ -421,7 +472,11 @@ class Git:
         )
 
         result.update(
-            {"message": stdout, "git.add": str(stdout) + str(stderr), "changed": True}
+            {
+                "message": stdout,
+                "git.add": str(stdout) + str(stderr),
+                "changed": True,
+            }
         )
 
         self.log.debug("%s result => %s", log_prefix, pprint.pformat(result))
@@ -435,7 +490,8 @@ class Git:
         args:
             * module:
                 type: dict()
-                descrition: Ansible basic module utilities and module arguments.
+                description: Ansible basic module utilities
+                and module arguments.
         return:
             * data:
                 type: set()
@@ -462,7 +518,7 @@ class Git:
             return data
 
         else:
-            FailingMessage(self.module, rc, command, stdout, stderr)
+            return FailingMessage(self.module, rc, command, stdout, stderr)
 
     def commit(self, comment="ansible update") -> dict:
         """
@@ -471,11 +527,13 @@ class Git:
         args:
             * module:
                 type: dict()
-                descrition: Ansible basic module utilities and module arguments.
+                description: Ansible basic module utilities
+                and module arguments.
         return:
             * result:
                 type: dict()
-                description: returned stdout from git commit command and changed status
+                description: returned stdout from git commit command
+                and changed status
         """
         log_prefix = "%s.commit():" % self.__class__.__name__
 
@@ -509,11 +567,13 @@ class Git:
         args:
             * module:
                 type: dict()
-                descrition: Ansible basic module utilities and module arguments.
+                description: Ansible basic module utilities
+                and module arguments.
         return:
             * result:
                 type: dict()
-                description: returned stdout from git push command and updated changed status.
+                description: returned stdout from git push command
+                and updated changed status.
         """
         log_prefix = "%s.push():" % self.__class__.__name__
 
@@ -528,7 +588,8 @@ class Git:
             args:
                 * module:
                     type: dict()
-                    descrition: Ansible basic module utilities and module arguments.
+                    description: Ansible basic module utilities
+                    and module arguments.
             return: null
             """
             cmd = ["remote", "get-url", "--all", self.remote]
@@ -553,7 +614,8 @@ class Git:
                         ]
                     else:
                         self.module.fail_json(
-                            msg="HTTPS scheme selected but not HTTPS URL provided"
+                            msg="HTTPS scheme selected but not HTTPS URL "
+                            "provided"
                         )
                 else:
                     cmd = [
@@ -579,14 +641,16 @@ class Git:
             args:
                 * path:
                     type: path
-                    descrition: git repo local path.
+                    description: git repo local path.
                 * cmd_push:
                     type: list()
-                    descrition: list of commands to perform git push operation.
+                    description: list of commands to perform git push
+                    operation.
             return:
                 * result:
                     type: dict()
-                    description: returned stdout from git push command and updated changed status.
+                    description: returned stdout from git push command
+                    and updated changed status.
             """
             result = dict()
 
@@ -604,7 +668,7 @@ class Git:
                 )
                 return result
             else:
-                FailingMessage(self.module, rc, command, stdout, stderr)
+                return FailingMessage(self.module, rc, command, stdout, stderr)
 
         if self.push_option:
             command.insert(3, "--push-option={0} ".format(self.push_option))

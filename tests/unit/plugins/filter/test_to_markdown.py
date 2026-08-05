@@ -3,10 +3,13 @@
 Unit tests for the to_markdown filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.filter.to_markdown import (
     FilterModule,
-)  # Adjust import path as needed
+)
 
 
 @pytest.fixture
@@ -62,7 +65,8 @@ def test_to_markdown_nested_dict(filter_module):
 
 
 def test_to_markdown_mixed_structure(filter_module):
-    """Test converting mixed structure to Markdown (flattened dict with list repr)."""
+    """Test converting mixed structure to Markdown (flattened dict with
+    list repr)."""
     input_obj = {
         "title": "Users Report",
         "users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}],
@@ -89,7 +93,8 @@ def test_to_markdown_empty_input(filter_module):
 
 
 def test_to_markdown_primitive_values(filter_module):
-    """Test that primitive values are handled (e.g., converted to simple text)."""
+    """Test that primitive values are handled (e.g., converted to
+    simple text)."""
     input_str = "Hello World"
     result_str = filter_module.to_markdown(input_str)
     assert result_str == "Hello World"
@@ -110,7 +115,7 @@ def test_to_markdown_with_flatten_option(filter_module):
     result = filter_module.to_markdown(input_dict, flatten_nested=False)
     expected = """| Key | Value |
 |-----|-------|
-| user | {'name': 'Alice', 'address': {'street': '123 Main St', 'city': 'New York'}} |"""
+| user | {'name': 'Alice', 'address': {'street': '123 Main St', 'city': 'New York'}} |"""  # noqa: E501
     assert result == expected
 
 

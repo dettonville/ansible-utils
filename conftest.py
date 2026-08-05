@@ -11,7 +11,9 @@ def pytest_configure():
     """
     # 1. If already resolvable (e.g., via run-tests.sh), do nothing
     try:
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
         import ansible_collections.dettonville.utils  # noqa: F401
+
         return
     except ImportError:
         pass

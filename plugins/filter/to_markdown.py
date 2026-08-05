@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
-to_markdown Ansible filter plugin
-"""
 
 from __future__ import absolute_import, division, print_function
+
+from typing import Any
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
     to_markdown,
 )
 
 DOCUMENTATION = """
   name: to_markdown
-  short_description: Convert data structures to Markdown tables or formatted text
+  short_description: >-
+    Convert data structures to Markdown tables or formatted text
   version_added: "2.20.0"
   author: Lee Johnson (@lj020326)
   description:
@@ -103,6 +105,6 @@ class FilterModule(object):
         return {"to_markdown": self.to_markdown}
 
     @staticmethod
-    def to_markdown(data: any, flatten_nested: bool = True) -> str:
+    def to_markdown(data: Any, flatten_nested: bool = True) -> str:
         """Convert data to Markdown."""
         return to_markdown(data, flatten_nested)

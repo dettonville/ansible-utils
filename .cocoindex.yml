@@ -1,3 +1,4 @@
+---
 app:
   name: "dettonville-utils"
   max_inflight_components: 8
@@ -7,27 +8,27 @@ sources:
   - type: local_files
     path: .
     include:
-      - '**/*.py'
-      - '**/*.md'
-      - '**/*.yml'
-      - '**/*.yaml'
-      - '**/*.json'
-      - '**/*.groovy'
-      - '**/*.sh'
-      - '**/*.tf'
+      - "**/*.py"
+      - "**/*.md"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.json"
+      - "**/*.groovy"
+      - "**/*.sh"
+      - "**/*.tf"
     exclude:
-      - '.git/**'
-      - 'archive/**'
-      - '__pycache__/**'
-      - '*.pyc'
-      - 'venv/**'
-      - '.venv/**'
-      - 'node_modules/**'
-      - 'build/**'
-      - 'dist/**'
-      - '.pytest_cache/**'
-      - '.coverage'
-      - '*.log'
+      - ".git/**"
+      - "archive/**"
+      - "__pycache__/**"
+      - "*.pyc"
+      - "venv/**"
+      - ".venv/**"
+      - "node_modules/**"
+      - "build/**"
+      - "dist/**"
+      - ".pytest_cache/**"
+      - ".coverage"
+      - "*.log"
 indexing:
   - type: embedding
     model: text-embedding-ada-002

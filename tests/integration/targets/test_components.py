@@ -1,13 +1,9 @@
-
-import os
-from os.path import join, dirname
-
-import re
-from glob import glob
-
 # import pathlib
 import logging
-
+import os
+import re
+from glob import glob
+from os.path import dirname, join
 from typing import Any
 
 import pytest
@@ -22,7 +18,7 @@ import pytest
 # ref: https://github.com/saltstack/pytest-shell-utilities/blob/main/tests/functional/shell/test_script_subprocess.py
 # ref: https://github.com/saltstack/pytest-shell-utilities/blob/main/tests/unit/utils/processes/test_processresult.py
 
-test_components = [
+COMPONENT_NAMES = [
     "export_dicts",
     "git_pacp",
     "remove_dict_keys",
@@ -34,7 +30,7 @@ log_level = "INFO"
 logging.basicConfig(level=log_level)
 
 
-# @pytest.fixture(params=test_components)
+# @pytest.fixture(params=COMPONENT_NAMES)
 # def test_component(request):
 #     return request.param
 
@@ -59,13 +55,15 @@ def get_test_cases() -> list[tuple[str, str]]:
     # script_dir = os.getcwd()
     script_dir = dirname(os.path.realpath(__file__))
     test_case_list: list[tuple[str | Any, Any]] = []
-    for test_component in test_components:
+    for test_component in COMPONENT_NAMES:
         component_testvars_dir = join(
             script_dir, "test_component", "vars", test_component
         )
         logging.debug("component_testvars_dir=%s", component_testvars_dir)
 
-        test_var_files = list(glob(join(component_testvars_dir, "testdata_*.yml")))
+        test_var_files = list(
+            glob(join(component_testvars_dir, "testdata_*.yml"))
+        )
         test_var_files += list(
             glob(join(component_testvars_dir, "**", "testdata_*.yml"))
         )
@@ -93,8 +91,15 @@ test_case_list = get_test_cases()
 # ref: https://docs.pytest.org/en/latest/reference/reference.html#request
 @pytest.mark.parametrize("test_component,test_case", test_case_list)
 def test_components(shell, script_path, test_component, test_case):
-    test_case_extra_vars = "--extra-vars \"test_case_id_list=[\'%s\']\"" % test_case
-    test_command_list = [script_path, "-t", test_component, test_case_extra_vars]
+    test_case_extra_vars = (
+        "--extra-vars \"test_case_id_list=['%s']\"" % test_case
+    )
+    test_command_list = [
+        script_path,
+        "-t",
+        test_component,
+        test_case_extra_vars,
+    ]
     logging.info("test_command_list=%s", test_command_list)
     # ref: https://stackoverflow.com/questions/7745952/how-to-expand-a-list-to-function-arguments-in-python#7745986
     ret = shell.run(*test_command_list)

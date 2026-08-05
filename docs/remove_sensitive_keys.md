@@ -1,22 +1,19 @@
 
-
 ```shell
 $ ansible --version
-ansible [core 2.20.1]
+ansible [core 2.21.2]
   config file = None
-  configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
+  configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
-  pyyaml version = 6.0.2 (with libyaml v0.2.5)
-$
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
-$
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.remove_sensitive_keys | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/remove_sensitive_keys.md
-> FILTER dettonville.utils.remove_sensitive_keys (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/filter/remove_sensitive_keys.py)
+> FILTER dettonville.utils.remove_sensitive_keys (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/filter/remove_sensitive_keys.py)
 
   Remove key(s) with specified list of regex patterns from nested
   dict/array.
@@ -62,7 +59,7 @@ EXAMPLES:
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       administrator-10.31.25.54:
         address: 10.31.25.54
         automatic_management_enabled: true
@@ -77,7 +74,7 @@ EXAMPLES:
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       careconlocal-10.21.33.8:
         address: 10.21.33.8
         automatic_management_enabled: true
@@ -88,7 +85,7 @@ EXAMPLES:
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       careconlocal-10.31.25.54:
         address: 10.31.25.54
         automatic_management_enabled: true
@@ -99,7 +96,7 @@ EXAMPLES:
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
   # Produces the dict:
   #
   #  my_dict:
@@ -166,7 +163,7 @@ EXAMPLES:
         platform_notes: WINANSD1S4.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.31.25.54
         automatic_management_enabled: true
         domain_type: local
@@ -180,7 +177,7 @@ EXAMPLES:
         platform_notes: WINANSD1S4.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
@@ -190,7 +187,7 @@ EXAMPLES:
         platform_notes: WINANSD1S1.example.int
         safe: A-T-careconlocal
         username: careconlocal
-        password: 39infsVSRk
+        password: passw0rd
       - address: 10.21.33.8
         automatic_management_enabled: true
         domain_type: local
@@ -204,7 +201,7 @@ EXAMPLES:
         platform_notes: WINANSD1S1.example.int
         safe: Windows-Server-Local-Admin
         username: administrator
-        password: 39infsVSRk
+        password: passw0rd
   # Produces the list:
   #
   #  my_list:

@@ -67,7 +67,7 @@
 
 - name: "{{ __test_component__log_reset }} Set __test_component__git_comment"
   ansible.builtin.set_fact:
-    __test_component__git_comment: "{{ __test_component__git_comment_prefix }}{{ 
+    __test_component__git_comment: "{{ __test_component__git_comment_prefix }}{{
       __test_component__log_prefix }} Reset test file to start"
 
 - name: "{{ __test_component__log_reset }} Git ACP update"

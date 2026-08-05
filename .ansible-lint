@@ -1,11 +1,12 @@
 ---
 # https://ansible.readthedocs.io/projects/lint/configuring/#ansible-lint-configuration
 exclude_paths:
-  - .cache/ # implicit unless exclude_paths is defined in config
+  - .cache/  # implicit unless exclude_paths is defined in config
   - .github/
+  - .continue/
+  - .jenkins/
   - "**/archive/"
   - "**/save/"
   - "**/tests/"
   - changelogs/
   - CHANGELOG.rst
-  - tests/

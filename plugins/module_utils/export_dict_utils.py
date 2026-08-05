@@ -4,12 +4,10 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-import io
 import csv
-import sys
-import traceback
-import codecs
+import io
 import logging
+import traceback
 
 _LOGLEVEL_DEFAULT = "INFO"
 
@@ -25,10 +23,13 @@ def get_headers_and_fields(column_list):
         headers = fieldnames
 
     for index, header in enumerate(headers):
-        if not header:  # This checks for falsey values like "", None, [], 0, False
+        # This checks for falsey values like "", None, [], 0, False
+        if not header:
             fieldname = fieldnames[index]
             logging.debug(
-                "Replace empty header at index %s with fieldname: %s", index, fieldname
+                "Replace empty header at index %s with fieldname: %s",
+                index,
+                fieldname,
             )
             headers[index] = fieldname
 
@@ -50,7 +51,10 @@ def write_csv_string(export_list, column_list):
     logging.debug("header_row_dict: %s", header_row_dict)
 
     writer = csv.DictWriter(
-        output, lineterminator="\n", fieldnames=fieldnames, extrasaction="ignore"
+        output,
+        lineterminator="\n",
+        fieldnames=fieldnames,
+        extrasaction="ignore",
     )
     writer.writerow(header_row_dict)
     writer.writerows(export_list)
@@ -95,7 +99,9 @@ def write_csv_file(module, output_file, export_list, column_list):
 
     result = dict(
         changed=True,
-        message="The csv file has been created successfully at {0}".format(output_file),
+        message="The csv file has been created successfully at {0}".format(
+            output_file
+        ),
     )
 
     return result
@@ -111,7 +117,7 @@ def write_markdown_string(export_list, column_list):
         md_string += " " + header + " |"
 
     md_string += "\n|"
-    for i in range(len(headers)):
+    for _unused in headers:
         md_string += " --- |"
 
     md_string += "\n"
@@ -134,13 +140,8 @@ def write_markdown_file(module, output_file, export_list, column_list):
     md_string = write_markdown_string(export_list, column_list)
 
     try:
-        file = codecs.open(output_file, "w", encoding="utf-8")
-        if sys.version_info >= (3, 6):
+        with open(output_file, "w", encoding="utf-8") as file:
             file.write(md_string)
-        else:
-            file.write(md_string.decode("utf-8"))
-
-        file.close()
 
     except IOError:
         module.fail_json(
@@ -149,9 +150,8 @@ def write_markdown_file(module, output_file, export_list, column_list):
 
     result = dict(
         changed=True,
-        message="The markdown file has been created successfully at {0}".format(
-            output_file
-        ),
+        message="The markdown file has been created successfully "
+        "at {0}".format(output_file),
     )
 
     return result

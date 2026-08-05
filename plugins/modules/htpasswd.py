@@ -10,17 +10,26 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: htpasswd
-short_description: Manage user credentials in an htpasswd file with backup and overwrite support
+short_description: >-
+  Manage user credentials in an htpasswd file with backup and overwrite support
 version_added: "2.20.0"
 author:
   - Lee Johnson (@lj020326)
 description:
   - Add and remove username/password entries in a password file using htpasswd.
-  - Supports managing a single user or a list of users in a single task execution.
-  - Supports adding, updating, and removing users using different password encryption algorithms.
+  - >-
+    Supports managing a single user or a list of users in a single task
+    execution.
+  - >-
+    Supports adding, updating, and removing users using different password
+    encryption algorithms.
   - Adds C(backup) capability before modifying target htpasswd files.
-  - Adds C(overwrite) capability to remove residue/unmanaged entries left over from prior runs.
-  - Supports standard file attribute management (owner, group, mode, secontext).
+  - >-
+    Adds C(overwrite) capability to remove residue/unmanaged entries
+    left over from prior runs.
+  - >-
+    Supports standard file attribute management (owner, group, mode,
+    secontext).
 options:
   path:
     description:
@@ -32,18 +41,24 @@ options:
     description:
       - User name to add, update, or remove.
       - Mutually exclusive with C(user_list).
-      - Required when C(user_list) is not provided and C(state=absent) or when adding/updating a single user.
+      - >-
+        Required when C(user_list) is not provided and C(state=absent)
+        or when adding/updating a single user.
     type: str
     aliases: [ username ]
   password:
     description:
       - Password associated with C(name).
-      - Required when C(state=present), C(name) is provided, and C(user_list) is not used.
+      - >-
+        Required when C(state=present), C(name) is provided,
+        and C(user_list) is not used.
     type: str
   user_list:
     description:
       - A list of user dictionaries to manage.
-      - Each dictionary in the list must contain C(username) and C(password) keys.
+      - >-
+        Each dictionary in the list must contain C(username)
+        and C(password) keys.
       - Mutually exclusive with C(name) and C(password).
     type: list
     elements: dict
@@ -61,7 +76,9 @@ options:
     choices: [ present, absent ]
   create:
     description:
-      - Used with C(state=present). If C(true), the file is created if it does not exist.
+      - >-
+        Used with C(state=present). If C(true), the file is created if
+        it does not exist.
     type: bool
     default: true
   backup:
@@ -71,8 +88,10 @@ options:
     default: false
   overwrite:
     description:
-      - When C(true) and C(state=present), purges any entries from the htpasswd file
-        that are not explicitly defined in the task execution.
+      - >-
+        When C(true) and C(state=present), purges any entries
+        from the htpasswd file that are not explicitly defined in
+        the task execution.
     type: bool
     default: false
 extends_documentation_fragment:
@@ -140,22 +159,35 @@ backup_file:
 """
 
 import os
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+
+__all__ = ["main"]
 
 HAS_PASSLIB = False
 try:
+    # noinspection PyPackageRequirements
     from passlib.apache import HtpasswdFile, htpasswd_context
+
+    # noinspection PyPackageRequirements
     from passlib.context import CryptContext
 
     HAS_PASSLIB = True
 except ImportError:
+    HtpasswdFile = None
+    htpasswd_context = None
+    CryptContext = None
     HAS_PASSLIB = False
 
 APACHE_HASHES = ["apr_md5_crypt", "des_crypt", "ldap_sha1", "plaintext"]
 
 
 def obtain_crypt_context(hash_scheme):
-    if hash_scheme in APACHE_HASHES or hash_scheme in htpasswd_context.schemes():
+    if hash_scheme in APACHE_HASHES or (
+        htpasswd_context is not None
+        and hash_scheme in htpasswd_context.schemes()
+    ):
         return htpasswd_context
     try:
         return CryptContext(schemes=[hash_scheme] + APACHE_HASHES)
@@ -172,14 +204,18 @@ def create_missing_directories(dest):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            path=dict(type='path', required=True, aliases=['dest', 'destfile']),
+            path=dict(
+                type='path', required=True, aliases=['dest', 'destfile']
+            ),
             name=dict(type='str', aliases=['username']),
             password=dict(type='str', no_log=True),
             user_list=dict(type='list', elements='dict', no_log=True),
             hash_scheme=dict(
                 type='str', default='apr_md5_crypt', aliases=['crypt_scheme']
             ),
-            state=dict(type='str', default='present', choices=['present', 'absent']),
+            state=dict(
+                type='str', default='present', choices=['present', 'absent']
+            ),
             create=dict(type='bool', default=True),
             backup=dict(type='bool', default=False),
             overwrite=dict(type='bool', default=False),
@@ -212,33 +248,39 @@ def main():
         for idx, entry in enumerate(user_list):
             if not isinstance(entry, dict):
                 module.fail_json(
-                    msg=f"Item at index {idx} in 'user_list' must be a dictionary"
+                    msg=f"Item at index {idx} in 'user_list' must "
+                    f"be a dictionary"
                 )
             u_name = entry.get('username') or entry.get('name')
             u_pass = entry.get('password')
             if not u_name:
                 module.fail_json(
-                    msg=f"Item at index {idx} in 'user_list' missing required key 'username'"
+                    msg=f"Item at index {idx} in 'user_list' missing "
+                    f"required key 'username'"
                 )
             if state == 'present' and u_pass is None:
                 module.fail_json(
-                    msg=f"Item at index {idx} ('{u_name}') in 'user_list' missing required key 'password'"
+                    msg=f"Item at index {idx} ('{u_name}') in 'user_list' "
+                    f"missing required key 'password'"
                 )
             target_users.append({'username': u_name, 'password': u_pass})
     elif username:
         if state == 'present' and password is None:
             module.fail_json(
-                msg="parameter 'password' required when state=present and name is provided"
+                msg="parameter 'password' required when state=present "
+                "and name is provided"
             )
         target_users.append({'username': username, 'password': password})
     else:
         if state == 'present' and not overwrite:
             module.fail_json(
-                msg="Either 'name'/'password' or 'user_list' must be specified when state=present"
+                msg="Either 'name'/'password' or 'user_list' must be "
+                "specified when state=present"
             )
         elif state == 'absent':
             module.fail_json(
-                msg="Either 'name' or 'user_list' must be specified when state=absent"
+                msg="Either 'name' or 'user_list' must be specified "
+                "when state=absent"
             )
 
     context = obtain_crypt_context(hash_scheme)
@@ -246,6 +288,7 @@ def main():
     changed = False
     backup_file = None
     messages = []
+    ht = None
 
     # Clean blank lines from file if present
     if file_exists:
@@ -306,7 +349,9 @@ def main():
         if not file_exists:
             module.exit_json(msg=f"{path} does not exist", changed=False)
 
-        ht = HtpasswdFile(path, new=False, default_scheme=hash_scheme, context=context)
+        ht = HtpasswdFile(
+            path, new=False, default_scheme=hash_scheme, context=context
+        )
         for user_data in target_users:
             u_name = user_data['username']
             if u_name in ht.users():
@@ -320,11 +365,13 @@ def main():
         backup_file = module.backup_local(path)
 
     # Save changes to file
-    if changed and not check_mode:
+    if changed and not check_mode and ht is not None:
         try:
             ht.save()
         except Exception as e:
-            module.fail_json(msg=f"Failed to write htpasswd file to {path}: {str(e)}")
+            module.fail_json(
+                msg=f"Failed to write htpasswd file to {path}: {str(e)}"
+            )
 
     # Handle standard Ansible file ownership, perms, secontext attributes
     file_args = module.load_file_common_arguments(module.params)

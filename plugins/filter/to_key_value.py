@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-to_markdown Ansible filter plugin
-"""
 
 from __future__ import absolute_import, division, print_function
+
+from typing import Any
 
 DOCUMENTATION = """
   name: to_key_value
@@ -30,11 +29,14 @@ DOCUMENTATION = """
       type: bool
       default: false
     quote_char:
-      description: The character used for quoting values when M(quote) is enabled.
+      description: >-
+        The character used for quoting values when M(quote) is enabled.
       type: str
       default: '"'
     sort_keys:
-      description: Toggle whether to sort keys alphanumerically instead of preserving insertion order.
+      description: >-
+        Toggle whether to sort keys alphanumerically instead of preserving
+        insertion order.
       type: bool
       default: false
 """
@@ -71,7 +73,8 @@ EXAMPLES = """
 
 - name: 4. Quoted values (Single quotes)
   ansible.builtin.debug:
-    msg: "{{ my_dict | dettonville.utils.to_key_value(quote=True, quote_char=\\"'\\") }}"
+    msg: "{{ my_dict | dettonville.utils.to_key_value(
+        quote=True, quote_char=\\"'\\") }}"
   vars:
     my_dict:
       API_KEY: secret123
@@ -92,25 +95,22 @@ EXAMPLES = """
   # Z_KEY=last
 """
 
-
 __metaclass__ = type
 
 
 def to_key_value(
-    data, separator='=', joiner='\n', quote=False, quote_char='"', sort_keys=False
-):
-    """
-    Converts a dictionary to a flat string of key=value pairs.
-    :param separator: String used to separate key and value (default: '=')
-    :param joiner: String used to join lines (default: '\n')
-    :param quote: Boolean to enable/disable quoting values
-    :param quote_char: The character to use for quoting (default: ")
-    :param sort_keys: Boolean to sort keys in alphanumeric order (default: False)
-    """
+    data,
+    separator: str = '=',
+    joiner: str = '\n',
+    quote: bool = False,
+    quote_char: str = '"',
+    sort_keys: bool = False,
+) -> Any:
     if not isinstance(data, dict):
         return data
 
-    # Use sorted keys if sort_keys is True, otherwise use standard dictionary ordering
+    # Use sorted keys if sort_keys is True, otherwise use standard
+    # dictionary ordering
     keys = sorted(data.keys()) if sort_keys else data.keys()
 
     lines = []
@@ -124,4 +124,17 @@ def to_key_value(
 
 class FilterModule(object):
     def filters(self):
-        return {'to_key_value': to_key_value}
+        return {'to_key_value': self.to_key_value}
+
+    @staticmethod
+    def to_key_value(
+        data: Any,
+        separator: str = '=',
+        joiner: str = '\n',
+        quote: bool = False,
+        quote_char: str = '"',
+        sort_keys: bool = False,
+    ) -> str:
+        return to_key_value(
+            data, separator, joiner, quote, quote_char, sort_keys
+        )

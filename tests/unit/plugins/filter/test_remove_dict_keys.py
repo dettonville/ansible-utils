@@ -3,10 +3,13 @@
 Unit tests for the remove_sensitive_keys filter.
 """
 
+# noinspection PyPackageRequirements
 import pytest
-from ansible_collections.dettonville.utils.plugins.filter.remove_sensitive_keys import (
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.filter.remove_sensitive_keys import (  # noqa: E501
     FilterModule,
-)  # Adjust import path as needed
+)
 
 
 @pytest.fixture
@@ -92,7 +95,9 @@ def test_remove_nested_list(filter_module):
             [{"nested_password": "nested"}],
         ]
     }
-    result = filter_module.remove_sensitive_keys(input_obj, key_patterns=patterns)
+    result = filter_module.remove_sensitive_keys(
+        input_obj, key_patterns=patterns
+    )
     assert "password" not in result["top"][0]["level1"]
     assert result["top"][1] == "string"
     assert "nested_password" not in result["top"][2][0]
@@ -129,7 +134,11 @@ def test_no_patterns(filter_module):
 
 def test_non_matching_keys(filter_module, default_patterns):
     """Test that non-matching keys are unchanged."""
-    input_dict = {"username": "admin", "description": "some desc", "password": "secret"}
+    input_dict = {
+        "username": "admin",
+        "description": "some desc",
+        "password": "secret",
+    }
     result = filter_module.remove_sensitive_keys(input_dict)
     assert result["username"] == "admin"
     assert result["description"] == "some desc"
@@ -148,7 +157,8 @@ def test_empty_input(filter_module):
 
 
 def test_primitive_values(filter_module):
-    """Test that primitive values (non-container) are handled correctly (only if key matches)."""
+    """Test that primitive values (non-container) are handled correctly
+    (only if key matches)."""
     input_dict = {"password": "secret", "number": 123, "bool": True}
     result = filter_module.remove_sensitive_keys(
         input_dict, key_patterns=["(?i).*password.*"]

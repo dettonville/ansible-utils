@@ -10,7 +10,7 @@
 - name: "Set test_object"
   ignore_errors: true
   ansible.builtin.set_fact:
-    test_object: 
+    test_object:
       {{ __test_data.test_object | to_nice_yaml(indent=2) | indent(6) }}
 
 - name: "Run test on {{ __test_component__collection }}.{{ __test_component }}"

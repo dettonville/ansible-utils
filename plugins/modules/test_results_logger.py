@@ -24,7 +24,7 @@ options:
       type: path
     test_results_file:
       description:
-        - Path to store test suite test results using internal YAML format. 
+        - Path to store test suite test results using internal YAML format.
       required: false
       type: path
       default: 'test-logger-results.yml'
@@ -36,12 +36,12 @@ options:
       default: 'junit-report.xml'
     test_case_base_dir:
       description:
-          - Base directory that test case files are located as specified in the O(test_case_file_prefix). 
+          - Base directory that test case files are located as specified in the O(test_case_file_prefix).
       required: true
       type: path
     test_suite_list:
       description:
-          - List of test suite directories located in the O(test_case_base_dir). 
+          - List of test suite directories located in the O(test_case_base_dir).
           - Each test suite directory is set as the test_suite_id in the results dictionary
       required: false
       type: list
@@ -52,7 +52,7 @@ options:
         - finds list of test case files where file names match specified prefix.
         - must define a prefix to set/derived the test_case_id (e.g., '(prefix)(test_case_id)\.yml').
         - If child directories exist in O(test_case_base_dir), the `test_suite_id` is set to respective parent directory.
-        - the 'test_suite_id' is set using the parent directory for each test case file in the O(test_case_base_dir). 
+        - the 'test_suite_id' is set using the parent directory for each test case file in the O(test_case_base_dir).
         - See examples for more details.
       required: false
       default: 'testcase_'
@@ -164,7 +164,9 @@ message:
     description: Status message for update
     type: str
     returned: always
-    sample: "The test_junit_report_file has been created successfully at /foo/bar/junit-report.xml"
+    sample: >-
+      "The test_junit_report_file has been created successfully
+      at /foo/bar/junit-report.xml"
 failed:
     description: True if update failed
     type: bool
@@ -178,16 +180,19 @@ changed:
 
 import logging
 import pprint
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule
 
 try:
     from module_utils.test_results_logger import TestResultsLogger
 except ImportError:
     try:
+        # noinspection PyPackageRequirements
         from ansible.module_utils.test_results_logger import TestResultsLogger
     except ImportError:
-        # noinspection PyUnresolvedReferences
-        from ansible_collections.dettonville.utils.plugins.module_utils.test_results_logger import (
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
+        from ansible_collections.dettonville.utils.plugins.module_utils.test_results_logger import (  # noqa: E501
             TestResultsLogger,
         )
 
@@ -202,12 +207,14 @@ except ImportError:
 #
 # test_case_assertions = dict(
 #     test_assertion_id=dict(required=True, type="str"),
-#     test_assertion_item=dict(required=True, type="dict", options=test_assertion_detail),
+#     test_assertion_item=dict(required=True, type="dict",
+#       options=test_assertion_detail),
 # )
 #
 # test_case_detail = dict(
 #     properties=dict(required=False, type="dict"),
-#     assertions=dict(required=True, type="dict", options=test_case_assertions),
+#     assertions=dict(required=True, type="dict",
+#       options=test_case_assertions),
 #     error=dict(required=False, type="bool", default=False),
 #     failed=dict(required=False, type="bool", default=False),
 #     skipped=dict(required=False, type="bool", default=False),
@@ -215,7 +222,8 @@ except ImportError:
 #
 # test_cases = dict(
 #     test_case_id=dict(required=True, type="str"),
-#     test_case_item=dict(required=True, type="dict", options=test_case_detail),
+#     test_case_item=dict(required=True, type="dict",
+#       options=test_case_detail),
 # )
 #
 # test_suite_detail = dict(
@@ -225,22 +233,26 @@ except ImportError:
 #
 # test_suite = dict(
 #     test_suite_id=dict(required=True, type="str"),
-#     test_suite_item=dict(required=True, type="dict", options=test_suite_detail),
+#     test_suite_item=dict(required=True, type="dict",
+#       options=test_suite_detail)
 # )
 
 # test_suites = dict(
 #     required=False,
 #     type="dict",
 #     options=dict(
-#         name=dict(required=True, type="str"), value=dict(required=True, type="dict")
-#     ),
+#         name=dict(required=True, type="str"),
+#         value=dict(required=True, type="dict")
+#     )
 # )
 
 # define available arguments/parameters a user can pass to the module
 argument_spec = dict(
     test_results_dir=dict(required=True, type="path"),
     test_case_base_dir=dict(required=True, type="path"),
-    test_case_file_prefix=dict(required=False, type="str", default="testcase_"),
+    test_case_file_prefix=dict(
+        required=False, type="str", default="testcase_"
+    ),
     test_case_file_regex=dict(required=False, type="str"),
     test_case_id_capture_regex=dict(required=False, type="str"),
     test_results_file=dict(
@@ -249,17 +261,23 @@ argument_spec = dict(
     test_junit_report_file=dict(
         required=False, type="path", default="junit-report.xml"
     ),
-    test_suite_list=dict(required=False, type="list", elements="str", default=list()),
+    test_suite_list=dict(
+        required=False, type="list", elements="str", default=list()
+    ),
     test_results=dict(type="dict", aliases=["results"], required=False),
     logging_level=dict(
-        type="str", choices=["NOTSET", "DEBUG", "INFO", "ERROR"], default="INFO"
+        type="str",
+        choices=["NOTSET", "DEBUG", "INFO", "ERROR"],
+        default="INFO",
     ),
 )
 
 
 # ref: https://docs.ansible.com/ansible/latest/dev_guide/testing_units_modules.html#restructuring-modules-to-enable-testing-module-set-up-and-other-processes
 def setup_module_object():
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
     return module
 
 
@@ -274,9 +292,11 @@ def run_module():
     module = setup_module_object()
 
     # ref: https://stackoverflow.com/questions/678236/how-do-i-get-the-filename-without-the-extension-from-a-path-in-python
-    # module_filename = os.path.splitext(os.path.basename(os.path.realpath(__file__)))[0]
+    # module_filename = os.path.splitext(
+    #   os.path.basename(os.path.realpath(__file__)))[0]
     # log_prefix = "%s():" % module_filename
 
+    # noinspection PyProtectedMember
     module_name = module._name
     log_prefix = "%s():" % module_name
     # module_fqcn = module_name.rsplit('.', 1)[0]

@@ -23,41 +23,41 @@
     test_case_results: "{{ __test_component__report_results.test_components[__test_component]['test_cases'][__test_case_id] }}"
     test_case_results_detailed: "{{ __test_component__report_results_detailed.test_components[__test_component]['test_cases'][__test_case_id] }}"
 
-- name: "{{ __test_component__log_save_component_report }} Save test case results to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save test case results to {{
     __test_component__test_file_results_dir }}/{{ __test_component__report_results_file }}"
 #  when: not __test_data.test_expected.failed|d(False)|bool
   ansible.builtin.copy:
     content: "{{ {'test_results': __test_case_results} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_path }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_dir }}/{{ __test_component__report_results_file }}"
     mode: "0644"
 
-- name: "{{ __test_component__log_save_component_report }} Save test case results to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save test case results to {{
     __test_component__test_file_results_dir }}/{{ __test_component__report_results_detailed_file }}"
   ansible.builtin.copy:
     content: "{{ {'test_results': __test_case_results_detailed} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_path }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_dir }}/{{ __test_component__report_results_detailed_file }}"
     mode: "0644"
 
-- name: "{{ __test_component__log_save_component_report }} Check if {{ 
+- name: "{{ __test_component__log_save_component_report }} Check if {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }} exists"
   no_log: true
   ansible.builtin.stat:
-    path: "{{ __test_component__test_base_path }}/{{ 
+    path: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }}"
   register: file_result
 
-- name: "{{ __test_component__log_save_component_report }} Get content from {{ 
+- name: "{{ __test_component__log_save_component_report }} Get content from {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }}"
   when: file_result.stat.exists
   block:
 
-    - name: "{{ __test_component__log_save_component_report }} Read content from {{ 
+    - name: "{{ __test_component__log_save_component_report }} Read content from {{
         __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_path }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{
           __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }}"
       register: test_report_content
 
@@ -70,7 +70,7 @@
       no_log: true
       ansible.builtin.set_fact:
         __test_component__report_results_last: "{{
-          __test_component__report_results_file_content.test_results.test_components[__test_component]['test_cases'] 
+          __test_component__report_results_file_content.test_results.test_components[__test_component]['test_cases']
           | d({}) }}"
 
     - name: "{{ __test_component__log_save_component_report }} Display __test_component__report_results_last"
@@ -78,13 +78,13 @@
         var: __test_component__report_results_last
         verbosity: 2
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Init __test_component__report_results_last_minus_current_test"
       no_log: true
       ansible.builtin.set_fact:
         __test_component__report_results_last_minus_current_test: {}
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Set __test_component__report_results_last_minus_current_test"
       when: item.key not in [__test_case_id]
       no_log: true
@@ -93,13 +93,13 @@
           __test_component__report_results_last_minus_current_test|d({}) | combine({item.key: item.value}) }}"
       with_dict: "{{ __test_component__report_results_last }}"
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Display __test_component__report_results_last_minus_current_test"
       ansible.builtin.debug:
         var: __test_component__report_results_last_minus_current_test
         verbosity: 2
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Merge test results into __test_component__report_results"
       no_log: true
       ansible.builtin.set_fact:
@@ -107,32 +107,32 @@
           __test_component: { 'test_cases': __test_component__report_results_last_minus_current_test } } }
           | combine(__test_component__report_results, recursive=True) }}"
 
-- name: "{{ __test_component__log_save_component_report }} Check if {{ 
+- name: "{{ __test_component__log_save_component_report }} Check if {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }} exists"
   no_log: true
   ansible.builtin.stat:
-    path: "{{ __test_component__test_base_path }}/{{ 
+    path: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }}"
   register: file_detailed_result
 
-- name: "{{ __test_component__log_save_component_report 
-    }} Get content from {{ __test_component__test_file_results_base_dir }}/{{ 
+- name: "{{ __test_component__log_save_component_report
+    }} Get content from {{ __test_component__test_file_results_base_dir }}/{{
     __test_component__report_results_detailed_file }}"
   when: file_detailed_result.stat.exists
   block:
 
-    - name: "{{ __test_component__log_save_component_report }} Read content from {{ 
+    - name: "{{ __test_component__log_save_component_report }} Read content from {{
         __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_path }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{
           __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }}"
       register: test_report_content_detailed
 
     - name: "{{ __test_component__log_save_component_report }} Set __test_component__report_results_file_content_detailed"
       no_log: true
       ansible.builtin.set_fact:
-        __test_component__report_results_file_content_detailed: "{{ 
+        __test_component__report_results_file_content_detailed: "{{
           test_report_content_detailed.content | b64decode | from_yaml }}"
 
     - name: "{{ __test_component__log_save_component_report }} Initialize __test_component__report_detailed_results_last"
@@ -146,12 +146,12 @@
         var: __test_component__report_detailed_results_last
         verbosity: 2
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Init __test_component__report_detailed_results_last_minus_current_test"
       ansible.builtin.set_fact:
         __test_component__report_detailed_results_last_minus_current_test: {}
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Set __test_component__report_detailed_results_last_minus_current_test"
       when: item.key not in [__test_case_id]
       no_log: true
@@ -160,7 +160,7 @@
           __test_component__report_detailed_results_last_minus_current_test|d({}) | combine({item.key: item.value}) }}"
       with_dict: "{{ __test_component__report_detailed_results_last }}"
 
-    - name: "{{ __test_component__log_save_component_report 
+    - name: "{{ __test_component__log_save_component_report
         }} Merge test results into __test_component__report_results_detailed"
       no_log: true
       ansible.builtin.set_fact:
@@ -173,7 +173,7 @@
     var: __test_component__report_results
     verbosity: 2
 
-- name: "{{ __test_component__log_save_component_report 
+- name: "{{ __test_component__log_save_component_report
     }} Flatten results to __test_component__report_results_flattened"
   no_log: true
   ansible.builtin.set_fact:
@@ -237,12 +237,12 @@
   no_log: true
   ansible.builtin.set_fact:
     __test_component__report_results: "{{ __test_component__report_results
-      | combine( __test_component__info, { 'test_components': { 
+      | combine( __test_component__info, { 'test_components': {
         __test_component: {
           'properties': __test_component__info } } },
       recursive=True ) }}"
     __test_component__report_results_detailed: "{{ __test_component__report_results_detailed
-      | combine( __test_component__info, { 'test_components': { 
+      | combine( __test_component__info, { 'test_components': {
         __test_component: {
           'properties': __test_component__info } } },
       recursive=True ) }}"
@@ -252,19 +252,19 @@
     var: __test_component__report_results
     verbosity: 1
 
-- name: "{{ __test_component__log_save_component_report }} Save test report results to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save test report results to {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }}"
   ansible.builtin.copy:
     content: "{{ {'test_results': __test_component__report_results} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_path }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_file }}"
     mode: "0644"
 
-- name: "{{ __test_component__log_save_component_report }} Save test report detailed results to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save test report detailed results to {{
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }}"
   ansible.builtin.copy:
     content: "{{ {'test_results': __test_component__report_results_detailed} | to_nice_yaml(indent=2) }}"
-    dest: "{{ __test_component__test_base_path }}/{{ 
+    dest: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_detailed_file }}"
     mode: "0644"
 
@@ -272,7 +272,7 @@
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_csv }}"
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_case_id') }}"
-    file: "{{ __test_component__test_base_path }}/{{ 
+    file: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_csv }}"
     format: "csv"
 
@@ -280,11 +280,11 @@
     __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_md }}"
   dettonville.utils.export_dicts:
     export_list: "{{ __test_component__report_results_flattened | dettonville.utils.sort_dict_list('test_case_id') }}"
-    file: "{{ __test_component__test_base_path }}/{{ 
+    file: "{{ __test_component__test_base_path }}/{{
       __test_component__test_file_results_base_dir }}/{{ __test_component__report_results_md }}"
     format: "md"
 
-- name: "{{ __test_component__log_save_component_report }} Save component README.md to {{ 
+- name: "{{ __test_component__log_save_component_report }} Save component README.md to {{
     __test_component__test_base_path }}/{{ __test_component__test_file_results_base_dir }}/README.md"
   ansible.builtin.template:
     src: "readme-component-results.md.j2"

@@ -68,7 +68,7 @@
     - test-vars.yml
   tasks:
     ## ref: https://stackoverflow.com/questions/53264221/in-ansible-how-to-filter-a-dictionary-based-on-regex-pattern-on-the-keys
-    - name: "Display host variables - excluding sensitive and/or global scope keys 
+    - name: "Display host variables - excluding sensitive and/or global scope keys
              (e.g., `.*vault.*`, '.*private_key.*', 'groups', '.*password.*', etc)"
       ansible.builtin.debug:
         var: hostvars[inventory_hostname] | dict2items

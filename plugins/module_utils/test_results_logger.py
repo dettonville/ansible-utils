@@ -3,26 +3,25 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 # ref: https://github.com/kyrus/python-junit-xml
-import os
-import sys
-import re
-import codecs
 import logging
-import warnings
+import os
+import re
+import sys
 import traceback
-
+import warnings
+import xml.dom.minidom
+import xml.etree.ElementTree as eTree
 from collections import defaultdict
-from ansible.module_utils.common.text.converters import to_text
-from ansible.module_utils.basic import missing_required_lib
+from functools import singledispatchmethod
 
 # from collections import OrderedDict
-
 from glob import glob
 
-import xml.etree.ElementTree as ET
-import xml.dom.minidom
+# noinspection PyPackageRequirements
+from ansible.module_utils.basic import missing_required_lib
 
-from functools import singledispatchmethod
+# noinspection PyPackageRequirements
+from ansible.module_utils.common.text.converters import to_text
 
 # ref: https://stackoverflow.com/questions/47382227/python-yaml-update-preserving-order-and-comments
 # ref: https://github.com/ansible/ansible/issues/74383#issuecomment-824884558
@@ -33,12 +32,14 @@ try:
 
     yaml = ruamel.yaml.YAML()
 
-    # prevent line wrapping since different versions handle it differently leading to test compare results issues
+    # prevent line wrapping since different versions handle it differently
+    # leading to test compare results issues
     # make large using big enough value to prevent line-wrap
     # ref:
     # https://stackoverflow.com/questions/42170709/prevent-long-lines-getting-wrapped-in-ruamel-yaml
     yaml.width = 4096
 
+    # noinspection PyUnresolvedReferences
     CM = ruamel.yaml.comments.CommentedMap
 
     # ref: https://yaml.readthedocs.io/en/latest/
@@ -47,7 +48,8 @@ try:
     # https://stackoverflow.com/questions/54378220/declare-data-type-to-ruamel-yaml-so-that-it-can-represent-serialize-it
     @yaml.register_class
     class TestCase(object):
-        """A JUnit test case with a result and possibly some stdout or stderr"""
+        """A JUnit test case with a result and possibly some stdout
+        or stderr"""
 
         def __init__(
             self,
@@ -100,6 +102,7 @@ try:
         def from_yaml(cls, constructor, node):
             test_case = TestCase(name="")
             yield test_case
+            # noinspection PyUnresolvedReferences
             data = ruamel.yaml.CommentedMap()
             constructor.construct_mapping(node, maptyp=data, deep=True)
             for k, v in data.items():
@@ -125,7 +128,9 @@ try:
                 if error_type:
                     self.errors[0]["type"] = error_type
 
-        def add_failure_info(self, message=None, output=None, failure_type=None):
+        def add_failure_info(
+            self, message=None, output=None, failure_type=None
+        ):
             """Adds a failure message, output, or both to the test case"""
             failure = dict(message=message, output=output, type=failure_type)
             # failure = {}
@@ -164,11 +169,16 @@ try:
 
         def is_failure(self):
             """returns true if this test case is a failure"""
-            return sum(1 for f in self.failures if f["message"] or f["output"]) > 0
+            return (
+                sum(1 for f in self.failures if f["message"] or f["output"])
+                > 0
+            )
 
         def is_error(self):
             """returns true if this test case is an error"""
-            return sum(1 for e in self.errors if e["message"] or e["output"]) > 0
+            return (
+                sum(1 for e in self.errors if e["message"] or e["output"]) > 0
+            )
 
         def is_skipped(self):
             """returns true if this test case has been skipped"""
@@ -178,7 +188,8 @@ try:
     class TestSuite(object):
         """
         Suite of test cases.
-        Can handle unicode strings or binary strings if their encoding is provided.
+        Can handle unicode strings or binary strings if their encoding
+        is provided.
         """
 
         def __init__(
@@ -186,7 +197,7 @@ try:
             name,
             test_cases=None,
             hostname=None,
-            id=None,
+            suite_id=None,
             package=None,
             timestamp=None,
             properties=None,
@@ -201,7 +212,8 @@ try:
                 test_cases = dict()
             if not isinstance(test_cases, dict):
                 raise TypeError(
-                    "test_cases must be a dict of test cases {test_case_id: test_case}"
+                    "test_cases must be a dict of test cases "
+                    "{test_case_id: test_case}"
                 )
 
             # if not test_cases:
@@ -209,11 +221,12 @@ try:
             # try:
             #     type(test_cases) is OrderedDict
             # except TypeError:
-            #     raise TypeError("test_cases must be a OrderedDict of test cases {test_case_id: test_case}")
+            #     raise TypeError("test_cases must be a OrderedDict of
+            #     test cases {test_case_id: test_case}")
             self.test_cases = test_cases
             self.timestamp = timestamp
             self.hostname = hostname
-            self.id = id
+            self.id = suite_id
             self.package = package
             self.file = file
             self.log = log
@@ -234,12 +247,18 @@ try:
         # ref:
         # https://stackoverflow.com/questions/43627405/understanding-getitem-method-in-python#43627975
         def __setitem__(self, test_case_id: str, test_case: TestCase):
-            log_prefix = "%s.__setitem__(%s):" % (self.__class__.__name__, test_case_id)
+            log_prefix = "%s.__setitem__(%s):" % (
+                self.__class__.__name__,
+                test_case_id,
+            )
             logging.debug("%s SET %s", log_prefix, PrettyLog(test_case))
             return self.test_cases.update({test_case_id: test_case})
 
         def __getitem__(self, test_case_id: str) -> TestCase:
-            log_prefix = "%s.__getitem__(%s):" % (self.__class__.__name__, test_case_id)
+            log_prefix = "%s.__getitem__(%s):" % (
+                self.__class__.__name__,
+                test_case_id,
+            )
             test_case: TestCase = self.test_cases[test_case_id]
             logging.debug("%s GET %s", log_prefix, PrettyLog(test_case))
             return test_case
@@ -251,15 +270,17 @@ try:
         def from_yaml(cls, constructor, node):
             test_suite = TestSuite(name="")
             yield test_suite
+            # noinspection PyUnresolvedReferences
             data = ruamel.yaml.CommentedMap()
             constructor.construct_mapping(node, maptyp=data, deep=True)
             for k, v in data.items():
                 setattr(test_suite, k, v)
 
-        def build_xml_doc(self, encoding=None) -> ET.Element:
+        def build_xml_doc(self, encoding=None) -> eTree.Element:
             """
             Builds the XML document for the JUnit test suite.
-            Produces clean unicode strings and decodes non-unicode with the help of encoding.
+            Produces clean unicode strings and decodes non-unicode with
+            the help of encoding.
             @param encoding: Used to decode encoded strings.
             @return: XML document with unicode string elements
             """
@@ -291,17 +312,27 @@ try:
             )
             test_suite_attributes["tests"] = str(len(self.test_cases))
             test_suite_attributes["time"] = str(
-                sum(c.elapsed_sec for c in self.test_cases.values() if c.elapsed_sec)
+                sum(
+                    c.elapsed_sec
+                    for c in self.test_cases.values()
+                    if c.elapsed_sec
+                )
             )
 
             if self.hostname:
-                test_suite_attributes["hostname"] = decode(self.hostname, encoding)
+                test_suite_attributes["hostname"] = decode(
+                    self.hostname, encoding
+                )
             if self.id:
                 test_suite_attributes["id"] = decode(self.id, encoding)
             if self.package:
-                test_suite_attributes["package"] = decode(self.package, encoding)
+                test_suite_attributes["package"] = decode(
+                    self.package, encoding
+                )
             if self.timestamp:
-                test_suite_attributes["timestamp"] = decode(self.timestamp, encoding)
+                test_suite_attributes["timestamp"] = decode(
+                    self.timestamp, encoding
+                )
             if self.file:
                 test_suite_attributes["file"] = decode(self.file, encoding)
             if self.log:
@@ -309,35 +340,44 @@ try:
             if self.url:
                 test_suite_attributes["url"] = decode(self.url, encoding)
 
-            xml_element = ET.Element("testsuite", test_suite_attributes)
+            xml_element = eTree.Element("testsuite", test_suite_attributes)
 
             # add any properties
             if self.properties:
-                props_element = ET.SubElement(xml_element, "properties")
+                props_element = eTree.SubElement(xml_element, "properties")
                 for k, v in self.properties.items():
-                    attrs = dict(name=decode(k, encoding), value=decode(v, encoding))
-                    # attrs = {"name": decode(k, encoding), "value": decode(v, encoding)}
-                    ET.SubElement(props_element, "property", attrs)
+                    attrs = dict(
+                        name=decode(k, encoding), value=decode(v, encoding)
+                    )
+                    # attrs = {"name": decode(k, encoding), "value":
+                    # decode(v, encoding)}
+                    eTree.SubElement(props_element, "property", attrs)
 
             # add test suite stdout
             if self.stdout:
-                stdout_element = ET.SubElement(xml_element, "system-out")
+                stdout_element = eTree.SubElement(xml_element, "system-out")
                 stdout_element.text = decode(self.stdout, encoding)
 
             # add test suite stderr
             if self.stderr:
-                stderr_element = ET.SubElement(xml_element, "system-err")
+                stderr_element = eTree.SubElement(xml_element, "system-err")
                 stderr_element.text = decode(self.stderr, encoding)
 
             # test cases
             for _test_case in self.test_cases.values():
                 test_case_attributes = dict()
-                test_case_attributes["name"] = decode(_test_case.name, encoding)
+                test_case_attributes["name"] = decode(
+                    _test_case.name, encoding
+                )
                 if _test_case.assertions:
                     # Number of assertions in the test case
-                    test_case_attributes["assertions"] = "%d" % _test_case.assertions
+                    test_case_attributes["assertions"] = (
+                        "%d" % _test_case.assertions
+                    )
                 if _test_case.elapsed_sec:
-                    test_case_attributes["time"] = "%f" % _test_case.elapsed_sec
+                    test_case_attributes["time"] = (
+                        "%f" % _test_case.elapsed_sec
+                    )
                 if _test_case.timestamp:
                     test_case_attributes["timestamp"] = decode(
                         _test_case.timestamp, encoding
@@ -347,33 +387,46 @@ try:
                         _test_case.classname, encoding
                     )
                 if _test_case.status:
-                    test_case_attributes["status"] = decode(_test_case.status, encoding)
+                    test_case_attributes["status"] = decode(
+                        _test_case.status, encoding
+                    )
                 if _test_case.category:
                     test_case_attributes["class"] = decode(
                         _test_case.category, encoding
                     )
                 if _test_case.file:
-                    test_case_attributes["file"] = decode(_test_case.file, encoding)
+                    test_case_attributes["file"] = decode(
+                        _test_case.file, encoding
+                    )
                 if _test_case.line:
-                    test_case_attributes["line"] = decode(_test_case.line, encoding)
+                    test_case_attributes["line"] = decode(
+                        _test_case.line, encoding
+                    )
                 if _test_case.log:
-                    test_case_attributes["log"] = decode(_test_case.log, encoding)
+                    test_case_attributes["log"] = decode(
+                        _test_case.log, encoding
+                    )
                 if _test_case.url:
-                    test_case_attributes["url"] = decode(_test_case.url, encoding)
+                    test_case_attributes["url"] = decode(
+                        _test_case.url, encoding
+                    )
 
-                test_case_element = ET.SubElement(
+                test_case_element = eTree.SubElement(
                     xml_element, "testcase", test_case_attributes
                 )
 
                 # add any properties
                 if _test_case.properties:
-                    props_element = ET.SubElement(test_case_element, "properties")
+                    props_element = eTree.SubElement(
+                        test_case_element, "properties"
+                    )
                     for k, v in _test_case.properties.items():
                         attrs = dict(
                             name=decode(k, encoding), value=decode(v, encoding)
                         )
-                        # attrs = {"name": decode(k, encoding), "value": decode(v, encoding)}
-                        ET.SubElement(props_element, "property", attrs)
+                        # attrs = {"name": decode(k, encoding), "value":
+                        # decode(v, encoding)}
+                        eTree.SubElement(props_element, "property", attrs)
 
                 # failures
                 for failure in _test_case.failures:
@@ -381,12 +434,16 @@ try:
                         attrs = dict(type="failure")
                         # attrs = {"type": "failure"}
                         if failure["message"]:
-                            attrs["message"] = decode(failure["message"], encoding)
+                            attrs["message"] = decode(
+                                failure["message"], encoding
+                            )
                         if failure["type"]:
                             attrs["type"] = decode(failure["type"], encoding)
-                        failure_element = ET.Element("failure", attrs)
+                        failure_element = eTree.Element("failure", attrs)
                         if failure["output"]:
-                            failure_element.text = decode(failure["output"], encoding)
+                            failure_element.text = decode(
+                                failure["output"], encoding
+                            )
                         test_case_element.append(failure_element)
 
                 # errors
@@ -395,12 +452,16 @@ try:
                         attrs = dict(type="error")
                         # attrs = {"type": "error"}
                         if error["message"]:
-                            attrs["message"] = decode(error["message"], encoding)
+                            attrs["message"] = decode(
+                                error["message"], encoding
+                            )
                         if error["type"]:
                             attrs["type"] = decode(error["type"], encoding)
-                        error_element = ET.Element("error", attrs)
+                        error_element = eTree.Element("error", attrs)
                         if error["output"]:
-                            error_element.text = decode(error["output"], encoding)
+                            error_element.text = decode(
+                                error["output"], encoding
+                            )
                         test_case_element.append(error_element)
 
                 # skippeds
@@ -409,20 +470,22 @@ try:
                     # attrs = {"type": "skipped"}
                     if skipped["message"]:
                         attrs["message"] = decode(skipped["message"], encoding)
-                    skipped_element = ET.Element("skipped", attrs)
+                    skipped_element = eTree.Element("skipped", attrs)
                     if skipped["output"]:
-                        skipped_element.text = decode(skipped["output"], encoding)
+                        skipped_element.text = decode(
+                            skipped["output"], encoding
+                        )
                     test_case_element.append(skipped_element)
 
                 # test stdout
                 if _test_case.stdout:
-                    stdout_element = ET.Element("system-out")
+                    stdout_element = eTree.Element("system-out")
                     stdout_element.text = decode(_test_case.stdout, encoding)
                     test_case_element.append(stdout_element)
 
                 # test stderr
                 if _test_case.stderr:
-                    stderr_element = ET.Element("system-err")
+                    stderr_element = eTree.Element("system-err")
                     stderr_element.text = decode(_test_case.stderr, encoding)
                     test_case_element.append(stderr_element)
 
@@ -436,14 +499,15 @@ try:
             @return: unicode string
             """
             warnings.warn(
-                "Testsuite.to_xml_string is deprecated. It will be removed in version 2.0.0. "
+                "Testsuite.to_xml_string is deprecated. It will be "
+                "removed in version 2.0.0. "
                 "Use function to_xml_report_string",
                 DeprecationWarning,
+                stacklevel=2,
             )
             return to_xml_report_string(test_suites, prettyprint, encoding)
 
         def update(self, test_case: TestCase):
-            log_prefix = "%s.update():" % self.__class__.__name__
             return self.test_cases.update({test_case.name: test_case})
 
     # ref:
@@ -464,16 +528,24 @@ try:
                 type(test_suites),
             )
             logging.info(
-                "%s unsupported test_suites type: %s", log_prefix, type(test_suites)
+                "%s unsupported test_suites type: %s",
+                log_prefix,
+                type(test_suites),
             )
-            raise ValueError(f"unsupported test_suites type: {type(test_suites)}")
+            raise ValueError(
+                f"unsupported test_suites type: {type(test_suites)}"
+            )
 
         # https://realpython.com/python-multiple-constructors/
         @__init__.register(object)
         def _from_object(self, obj):
-            log_prefix = "%s._from_object(%s):" % (self.__class__.__name__, type(obj))
+            log_prefix = "%s._from_object(%s):" % (
+                self.__class__.__name__,
+                type(obj),
+            )
             logging.debug(
-                "%s test_suites type: %s not handled - so initialized to default empty dict",
+                "%s test_suites type: %s not handled - so initialized "
+                "to default empty dict",
                 log_prefix,
                 type(obj),
             )
@@ -485,7 +557,8 @@ try:
         def _from_list(self, test_suites_list: list[TestSuite]):
             log_prefix = "%s._from_list():" % self.__class__.__name__
             logging.debug(
-                "%s test_suites type: initialize with specified list", log_prefix
+                "%s test_suites type: initialize with specified list",
+                log_prefix,
             )
             # self.test_suites = OrderedDict()
             self.test_suites = dict()
@@ -534,7 +607,9 @@ try:
             )
             logging.debug("%s test_suite_id=%s", log_prefix, test_suite_id)
             logging.debug(
-                "%s self.test_suites=%s", log_prefix, PrettyLog(self.test_suites)
+                "%s self.test_suites=%s",
+                log_prefix,
+                PrettyLog(self.test_suites),
             )
             test_suite: TestSuite = self.test_suites[test_suite_id]
             logging.debug("%s GET %s", log_prefix, PrettyLog(test_suite))
@@ -544,13 +619,13 @@ try:
         def from_yaml(cls, constructor, node):
             test_suites = TestSuites()
             yield test_suites
+            # noinspection PyUnresolvedReferences
             data = ruamel.yaml.CommentedMap()
             constructor.construct_mapping(node, maptyp=data, deep=True)
             for k, v in data.items():
                 setattr(test_suites, k, v)
 
         def update(self, test_suite: TestSuite):
-            log_prefix = "%s.update():" % self.__class__.__name__
             return self.test_suites.update({test_suite.name: test_suite})
 
         def to_xml_report_string(
@@ -561,7 +636,7 @@ try:
         ):
             log_prefix = "%s.to_xml_report_string():" % self.__class__.__name__
 
-            xml_element = ET.Element("testsuites")
+            xml_element = eTree.Element("testsuites")
             attributes = defaultdict(int)
 
             for ts in self.test_suites.values():
@@ -590,22 +665,29 @@ try:
                 # https://stackoverflow.com/questions/25338817/sorting-xml-in-python-etree
                 xml_sort_children(xml_element, attr=sort_attr)
 
-            xml_string = ET.tostring(xml_element, encoding=encoding)
+            xml_string = eTree.tostring(xml_element, encoding=encoding)
             # is encoded now
-            xml_string = _clean_illegal_xml_chars(
+            decoded_xml_string = (
                 xml_string.decode(encoding or "utf-8")
+                if isinstance(xml_string, bytes)
+                else xml_string
             )
+            xml_string = _clean_illegal_xml_chars(decoded_xml_string)
             # is unicode now
 
             if prettyprint:
                 # minidom.parseString() works just on correctly encoded binary
                 # strings
-                xml_string = xml_string.encode(encoding or "utf-8")
-                xml_string = xml.dom.minidom.parseString(xml_string)
+                xml_bytes = (
+                    xml_string.encode(encoding or "utf-8")
+                    if isinstance(xml_string, str)
+                    else xml_string
+                )
+                dom_obj = xml.dom.minidom.parseString(xml_bytes)
                 # toprettyxml() produces unicode if no encoding is being passed
                 # or binary string with an encoding
-                xml_string = xml_string.toprettyxml(encoding=encoding)
-                if encoding:
+                xml_string = dom_obj.toprettyxml(encoding=encoding)
+                if encoding and isinstance(xml_string, bytes):
                     xml_string = xml_string.decode(encoding)
                 # is unicode now
             return xml_string
@@ -623,7 +705,9 @@ try:
                 self.__class__.__name__,
                 type(test_suites),
             )
-            logging.info("%s test_suites type: %s", log_prefix, type(test_suites))
+            logging.info(
+                "%s test_suites type: %s", log_prefix, type(test_suites)
+            )
             if test_suites:
                 logging.info(
                     "%s invoking super.init() for test_suites type: %s",
@@ -635,17 +719,23 @@ try:
                 super(TestSuites, self).__init__(test_suites)
                 # super(TestSuite, self).__init__(test_suites)
             else:
-                logging.info("%s setting test_suites to empty dict", log_prefix)
+                logging.info(
+                    "%s setting test_suites to empty dict", log_prefix
+                )
                 # self.test_suites = OrderedDict()
                 self.test_suites = dict()
 
 except ImportError as imp_exc:
+    ruamel = None
+    yaml = None
     YAML_IMPORT_ERROR = imp_exc
 else:
     YAML_IMPORT_ERROR = None
 
-# noinspection PyUnresolvedReferences
-from ansible_collections.dettonville.utils.plugins.module_utils.utils import PrettyLog
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.module_utils.utils import (
+    PrettyLog,
+)
 
 unichr = chr
 
@@ -714,6 +804,7 @@ def decode(var, encoding):
     #         ret = unicode(var)  # noqa: F821
     # else:
     #     ret = str(var)
+    unused_encoding = encoding  # noqa: F841
     ret = str(var)
     return ret
 
@@ -728,12 +819,13 @@ def yaml_sort_keys(data, level: int = 0, reverse_sort: str = False):
     # ref:
     # https://stackoverflow.com/questions/33311258/python-check-if-variable-isinstance-of-any-type-in-list
     if isinstance(data, (TestSuites, TestSuite)):
+        res = dict()
         if isinstance(data, TestSuites):
             res = TestSuites()
         if isinstance(data, TestSuite):
             res = TestSuite(name=data.name)
-        if isinstance(data, dict):
-            res = dict()
+        # if isinstance(data, dict):
+        #     res = dict()
 
         sorted_keys = sorted(list(data.keys()))
         if reverse_sort:
@@ -748,17 +840,19 @@ def yaml_sort_keys(data, level: int = 0, reverse_sort: str = False):
     if isinstance(data, list):
         for idx, elem in enumerate(data):
             logging.debug("%s sorting %s", log_prefix, PrettyLog(elem))
-            data[idx] = yaml_sort_keys(elem, level=level + 1, reverse_sort=reverse_sort)
+            data[idx] = yaml_sort_keys(
+                elem, level=level + 1, reverse_sort=reverse_sort
+            )
     return data
 
 
-def xml_get_node_key(node: ET.Element, attr: dict = None):
+def xml_get_node_key(node: eTree.Element, attr: str = None):
     """Return the sorting key of an xml node
     using tag and attributes
     """
     if attr is None:
         return "%s" % node.tag + ":".join(
-            [node.get(attr) for attr in sorted(node.attrib)]
+            [node.get(a) for a in sorted(node.attrib)]
         )
     if attr in node.attrib:
         return "%s:%s" % (node.tag, node.get(attr))
@@ -766,7 +860,7 @@ def xml_get_node_key(node: ET.Element, attr: dict = None):
 
 
 # ref: https://stackoverflow.com/questions/25338817/sorting-xml-in-python-etree
-def xml_sort_children(node: ET.Element, attr: dict = None):
+def xml_sort_children(node: eTree.Element, attr: str = None):
     """Sort children along tag and given attribute.
     if attr is None, sort along all attributes"""
     if not isinstance(node.tag, str):  # PYTHON 2: use basestring instead
@@ -776,8 +870,8 @@ def xml_sort_children(node: ET.Element, attr: dict = None):
     # sort child along attr
     node[:] = sorted(node, key=lambda child: xml_get_node_key(child, attr))
     # and recurse
-    for child in node:
-        xml_sort_children(child, attr)
+    for ch in node:
+        xml_sort_children(ch, attr)
 
 
 # def to_xml_report_string(test_suites: list[TestSuite], prettyprint:
@@ -787,13 +881,18 @@ def xml_sort_children(node: ET.Element, attr: dict = None):
 def to_xml_report_string(test_suites, prettyprint=True, encoding=None):
     # if not isinstance(test_suites, dict):
     #     raise TypeError(
-    #         "test_suites must be a dict of test suites {test_suite_id: test_suite}"
+    #         "test_suites must be a dict of test suites
+    #         {test_suite_id: test_suite}"
     #     )
 
-    return test_suites.to_xml_report_string(prettyprint=prettyprint, encoding=encoding)
+    return test_suites.to_xml_report_string(
+        prettyprint=prettyprint, encoding=encoding
+    )
 
 
-def to_xml_report_file(file_descriptor, test_suites, prettyprint=True, encoding=None):
+def to_xml_report_file(
+    file_descriptor, test_suites, prettyprint=True, encoding=None
+):
     """
     Writes the JUnit XML document to a file.
     """
@@ -809,7 +908,7 @@ def _clean_illegal_xml_chars(string_to_clean):
     """
     Removes any illegal unicode characters from the given XML string.
 
-    @see: http://stackoverflow.com/questions/1707890/fast-way-to-filter-illegal-xml-unicode-chars-in-python
+    @see: https://stackoverflow.com/questions/1707890/fast-way-to-filter-illegal-xml-unicode-chars-in-python
     """
 
     illegal_unichrs = [
@@ -851,16 +950,20 @@ def _clean_illegal_xml_chars(string_to_clean):
 class TestResultsLogger:
     def __init__(self, module):
         self.module = module
+        # noinspection PyProtectedMember
         self.module_name = module._name
         self.module_fqcn = self.module_name.rsplit(".", 1)[0]
 
         if YAML_IMPORT_ERROR:
             module.fail_json(
-                msg=missing_required_lib("ruamel.yaml"), exception=YAML_IMPORT_ERROR
+                msg=missing_required_lib("ruamel.yaml"),
+                exception=YAML_IMPORT_ERROR,
             )
 
         log_prefix = "%s.init():" % self.__class__.__name__
-        self.loglevel = self.module.params.get("logging_level") or _LOGLEVEL_DEFAULT
+        self.loglevel = (
+            self.module.params.get("logging_level") or _LOGLEVEL_DEFAULT
+        )
         logging.basicConfig(level=self.loglevel)
         self.log = logging.getLogger()
 
@@ -871,7 +974,8 @@ class TestResultsLogger:
         self.log.debug("%s module_fqcn => %s", log_prefix, self.module_fqcn)
 
         self.test_junit_report_file = (
-            self.module.params.get("test_junit_report_file") or _LOGLEVEL_DEFAULT
+            self.module.params.get("test_junit_report_file")
+            or _LOGLEVEL_DEFAULT
         )
 
         # ref:
@@ -888,13 +992,23 @@ class TestResultsLogger:
         self.log = logging.getLogger()
 
         self.test_case_base_dir = self.module.params.get("test_case_base_dir")
-        self.test_case_file_prefix = self.module.params.get("test_case_file_prefix")
+        self.test_case_file_prefix = self.module.params.get(
+            "test_case_file_prefix"
+        )
         self.test_results_dir = self.module.params.get("test_results_dir")
         self.test_results_file = self.module.params.get("test_results_file")
-        self.test_junit_report_file = self.module.params.get("test_junit_report_file")
+        self.test_junit_report_file = self.module.params.get(
+            "test_junit_report_file"
+        )
+
+        self.test_suite_list = None
+        self.test_case_file_regex = None
+        self.test_case_id_capture_regex = None
 
         self.log.info(
-            "%s self.test_case_base_dir => %s", log_prefix, self.test_case_base_dir
+            "%s self.test_case_base_dir => %s",
+            log_prefix,
+            self.test_case_base_dir,
         )
         self.log.info(
             "%s self.test_case_file_prefix => %s",
@@ -905,7 +1019,9 @@ class TestResultsLogger:
             "%s self.test_results_dir => %s", log_prefix, self.test_results_dir
         )
         self.log.info(
-            "%s self.test_results_file => %s", log_prefix, self.test_results_file
+            "%s self.test_results_file => %s",
+            log_prefix,
+            self.test_results_file,
         )
         self.log.info(
             "%s self.test_junit_report_file => %s",
@@ -932,13 +1048,16 @@ class TestResultsLogger:
                 self.module.fail_json(
                     status_code=-1,
                     msg=(
-                        "%s Error occurred.\n*** when attempting to create test_results_dir=%s\n%s"
+                        "%s Error occurred.\n*** when attempting to create "
+                        "test_results_dir=%s\n%s"
                         % (log_prefix, self.test_results_dir, to_text(e))
                     ),
                 )
 
         self.test_suite_list = self.module.params.get("test_suite_list")
-        self.test_case_file_regex = self.module.params.get("test_case_file_regex")
+        self.test_case_file_regex = self.module.params.get(
+            "test_case_file_regex"
+        )
         self.test_case_id_capture_regex = self.module.params.get(
             "test_case_id_capture_regex"
         )
@@ -947,11 +1066,15 @@ class TestResultsLogger:
             self.test_case_file_regex = "%s*.yml" % self.test_case_file_prefix
 
         if not self.test_case_id_capture_regex:
-            self.test_case_id_capture_regex = "%s(.*?).yml" % self.test_case_file_prefix
+            self.test_case_id_capture_regex = (
+                "%s(.*?).yml" % self.test_case_file_prefix
+            )
 
         if not self.test_suite_list:
             self.test_suite_list = [
-                f.name for f in os.scandir(self.test_case_base_dir) if f.is_dir()
+                f.name
+                for f in os.scandir(self.test_case_base_dir)
+                if f.is_dir()
             ]
             logging.debug(
                 "%s test_suite_list initialized with scanned dirs => %s",
@@ -971,30 +1094,41 @@ class TestResultsLogger:
         test_suites: TestSuites = TestSuites()
         for test_suite_id in self.test_suite_list:
             test_suite = TestSuite(test_suite_id)
-            # test_suite_vars_dir = os.path.join(self.test_case_base_dir, test_suite_id)
+            # test_suite_vars_dir = os.path.join(self.test_case_base_dir,
+            # test_suite_id)
             test_suite_vars_dir = os.path.join(
                 self.test_case_base_dir, test_suite_id, "**"
             )
-            logging.debug("%s test_suite_vars_dir=%s", log_prefix, test_suite_vars_dir)
+            logging.debug(
+                "%s test_suite_vars_dir=%s", log_prefix, test_suite_vars_dir
+            )
 
             # ref:
             # https://stackoverflow.com/questions/2186525/how-to-use-to-find-files-recursively#2186565
             test_var_files = list(
                 glob(
-                    os.path.join(test_suite_vars_dir, self.test_case_file_regex),
+                    os.path.join(
+                        test_suite_vars_dir, self.test_case_file_regex
+                    ),
                     recursive=True,
                 )
             )
-            logging.debug("%s test_var_files=%s", log_prefix, PrettyLog(test_var_files))
+            logging.debug(
+                "%s test_var_files=%s", log_prefix, PrettyLog(test_var_files)
+            )
 
             for test_case_file in test_var_files:
-                logging.debug("%s test_case_file=%s", log_prefix, test_case_file)
+                logging.debug(
+                    "%s test_case_file=%s", log_prefix, test_case_file
+                )
                 test_case_id = re.findall(
                     self.test_case_id_capture_regex, str(test_case_file)
                 )[0]
                 logging.debug("%s test_case_id=%s", log_prefix, test_case_id)
 
-                test_case = TestCase(name=test_case_id, classname=test_suite_id)
+                test_case = TestCase(
+                    name=test_case_id, classname=test_suite_id
+                )
                 test_case.add_skipped_info(
                     output="test_suite_id:test_case_id=%s:%s skipped"
                     % (test_suite_id, test_case_id)
@@ -1002,7 +1136,9 @@ class TestResultsLogger:
 
                 test_suite.update(test_case)
 
-            logging.debug("%s test_suite=%s", log_prefix, PrettyLog(test_suite))
+            logging.debug(
+                "%s test_suite=%s", log_prefix, PrettyLog(test_suite)
+            )
             test_suites.update(test_suite)
 
         logging.debug("%s test_suites=%s", log_prefix, PrettyLog(test_suites))
@@ -1012,8 +1148,12 @@ class TestResultsLogger:
         log_prefix = "%s.update_test_results():" % self.__class__.__name__
 
         if test_results:
-            self.log.debug("%s test_results=%s", log_prefix, PrettyLog(test_results))
-            for test_suite_id, test_suite_data in test_results["test_suites"].items():
+            self.log.debug(
+                "%s test_results=%s", log_prefix, PrettyLog(test_results)
+            )
+            for test_suite_id, test_suite_data in test_results[
+                "test_suites"
+            ].items():
                 test_cases = test_suite_data["test_cases"]
 
                 # test_suite = self.test_suites.get(test_suite_id)
@@ -1023,7 +1163,9 @@ class TestResultsLogger:
                     test_suite.properties = test_suite_properties
 
                 for test_case_id, test_case_data in test_cases.items():
-                    test_case = TestCase(name=test_case_id, classname=test_suite_id)
+                    test_case = TestCase(
+                        name=test_case_id, classname=test_suite_id
+                    )
 
                     if "properties" in test_case_data:
                         test_case_properties = test_case_data["properties"]
@@ -1031,11 +1173,17 @@ class TestResultsLogger:
 
                         if "test_job_link" in test_case_properties:
                             if test_case_properties["test_job_link"]:
-                                test_case.url = test_case_properties["test_job_link"]
+                                test_case.url = test_case_properties[
+                                    "test_job_link"
+                                ]
 
                         if "assertions" in test_case_properties:
-                            test_case_assertions = test_case_properties["assertions"]
-                            test_case.assertions = len(test_case_assertions.keys())
+                            test_case_assertions = test_case_properties[
+                                "assertions"
+                            ]
+                            test_case.assertions = len(
+                                test_case_assertions.keys()
+                            )
 
                             for (
                                 test_case_assertion_id,
@@ -1056,17 +1204,27 @@ class TestResultsLogger:
                                     )
 
                     if "failures" in test_case_data:
-                        test_case.add_failure_info(output=test_case_data["failures"])
+                        test_case.add_failure_info(
+                            output=test_case_data["failures"]
+                        )
                     if "errors" in test_case_data:
-                        test_case.add_error_info(output=test_case_data["errors"])
+                        test_case.add_error_info(
+                            output=test_case_data["errors"]
+                        )
                     if "skipped" in test_case_data:
-                        test_case.add_skipped_info(output=test_case_data["skipped"])
+                        test_case.add_skipped_info(
+                            output=test_case_data["skipped"]
+                        )
 
-                    self.log.debug("%s update test_suite with test_case", log_prefix)
+                    self.log.debug(
+                        "%s update test_suite with test_case", log_prefix
+                    )
                     test_suite.update(test_case)
 
                 # self.test_suites.update(test_suite)
-                self.log.debug("%s update self.test_suites with test_suite", log_prefix)
+                self.log.debug(
+                    "%s update self.test_suites with test_suite", log_prefix
+                )
                 self.test_suites.update(test_suite)
 
         self.log.debug(
@@ -1087,19 +1245,26 @@ class TestResultsLogger:
             "%s prettyprint=%s, encoding=%s", log_prefix, prettyprint, encoding
         )
 
+        test_junit_report_file_path = None
         try:
             test_junit_report_file_path = os.path.join(
                 self.test_results_dir, self.test_junit_report_file
             )
-            with codecs.open(
-                test_junit_report_file_path, mode="w", encoding=encoding
+            with open(
+                test_junit_report_file_path,
+                mode="w",
+                encoding=encoding or "utf-8",
             ) as f:
                 to_xml_report_file(
-                    f, self.test_suites, prettyprint=prettyprint, encoding=encoding
+                    f,
+                    self.test_suites,
+                    prettyprint=prettyprint,
+                    encoding=encoding,
                 )
         except IOError:
             self.module.fail_json(
-                msg="Unable to create file %s", traceback=traceback.format_exc()
+                msg="Unable to create file %s",
+                traceback=traceback.format_exc(),
             )
 
         result["message"] = (
@@ -1113,7 +1278,9 @@ class TestResultsLogger:
         log_prefix = "%s.dump_yaml():" % self.__class__.__name__
         result = dict(changed=True, failed=False, message="")
 
-        self.log.debug("%s encoding=%s, sort_keys=%s", log_prefix, encoding, sort_keys)
+        self.log.debug(
+            "%s encoding=%s, sort_keys=%s", log_prefix, encoding, sort_keys
+        )
 
         test_results_file_path = os.path.join(
             self.test_results_dir, self.test_results_file
@@ -1121,15 +1288,20 @@ class TestResultsLogger:
 
         self.log.debug("%s yaml dump=%s", log_prefix, test_results_file_path)
         try:
-            with codecs.open(test_results_file_path, mode="w", encoding=encoding) as f:
+            with open(
+                test_results_file_path, mode="w", encoding=encoding or "utf-8"
+            ) as f:
                 if sort_keys:
                     self.log.debug("%s sorting keys", log_prefix)
+                    # noinspection PyUnresolvedReferences
                     yaml.dump(yaml_sort_keys(self.test_suites), f)
                 else:
+                    # noinspection PyUnresolvedReferences
                     yaml.dump(self.test_suites, f)
         except IOError:
             self.module.fail_json(
-                msg="Unable to create file %s", traceback=traceback.format_exc()
+                msg="Unable to create file %s",
+                traceback=traceback.format_exc(),
             )
 
         result["message"] = (

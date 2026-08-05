@@ -3,18 +3,24 @@ authors:
   - Dettonville Development Team
   - Lee Johnson - ljohnson@dettonville.com
 description: Ansible Collection with utilities to ease the management, manipulation, and validation of data within a playbook
-issues: https://github.com/dettonville/ansible-dettonville-utils/issues
+issues: https://github.com/dettonville/ansible-utils/issues
 license_file: LICENSE.md
 name: utils
 namespace: dettonville
 readme: README.md
 repository: https://github.com/dettonville/ansible-utils
 tags:
-  - linux
-  - utilities
-  - data
+  - cicd_utilities
+  - export_dicts
+  - git
+  - git_pacp
+  - infrastructure
   - junit
-  - utils
+  - linux
+  - markdown
+  - tools
+  - utilities
+  - x509_certificate_verify
 version: 2026.7.1
 # https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
 manifest:

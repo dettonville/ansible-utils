@@ -4,6 +4,7 @@ cryptography>=1.5
 distlib
 packaging
 passlib
+pre-commit
 pyopenssl
 pyyaml
 requests

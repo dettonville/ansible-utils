@@ -35,7 +35,7 @@ Ansible collections follow a rigid layout. All modifications must conform to thi
 
 ## 3. Testing & Validation Workflow
 
-You must strictly achieve a green exit status (**Exit Code 0**) on all sanity and unit tests before completing your handoff. 
+You must strictly achieve a green exit status (**Exit Code 0**) on all sanity and unit tests before completing your handoff.
 
 ### A. Execution Environment
 Always use the localized repository test wrapper script `./run-tests.sh` to run execution sweeps. Do NOT attempt to run raw global binaries.

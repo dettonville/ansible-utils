@@ -5,8 +5,14 @@ permissions:
   checks: write
 
 on:
-  workflow_call:  # allow this workflow to be called from other workflows
-  workflow_dispatch:  # allow this workflow to be called from user
+  workflow_call:
+    inputs:
+      collection_path:
+        type: string
+        required: true
+
+env:
+  COLLECTION_PATH: ${{ inputs.collection_path }}
 
 jobs:
   ansible_test_units:
@@ -22,30 +28,15 @@ jobs:
           # oldest versions of each that we support
           - { python: "3.14", ansible: "stable-2.21" }
           - { python: "3.13", ansible: "stable-2.20" }
-#          - { python: "3.13", ansible: "stable-2.19" }
-#          - { python: "3.11", ansible: "stable-2.19" }
+          # - { python: "3.13", ansible: "stable-2.19" }
+          # - { python: "3.11", ansible: "stable-2.19" }
           - { python: "3.12", ansible: "stable-2.16" }
           - { python: "3.10", ansible: "stable-2.16" }
-#          - { python: "3.13", ansible: devel }
+          # - { python: "3.13", ansible: devel }
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # Ensure full repository checkout
-
-      - name: Debug - List repository structure
-        run: |
-          echo "Current working directory:"
-          pwd
-          echo "Listing repository contents:"
-          ls -la
-          echo "Checking for galaxy.yml:"
-          find . -name galaxy.yml -type f || echo "galaxy.yml not found"
-          echo "Repository root contents:"
-          ls -la ./
-          echo "Checking if ansible_collections exists:"
-          ls -la ansible_collections/ || echo "ansible_collections directory not found"
+      - name: Check out
+        uses: actions/checkout@v6
 
       - name: Install Python dependencies
         run: |
@@ -55,16 +46,32 @@ jobs:
             coverage>=7.0.0 \
             pytest-xdist>=3.0.0
 
+      - name: Determine Test Dependencies
+        id: deps
+        run: |
+          if [ -f "requirements.yml" ]; then
+            echo "found_reqs=true" >> "$GITHUB_OUTPUT"
+            echo "deps_file=requirements.yml" >> "$GITHUB_OUTPUT"
+          elif [ -f "tests/requirements.yml" ]; then
+            echo "found_reqs=true" >> "$GITHUB_OUTPUT"
+            echo "deps_file=tests/requirements.yml" >> "$GITHUB_OUTPUT"
+          else
+            echo "found_reqs=false" >> "$GITHUB_OUTPUT"
+            echo "deps_file=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: >-
           Perform unit testing against
           Ansible version ${{ matrix.versions.ansible }}
           under Python ${{ matrix.versions.python }}
         id: ansible_test
-        uses: ansible-community/ansible-test-gh-action@release/v1
+        #        uses: ansible-community/ansible-test-gh-action@release/v1
+        uses: dettonville/ansible-test-gh-action@feature/add-test-deps-file
         with:
           ansible-core-version: ${{ matrix.versions.ansible }}
           target-python-version: ${{ matrix.versions.python }}
           testing-type: units
+          test-deps-file: ${{ steps.deps.outputs.deps_file }}
           pull-request-change-detection: false
           collection-root: .
           pre-test-cmd: >-
@@ -72,9 +79,9 @@ jobs:
 
       - name: Debug - List test output files
         run: |
-          echo "Listing files in ansible_collections/dettonville/utils/tests/output/"
-          find ansible_collections/dettonville/utils/tests/output/ -type f || \
-          echo "No files found in ansible_collections/dettonville/utils/tests/output/"
+          echo "Listing files in ${{ env.COLLECTION_PATH }}/tests/output/"
+          find ${{ env.COLLECTION_PATH }}/tests/output/ -type f || \
+          echo "No files found in ${{ env.COLLECTION_PATH }}/tests/output/"
           echo "ansible-test-gh-action outputs:"
           echo "test-result-files: ${{ steps.ansible_test.outputs.test-result-files }}"
           echo "coverage-report-files: ${{ steps.ansible_test.outputs.coverage-report-files }}"
@@ -85,9 +92,9 @@ jobs:
         with:
           name: test-results-${{ matrix.versions.ansible }}-python-${{ matrix.versions.python }}
           path: |
-            ansible_collections/dettonville/utils/tests/output/junit/
-            ansible_collections/dettonville/utils/tests/output/coverage/
-            ansible_collections/dettonville/utils/tests/output/reports/
+            ${{ env.COLLECTION_PATH }}/tests/output/junit/
+            ${{ env.COLLECTION_PATH }}/tests/output/coverage/
+            ${{ env.COLLECTION_PATH }}/tests/output/reports/
           retention-days: 7
 
       - name: Publish Unit Test Results
@@ -95,17 +102,17 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            ansible_collections/dettonville/utils/tests/output/junit/*.xml
+            ${{ env.COLLECTION_PATH }}/tests/output/junit/*.xml
 
-#      # Optional: Upload coverage to Codecov
-#      - name: Upload coverage to Codecov
-#        if: always()
-#        uses: codecov/codecov-action@v4
-#        with:
-#          files: |
-#            ansible_collections/dettonville/utils/tests/output/reports/coverage=units.xml
-#            ansible_collections/dettonville/utils/tests/output/reports/coverage=units=python-${{ matrix.versions.python }}.xml
-#          token: ${{ secrets.CODECOV_TOKEN }}
+  #      # Optional: Upload coverage to Codecov
+  #      - name: Upload coverage to Codecov
+  #        if: always()
+  #        uses: codecov/codecov-action@v4
+  #        with:
+  #          files: |
+  #            ${{ env.COLLECTION_PATH }}/tests/output/reports/coverage=units.xml
+  #            ${{ env.COLLECTION_PATH }}/tests/output/reports/coverage=units=python-${{ matrix.versions.python }}.xml
+  #          token: ${{ secrets.CODECOV_TOKEN }}
 
   # This job does nothing and is only used for the branch protection
   # or multi-stage CI jobs, like making sure that all tests pass before

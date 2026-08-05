@@ -18,7 +18,8 @@ class GitConfiguration:
         args:
             * module:
                 type: dict()
-                descrition: Ansible basic module utilities and module arguments.
+                description: Ansible basic module utilities
+                and module arguments.
         return:
             * result:
                 type: dict()
@@ -31,7 +32,9 @@ class GitConfiguration:
             if user_config[parameter]:
                 config_parameter = user_config[parameter]
             else:
-                config_parameter = self.module.params.get("user_{0}".format(parameter))
+                config_parameter = self.module.params.get(
+                    "user_{0}".format(parameter)
+                )
 
             if config_parameter:
                 command = [

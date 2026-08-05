@@ -1,0 +1,126 @@
+---
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+ci:
+  autoupdate_schedule: quarterly
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: check-json
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: detect-private-key
+        exclude: |
+          (?x)^(
+              docs/x509_certificate_verify\.md|
+              plugins/modules/x509_certificate_verify\.py|
+              tests/integration/integration_config\.example\.yml
+          )$
+      - id: mixed-line-ending
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: \.sh$
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.2
+    hooks:
+      - id: codespell
+        additional_dependencies: [tomli]
+
+  # Ruff = modern, extremely fast replacement for flake8 + isort + black + many pylint rules
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.1
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # Pylint for deeper static analysis (complements Ruff)
+  - repo: https://github.com/pylint-dev/pylint
+    rev: v4.0.6
+    hooks:
+      - id: pylint
+        args:
+          - --rcfile=.pylintrc
+          - --output-format=colorized
+        # only run on the same paths ansible-test would
+        files: ^(plugins|tests)/
+        # Add extra deps your modules need so pylint can import them
+        # additional_dependencies:
+        #   - ansible-core
+        #   - ...
+#
+#  - repo: https://github.com/ansible/ansible-lint
+#    rev: v26.4.0
+#    hooks:
+#      - id: ansible-lint
+#        # Avoid hard-coded python3.14 requirement in the upstream hook
+#        language_version: python3
+#        additional_dependencies:
+#          - ansible-core>=2.16.0
+#          # required for collection MANIFEST handling
+#          - distlib
+
+  - repo: local
+    hooks:
+      - id: local-ansible-lint
+        name: ansible-lint
+        entry: ansible-lint
+        language: python
+        # Matches Ansible files/roles/plugins to trigger execution only on relevant changes
+        files: ^(plugins)/
+        #        pass_filenames: true
+        language_version: python3
+        additional_dependencies:
+          - ansible-lint==26.4.0
+          - ansible-core>=2.16.0
+          # required for collection MANIFEST handling
+          - distlib
+
+  - repo: local
+    hooks:
+      - id: local-ansible-sanity-validate-modules
+        name: ansible-validate-modules
+        files: ^plugins/
+        entry: ./run-tests.sh sanity --test validate-modules
+        language: script
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: local-ansible-test-units
+        name: ansible-test-units
+        entry: ./run-tests.sh units
+        files: ^(plugins|tests)/
+        language: script
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: local-ansible-sanity
+        name: Run Ansible Sanity Tests
+        entry: ./run-tests.sh sanity
+        files: ^(plugins|tests)/
+        language: script
+        pass_filenames: false
+        # Optional: run via 'pre-commit run local-ansible-sanity' to avoid slow commits
+        stages: [manual]
+
+  - repo: local
+    hooks:
+      - id: update-plugin-docs
+        name: update ansible plugin documentation
+        files: ^(plugins/|galaxy\.yml)
+        entry: bash -c 'if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]; then ./update-plugin-docs.sh; fi'
+        language: system
+        pass_filenames: false
+        always_run: false

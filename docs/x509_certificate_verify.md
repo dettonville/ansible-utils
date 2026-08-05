@@ -1,22 +1,19 @@
 
-
 ```shell
 $ ansible --version
-ansible [core 2.20.1]
+ansible [core 2.21.2]
   config file = None
-  configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
+  configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
-  pyyaml version = 6.0.2 (with libyaml v0.2.5)
-$
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
-$
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -36,7 +33,7 @@ OPTIONS (= indicates it is required):
         type: path
 
 - checkend_value  Number of seconds to check for impending expiration
-                   (used with validate_checkend).
+                   used with validate_checkend.
         default: 86400
         type: int
 
@@ -65,8 +62,8 @@ OPTIONS (= indicates it is required):
                        names that MUST all be present.
                        Validation fails if the EKU extension is
                        missing or any requested value is absent.
-                       Use the short names as commonly displayed
-                       (serverAuth, clientAuth, etc.).
+                       Use the short names as commonly displayed E.g.,
+                       serverAuth, clientAuth, etc..
         choices: [serverAuth, clientAuth, codeSigning, emailProtection, timeStamping, OCSPSigning,
           ipsecEndSystem, ipsecTunnel, ipsecUser, anyExtendedKeyUsage]
         default: null
@@ -133,7 +130,7 @@ OPTIONS (= indicates it is required):
                         `private_key_path'.
                         When providing raw PEM, it should include the
                         `-----BEGIN PRIVATE KEY-----' / `-----BEGIN
-                        RSA PRIVATE KEY-----' etc. markers.
+                        RSA PRIVATE KEY-----' markers.
         default: null
         type: str
 
@@ -153,15 +150,14 @@ OPTIONS (= indicates it is required):
                   Can be provided in **decimal** (e.g. '12345') or
                   **hexadecimal** format.
                   Hex format supports optional `0x' prefix and colon
-                  separators (e.g. '0x3039', '01:23:45:67',
-                  '01234567').
+                  separators E.g., '0x3039', '01:23:45:67', '01234567'
                   The comparison is case-insensitive and ignores
                   colons/spaces.
                   Returned in `details.serial_number' as lowercase hex
-                  with colon separators (e.g.
+                  with colon separators. E.g.,
                   '01:23:45:67:89:ab:cd:ef'), matching `openssl x509
                   -serial' and
-                  `community.crypto.x509_certificate_info'.
+                  `community.crypto.x509_certificate_info'
         default: null
         type: str
 
@@ -196,7 +192,7 @@ OPTIONS (= indicates it is required):
         type: bool
 
 - validate_modulus_match  Verify if the certificate's modulus matches
-                           its direct issuer's modulus.
+                           the direct     issuer's modulus.
                            Only applies to RSA keys.
                            Logic will handle setting this to True if
                            ca_path is present
@@ -214,9 +210,9 @@ NOTES:
         certificates and keys.
       * Exactly one of `path' or `content' must be provided for
         the certificate.
-      * At least one verification property must be provided
-        (e.g., common_name, serial_number,
-        validate_expired=True, or ca_path).
+      * At least one verification property must be provided.
+        E.g., common_name, serial_number, validate_expired=True,
+        or ca_path.
       * Modulus comparison is performed only for RSA keys when
         ca_path is provided.
       * Use ca_path to include the issuer certificate or
@@ -248,17 +244,17 @@ NOTES:
         environment's cryptography installation over system-wide
         paths.
       * Certificate can be provided via `path' or `content'
-        (base64-encoded or as raw PEM/DER string). `content'
-        takes precedence.
+        base64-encoded or as raw PEM/DER string. `content' takes
+        precedence.
       * Private key can be provided via `private_key_path' or
         `private_key_content' (base64-encoded or as raw PEM/DER
         string). `private_key_content' takes precedence.
-      * - **serial_number**: Accepts decimal or hexadecimal
-        input (with or without `0x`/colons). - The returned
-        value in `details.serial_number` is always formatted as
-        lowercase hexadecimal with colon separators   (e.g.
-        `01:23:45:67:89:ab:cd:ef`), matching `openssl x509
-        -serial` and `community.crypto.x509_certificate_info`.
+      * - >-   **serial_number**: Accepts decimal or hexadecimal
+        input with   or without `0x`/colons. - >-   The returned
+        value in `details.serial_number` is always formatted
+        as lowercase hexadecimal with colon separators   E.g.,
+        `01:23:45:67:89:ab:cd:ef`, matching `openssl x509
+        -serial`   and `community.crypto.x509_certificate_info`.
 
 REQUIREMENTS:  cryptography>=1.5, pyopenssl
 
@@ -375,7 +371,7 @@ RETURN VALUES:
           type: str
 
         - key_usage  List of all Key Usage values present in the
-                      certificate (if the extension exists)
+                      certificate if the extension exists.
           elements: str
           type: list
 
@@ -469,7 +465,7 @@ RETURN VALUES:
           type: bool
 
         - is_ca  Whether the certificate has CA:TRUE in
-                  basicConstraints (if validate_is_ca is true).
+                  basicConstraints if validate_is_ca is true.
           type: bool
 
         - key_size  Whether the key size matched.

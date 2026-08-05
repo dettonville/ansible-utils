@@ -15,11 +15,19 @@ author:
   - "Lee Johnson (@lj020326)"
 version_added: "2.20.0"
 description:
-  - This module is intended for idempotent verification of certificates in playbooks.
-  - This module verifies properties of an X.509 certificate, such as common name, organization,
-    serial number, signature algorithm, key algorithm, and expiration status.
-  - This module also can verify the certificate's signature against an issuer CA certificate, chain or CA bundle.
-  - This module also can verify the certificate's private key matches the CA certificate.
+  - >-
+    This module is intended for idempotent verification of certificates
+    in playbooks.
+  - >-
+    This module verifies properties of an X.509 certificate, such as
+    common name, organization, serial number, signature algorithm,
+    key algorithm, and expiration status.
+  - >-
+    This module also can verify the certificate's signature against an
+    issuer CA certificate, chain or CA bundle.
+  - >-
+    This module also can verify the certificate's private key matches
+    the CA certificate.
 options:
   path:
     description:
@@ -29,14 +37,21 @@ options:
   content:
     description:
       - Certificate content to verify.
-      - Can be provided as **base64-encoded string** or as **raw PEM/DER text**.
+      - >-
+        Can be provided as **base64-encoded string** or
+        as **raw PEM/DER text**.
       - If provided, this takes precedence over C(path).
-      - When providing raw PEM, it should include the C(-----BEGIN CERTIFICATE-----) and C(-----END CERTIFICATE-----) markers.
+      - >-
+        When providing raw PEM, it should include the
+        C(-----BEGIN CERTIFICATE-----) and C(-----END CERTIFICATE-----)
+        markers.
     required: false
     type: str
   ca_path:
     description:
-      - Path to the issuer CA certificate, chain file (PEM or DER format), or bundle for signature verification.
+      - >-
+        Path to the issuer CA certificate, chain file (PEM or DER format),
+        or bundle for signature verification.
     required: false
     type: path
   issuer_ca_path:
@@ -46,8 +61,12 @@ options:
     type: path
   private_key_path:
     description:
-      - Path to the private key file to verify against the certificate's public key.
-      - If specified, performs a match test between the certificate's public key and the private key.
+      - >-
+        Path to the private key file to verify against the
+        certificate's public key.
+      - >-
+        If specified, performs a match test between the certificate's
+        public key and the private key.
     type: path
     default: null
   private_key_content:
@@ -55,7 +74,10 @@ options:
       - Private key content to verify against the certificate's public key.
       - Can be provided as **base64-encoded string** or as **raw PEM text**.
       - If provided, this takes precedence over C(private_key_path).
-      - When providing raw PEM, it should include the C(-----BEGIN PRIVATE KEY-----) / C(-----BEGIN RSA PRIVATE KEY-----) etc. markers.
+      - >-
+        When providing raw PEM, it should include the
+        C(-----BEGIN PRIVATE KEY-----) / C(-----BEGIN RSA PRIVATE KEY-----)
+        markers.
     type: str
     required: false
   private_key_password:
@@ -100,18 +122,27 @@ options:
     type: str
   subject_alt_names:
     description:
-      - List of expected Subject Alternative Names (SANs) to verify (DNS names only).
+      - >-
+        List of expected Subject Alternative Names (SANs) to
+        verify (DNS names only).
     required: false
     type: list
     elements: str
   serial_number:
     description:
       - Expected serial number of the certificate to verify against.
-      - Can be provided in **decimal** (e.g. '12345') or **hexadecimal** format.
-      - Hex format supports optional C(0x) prefix and colon separators (e.g. '0x3039', '01:23:45:67', '01234567').
+      - >-
+        Can be provided in **decimal** (e.g. '12345')
+        or **hexadecimal** format.
+      - >-
+        Hex format supports optional C(0x) prefix and colon separators
+        E.g., '0x3039', '01:23:45:67', '01234567'
       - The comparison is case-insensitive and ignores colons/spaces.
-      - Returned in C(details.serial_number) as lowercase hex with colon separators
-        (e.g. '01:23:45:67:89:ab:cd:ef'), matching C(openssl x509 -serial) and C(community.crypto.x509_certificate_info).
+      - >-
+        Returned in C(details.serial_number) as lowercase hex with
+        colon separators.
+        E.g., '01:23:45:67:89:ab:cd:ef'), matching C(openssl x509 -serial)
+        and C(community.crypto.x509_certificate_info)
     required: false
     type: str
   version:
@@ -127,9 +158,13 @@ options:
     type: str
   key_usage:
     description:
-      - List of expected Key Usage values that **must all** be present in the certificate.
+      - >-
+        List of expected Key Usage values that **must all** be present
+        in the certificate.
       - Validation fails if any value from this list is missing.
-      - Case sensitive — use exact names as defined in RFC 5280 / cryptography library.
+      - >-
+        Case sensitive — use exact names as defined in
+        RFC 5280 / cryptography library.
     type: list
     elements: str
     required: false
@@ -146,9 +181,15 @@ options:
     version_added: "2026.1.0"
   extended_key_usage:
     description:
-      - List of Extended Key Usage (EKU) purpose OIDs / names that MUST all be present.
-      - Validation fails if the EKU extension is missing or any requested value is absent.
-      - Use the short names as commonly displayed (serverAuth, clientAuth, etc.).
+      - >-
+        List of Extended Key Usage (EKU) purpose OIDs / names that MUST
+        all be present.
+      - >-
+        Validation fails if the EKU extension is missing
+        or any requested value is absent.
+      - >-
+        Use the short names as commonly displayed
+        E.g., serverAuth, clientAuth, etc..
     type: list
     elements: str
     required: false
@@ -179,7 +220,9 @@ options:
       - key_algo
   key_size:
     description:
-      - Expected key size in bits (e.g., 2048 for RSA/DSA, 256 for EC). Not applicable for Ed25519.
+      - >-
+        Expected key size in bits (e.g., 2048 for RSA/DSA, 256 for EC).
+        Not applicable for Ed25519.
     required: false
     type: int
   validate_expired:
@@ -190,26 +233,34 @@ options:
     default: true
   validate_checkend:
     description:
-      - Whether to check if the certificate expires within a specified time (seconds).
+      - >-
+        Whether to check if the certificate expires within
+        a specified time (seconds).
     required: false
     type: bool
     default: true
   validate_is_ca:
     description:
-      - Verify that the certificate is a CA certificate by checking basicConstraints for CA=TRUE.
+      - >-
+        Verify that the certificate is a CA certificate by
+        checking basicConstraints for CA=TRUE.
     required: false
     type: bool
     default: false
   validate_modulus_match:
     description:
-      - Verify if the certificate's modulus matches its direct issuer's modulus.
+      - >-
+        Verify if the certificate's modulus matches the direct
+            issuer's modulus.
       - Only applies to RSA keys.
       - Logic will handle setting this to True if ca_path is present
       - default is true if ca_path is provided
     type: bool
   checkend_value:
     description:
-      - Number of seconds to check for impending expiration (used with validate_checkend).
+      - >-
+        Number of seconds to check for impending expiration
+        used with validate_checkend.
     required: false
     type: int
     default: 86400
@@ -226,10 +277,16 @@ requirements:
 notes:
   - The module works with both PEM and DER encoded certificates and keys.
   - Exactly one of C(path) or C(content) must be provided for the certificate.
-  - At least one verification property must be provided (e.g., common_name, serial_number, validate_expired=True, or ca_path).
+  - >-
+    At least one verification property must be provided.
+    E.g., common_name, serial_number, validate_expired=True, or ca_path.
   - Modulus comparison is performed only for RSA keys when ca_path is provided.
-  - Use ca_path to include the issuer certificate or certificate chain when verifying certificates.
-  - For serial_number, provide as a decimal or hex string (with or without '0x').
+  - >-
+    Use ca_path to include the issuer certificate or certificate chain
+    when verifying certificates.
+  - >-
+    For serial_number, provide as a decimal or hex string (with or
+    without '0x').
   - For version, specify 1 for v1 or 3 for v3 certificates.
   - The issuer_ca_path parameter is deprecated in favor of ca_path.
   - >
@@ -237,20 +294,40 @@ notes:
     - Web server certificates: C([DigitalSignature, KeyEncipherment])
     - Code signing: C([DigitalSignature])
     - Client authentication: C([DigitalSignature, KeyAgreement])
-  - C(EncipherOnly) and C(DecipherOnly) are only meaningful when C(KeyAgreement) is also present.
-  - When logging_level is set to DEBUG, a full stack trace is logged for any exceptions.
-  - When logging_level is set to DEBUG, additional certificate metadata and environment details are included.
-  - If not_valid_after_utc is unavailable in cryptography >= 41.0.0, an error is logged, indicating a potential library or environment issue.
-  - If cryptography is loaded from a system-wide path in a virtual environment, a warning is logged to indicate potential version mismatches.
-  - The module modifies sys.path to prioritize the virtual environment's cryptography installation over system-wide paths.
-  - Certificate can be provided via C(path) or C(content) (base64-encoded or as raw PEM/DER string). C(content) takes precedence.
+  - >-
+    C(EncipherOnly) and C(DecipherOnly) are only meaningful
+    when C(KeyAgreement) is also present.
+  - >-
+    When logging_level is set to DEBUG, a full stack trace is logged
+    for any exceptions.
+  - >-
+    When logging_level is set to DEBUG, additional certificate metadata
+    and environment details are included.
+  - >-
+    If not_valid_after_utc is unavailable in cryptography >= 41.0.0, an error
+    is logged, indicating a potential library or environment issue.
+  - >-
+    If cryptography is loaded from a system-wide path in a virtual
+    environment, a warning is logged to indicate potential version mismatches.
+  - >-
+    The module modifies sys.path to prioritize the virtual environment's
+    cryptography installation over system-wide paths.
+  - >-
+    Certificate can be provided via C(path) or C(content) base64-encoded
+    or as raw PEM/DER string. C(content) takes precedence.
   - >
-    Private key can be provided via C(private_key_path) or C(private_key_content) (base64-encoded or as raw PEM/DER string).
+    Private key can be provided via C(private_key_path)
+    or C(private_key_content) (base64-encoded or as raw PEM/DER string).
     C(private_key_content) takes precedence.
   - >
-    - **serial_number**: Accepts decimal or hexadecimal input (with or without `0x`/colons).
-    - The returned value in `details.serial_number` is always formatted as lowercase hexadecimal with colon separators
-      (e.g. `01:23:45:67:89:ab:cd:ef`), matching `openssl x509 -serial` and `community.crypto.x509_certificate_info`.
+    - >-
+      **serial_number**: Accepts decimal or hexadecimal input with
+      or without `0x`/colons.
+    - >-
+      The returned value in `details.serial_number` is always formatted
+      as lowercase hexadecimal with colon separators
+      E.g., `01:23:45:67:89:ab:cd:ef`, matching `openssl x509 -serial`
+      and `community.crypto.x509_certificate_info`.
 """
 
 RETURN = r"""
@@ -298,7 +375,8 @@ details:
       description: Email Address of the certificate.
       type: str
     subject_alt_names:
-      description: List of Subject Alternative Names (DNS) from the certificate.
+      description: >-
+        List of Subject Alternative Names (DNS) from the certificate.
       type: list
       elements: str
     serial_number:
@@ -311,7 +389,9 @@ details:
       description: Signature algorithm of the certificate.
       type: str
     key_usage:
-      description: List of all Key Usage values present in the certificate (if the extension exists)
+      description: >-
+        List of all Key Usage values present in the certificate
+        if the extension exists.
       type: list
       elements: str
     key_type:
@@ -376,19 +456,25 @@ verify_results:
       description: Whether the certificate is not expired.
       type: bool
     checkend_valid:
-      description: Whether the certificate does not expire within checkend_value seconds.
+      description: >-
+        Whether the certificate does not expire within checkend_value seconds.
       type: bool
     is_ca:
-      description: Whether the certificate has CA:TRUE in basicConstraints (if validate_is_ca is true).
+      description: >-
+        Whether the certificate has CA:TRUE in basicConstraints
+        if validate_is_ca is true.
       type: bool
     signature_valid:
       description: Whether the signature is valid (if ca_path is provided).
       type: bool
     modulus_match:
-      description: Whether the certificate and issuer CA moduli match (if applicable).
+      description: >-
+        Whether the certificate and issuer CA moduli match (if applicable).
       type: bool
     private_key_match:
-      description: Whether the private key matches the certificate (only if private_key_path or private_key_content provided).
+      description: >-
+        Whether the private key matches the certificate (only if
+        private_key_path or private_key_content provided).
       type: bool
   sample: {
         "common_name": true, "key_size": false, "expiry_valid": true,
@@ -396,12 +482,14 @@ verify_results:
         "modulus_match": true, "subject_alt_names": true
   }
 cert_modulus:
-  description: Modulus of the certificate's public key (hexadecimal, if applicable).
+  description: >-
+    Modulus of the certificate's public key (hexadecimal, if applicable).
   type: str
   returned: when ca_path is provided and the certificate has an RSA key
   sample: "a1b2c3..."
 issuer_modulus:
-  description: Modulus of the issuer CA's public key (hexadecimal, if applicable).
+  description: >-
+    Modulus of the issuer CA's public key (hexadecimal, if applicable).
   type: str
   returned: when ca_path is provided and the issuer certificate has an RSA key
   sample: "a1b2c3..."
@@ -487,6 +575,7 @@ EXAMPLES = r"""
 """
 
 import base64
+import binascii
 import logging
 import os
 import re
@@ -494,7 +583,10 @@ import sys
 import traceback
 from datetime import datetime, timedelta, timezone
 
+# noinspection PyPackageRequirements
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+
+# noinspection PyPackageRequirements
 from ansible.module_utils.common.text.converters import to_native
 
 HAS_CRYPTOGRAPHY = False
@@ -502,24 +594,50 @@ cryptography_version = "0.0.0"
 
 # Handle cryptography imports
 try:
+    # noinspection PyPackageRequirements
     from cryptography import __version__ as cryptography_version
+
+    # noinspection PyPackageRequirements
     from cryptography import x509
+
+    # noinspection PyPackageRequirements
     from cryptography.hazmat.backends import default_backend
+
+    # noinspection PyPackageRequirements
     from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, padding, rsa
+
+    # noinspection PyPackageRequirements
+    from cryptography.hazmat.primitives.asymmetric import (
+        dsa,
+        ec,
+        ed25519,
+        padding,
+        rsa,
+    )
 
     HAS_CRYPTOGRAPHY = True
 except ImportError:
+    cryptography_version = None
+    x509 = None
+    default_backend = None
+    serialization = None
+    dsa = None
+    ec = None
+    ed25519 = None
+    padding = None
+    rsa = None
     HAS_CRYPTOGRAPHY = False
 
 HAS_PYOPENSSL = False
 
 # Handle pyOpenSSL imports
 try:
+    # noinspection PyPackageRequirements
     from OpenSSL import crypto
 
     HAS_PYOPENSSL = True
 except ImportError:
+    crypto = None
     HAS_PYOPENSSL = False
 
 HAS_LIBS = HAS_CRYPTOGRAPHY and HAS_PYOPENSSL
@@ -556,7 +674,6 @@ def _read_cert_file(path):
         with open(path, "rb") as f:
             return f.read()
     except Exception as e:  # pylint: disable=broad-except
-        # raise Exception(f"Failed to read certificate file {path}: {str(e)}") from e
         raise CertificateReadError(
             f"Failed to read certificate file {path}: {str(e)}"
         ) from e
@@ -584,8 +701,9 @@ def _normalize_cert_content(content, is_private_key=False):
     # Otherwise assume it's base64 → try to decode
     try:
         return base64.b64decode(content, validate=True)
-    except Exception as e:  # pylint: disable=broad-except
-        msg = f"Failed to decode {'private_key_content' if is_private_key else 'content'} as base64"
+    except (binascii.Error, TypeError) as e:
+        key_type = "private_key_content" if is_private_key else "content"
+        msg = f"Failed to decode {key_type} as base64"
         # raise Exception(f"{msg}: {to_native(e)}") from e
         raise CertificateProcessError(f"{msg}: {to_native(e)}") from e
 
@@ -595,7 +713,9 @@ def _is_pem_bundle(data):
     if b"-----BEGIN CERTIFICATE-----" not in data:
         return False
     pem_blocks = re.findall(
-        b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL
+        b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----",
+        data,
+        re.DOTALL,
     )
     return len(pem_blocks) > 1
 
@@ -604,10 +724,12 @@ def _load_certificate_chain(data):
     """Load certificate chain from data, returning leaf and chain certs."""
     if _is_pem_bundle(data):
         pem_blocks = re.findall(
-            b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", data, re.DOTALL
+            b"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----",
+            data,
+            re.DOTALL,
         )
         leaf_data = pem_blocks[0]
-        chain_data = b"\n".join(pem_blocks[1:])
+        # chain_data = b"\n".join(pem_blocks[1:])
         leaf = _parse_certificate(leaf_data)
         chain_certs = [_parse_certificate(block) for block in pem_blocks[1:]]
         return leaf, chain_certs
@@ -619,26 +741,33 @@ def _load_certificate_chain(data):
 def _parse_certificate(data):
     """Parse certificate data (PEM or DER format)."""
     try:
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
         cert = x509.load_pem_x509_certificate(data, default_backend())
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
         if not isinstance(cert, x509.Certificate):
+            # noinspection PyStringConversionWithoutDunderMethod
             raise ValueError(
-                f"Parsed certificate is not a valid x509.Certificate object, got {type(cert)}"
+                f"Parsed certificate is not a valid x509.Certificate object, "
+                f"got {type(cert)}"
             )
         return cert
     except ValueError:
         try:
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
             cert = x509.load_der_x509_certificate(data, default_backend())
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
             if not isinstance(cert, x509.Certificate):
+                # noinspection PyStringConversionWithoutDunderMethod
                 raise ValueError(
-                    f"Parsed certificate is not a valid x509.Certificate object, got {type(cert)}"
+                    f"Parsed certificate is not a valid x509.Certificate "
+                    f"object, got {type(cert)}"
                 )
             return cert
         except ValueError as e:
             raise ValueError(
-                "Could not parse certificate. Must be PEM or DER format. Error: {}".format(
-                    str(e)
-                )
-            )
+                "Could not parse certificate. Must be PEM or DER format. "
+                "Error: {}".format(str(e))
+            ) from e
 
 
 def _load_ca_certs(path):
@@ -664,7 +793,7 @@ def _load_ca_certs(path):
     except Exception as e:
         raise Exception(
             "Failed to load CA certificates from {}: {}".format(path, str(e))
-        )
+        ) from e
 
 
 # Function to verify certificate signature
@@ -673,45 +802,52 @@ def _verify_signature(cert, ca_certs, chain_certs=None):
     if chain_certs is None:
         chain_certs = []
     # Try standard chain verification first
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     store = crypto.X509Store()
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     cert_openssl = crypto.load_certificate(
         crypto.FILETYPE_PEM, cert.public_bytes(serialization.Encoding.PEM)
     )
 
     for ca_cert in ca_certs + chain_certs:
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
         ca_openssl = crypto.load_certificate(
-            crypto.FILETYPE_PEM, ca_cert.public_bytes(serialization.Encoding.PEM)
+            crypto.FILETYPE_PEM,
+            ca_cert.public_bytes(serialization.Encoding.PEM),
         )
         store.add_cert(ca_openssl)
     try:
+        # noinspection PyUnresolvedReferences,PyPackageRequirements
         store_ctx = crypto.X509StoreContext(store, cert_openssl)
         store_ctx.verify_certificate()
         return True
-    except (crypto.Error, crypto.X509StoreContextError):
-        # Fallback: Check if any individual cert in the bundle is the direct signer
+    except (crypto.Error, crypto.X509StoreContextError):  # type: ignore
+        # Fallback: Check if any individual cert in the bundle is the
+        # direct signer.
         # This handles cases where the full chain to root isn't in the bundle
         for ca_cert in ca_certs + chain_certs:
             try:
                 public_key = ca_cert.public_key()
                 sig_hash = cert.signature_hash_algorithm
+                # noinspection PyUnresolvedReferences,PyPackageRequirements
                 if isinstance(public_key, rsa.RSAPublicKey):
                     public_key.verify(
                         cert.signature,
                         cert.tbs_certificate_bytes,
-                        padding.PKCS1v15(),
+                        padding.PKCS1v15(),  # type: ignore
                         sig_hash,
                     )
                 elif isinstance(public_key, ec.EllipticCurvePublicKey):
                     public_key.verify(
                         cert.signature,
                         cert.tbs_certificate_bytes,
-                        ec.ECDSA(sig_hash),
+                        ec.ECDSA(sig_hash),  # type: ignore
                     )
                 elif isinstance(public_key, dsa.DSAPublicKey):
                     public_key.verify(
                         cert.signature,
                         cert.tbs_certificate_bytes,
-                        dsa.DSA(cert.signature_hash_algorithm),
+                        dsa.DSA(cert.signature_hash_algorithm),  # type: ignore
                     )
                 elif isinstance(public_key, ed25519.Ed25519PublicKey):
                     public_key.verify(
@@ -729,6 +865,7 @@ def _verify_signature(cert, ca_certs, chain_certs=None):
 
 def _get_modulus(public_key):
     """Get modulus for RSA keys."""
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     if isinstance(public_key, rsa.RSAPublicKey):
         return "{:X}".format(public_key.public_numbers().n)
         # return hex(public_key.public_numbers().n)[2:].upper()
@@ -740,12 +877,12 @@ def verify_private_key_match(cert, priv_key):
     """Verify private key matches cert public key."""
     try:
         pub_cert = cert.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            encoding=serialization.Encoding.PEM,  # type: ignore
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,  # type: ignore
         )
         pub_key = priv_key.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            encoding=serialization.Encoding.PEM,  # type: ignore
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,  # type: ignore
         )
         return pub_cert == pub_key
     except Exception:  # pylint: disable=broad-except
@@ -779,7 +916,7 @@ def main():
             required=False,
             choices=[
                 "DigitalSignature",
-                "NonRepudiation",  # also known as ContentCommitment in some contexts
+                "NonRepudiation",  # aka ContentCommitment in some contexts
                 "KeyEncipherment",
                 "DataEncipherment",
                 "KeyAgreement",
@@ -852,7 +989,8 @@ def main():
     #         sys_path_removed = True
     # if sys_path_removed:
     #     log.debug(
-    #         "Removed system-wide path /usr/lib/python3/dist-packages from sys.path to prioritize virtual environment"
+    #         "Removed system-wide path /usr/lib/python3/dist-packages from "
+    #         "sys.path to prioritize virtual environment"
     #     )
 
     # # Re-import cryptography to ensure virtual environment version is used
@@ -863,14 +1001,17 @@ def main():
     # except ImportError:
     #     HAS_CRYPTOGRAPHY = False
     #     module.fail_json(msg=missing_required_lib(
-    #         "cryptography Python library is required after sys.path adjustment."))
+    #         "cryptography Python library is required after sys.path "
+    #         "adjustment."))
 
     # Log environment details for debugging
     log.debug("Python version: %s", sys.version)
     log.debug("Python executable: %s", sys.executable)
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     log.debug("cryptography module path: %s", os.path.dirname(x509.__file__))
     log.debug(
-        "cryptography runtime version: %s", getattr(x509, "__version__", "Unknown")
+        "cryptography runtime version: %s",
+        getattr(x509, "__version__", "Unknown"),
     )
 
     # Log cryptography version for debugging
@@ -881,7 +1022,8 @@ def main():
     version_parts = [int(part) for part in cryptography_version.split(".")[:3]]
     if version_parts < [36, 0, 0]:
         module.warn(
-            f"Cryptography version {cryptography_version} is below 36.0.0. Some features may not work correctly."
+            f"Cryptography version {cryptography_version} is below 36.0.0. "
+            f"Some features may not work correctly."
         )
 
     cert_path = module.params.get('path')
@@ -890,7 +1032,8 @@ def main():
         module.warn("Both path and content provided; using content.")
     if not content and not cert_path:
         module.fail_json(
-            msg="Exactly one of path or content must be provided for the certificate."
+            msg="Exactly one of path or content must be provided for the "
+            "certificate."
         )
 
     ca_path = module.params.get("ca_path")
@@ -930,16 +1073,25 @@ def main():
         "key_type",
         "key_size",
     ]
-    boolean_properties = ["validate_expired", "validate_checkend", "validate_is_ca"]
+    boolean_properties = [
+        "validate_expired",
+        "validate_checkend",
+        "validate_is_ca",
+    ]
     has_verification = (
-        any(module.params.get(prop) is not None for prop in non_boolean_properties)
+        any(
+            module.params.get(prop) is not None
+            for prop in non_boolean_properties
+        )
         or any(module.params.get(prop) is True for prop in boolean_properties)
         or ca_path is not None
         or private_key_path is not None
         or private_key_content is not None
     )
     if not has_verification:
-        module.fail_json(msg="At least one verification property must be provided.")
+        module.fail_json(
+            msg="At least one verification property must be provided."
+        )
 
     result = {
         "failed": False,
@@ -963,14 +1115,19 @@ def main():
         # Read and parse the certificate or chain
         if content:
             try:
-                cert_data = _normalize_cert_content(content, is_private_key=False)
+                cert_data = _normalize_cert_content(
+                    content, is_private_key=False
+                )
             except Exception as e:
                 module.fail_json(
-                    msg=f"Failed to process certificate content: {to_native(e)}"
+                    msg=f"Failed to process certificate content: "
+                    f"{to_native(e)}"
                 )
         else:
             if not cert_path:
-                module.fail_json(msg="Either 'path' or 'content' must be provided")
+                module.fail_json(
+                    msg="Either 'path' or 'content' must be provided"
+                )
             cert_data = _read_cert_file(cert_path)
 
         if not cert_data:
@@ -1029,37 +1186,39 @@ def main():
 
         # Extract subject attributes
         for attr in cert.subject:
-            if attr.oid == x509.oid.NameOID.COMMON_NAME:
+            if attr.oid == x509.oid.NameOID.COMMON_NAME:  # type: ignore
                 result["details"]["common_name"] = attr.value
-            elif attr.oid == x509.oid.NameOID.ORGANIZATION_NAME:
+            elif attr.oid == x509.oid.NameOID.ORGANIZATION_NAME:  # type: ignore
                 result["details"]["organization"] = attr.value
-            elif attr.oid == x509.oid.NameOID.ORGANIZATIONAL_UNIT_NAME:
+            elif attr.oid == x509.oid.NameOID.ORGANIZATIONAL_UNIT_NAME:  # type: ignore
                 result["details"]["organizational_unit"] = attr.value
-            elif attr.oid == x509.oid.NameOID.COUNTRY_NAME:
+            elif attr.oid == x509.oid.NameOID.COUNTRY_NAME:  # type: ignore
                 result["details"]["country"] = attr.value
-            elif attr.oid == x509.oid.NameOID.STATE_OR_PROVINCE_NAME:
+            elif attr.oid == x509.oid.NameOID.STATE_OR_PROVINCE_NAME:  # type: ignore
                 result["details"]["state_or_province"] = attr.value
-            elif attr.oid == x509.oid.NameOID.LOCALITY_NAME:
+            elif attr.oid == x509.oid.NameOID.LOCALITY_NAME:  # type: ignore
                 result["details"]["locality"] = attr.value
-            elif attr.oid == x509.oid.NameOID.EMAIL_ADDRESS:
+            elif attr.oid == x509.oid.NameOID.EMAIL_ADDRESS:  # type: ignore
                 result["details"]["email_address"] = attr.value
 
         # Extract Subject Alternative Names (DNS only)
         try:
             san_ext = cert.extensions.get_extension_for_oid(
-                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
+                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME  # type: ignore
             )
             if not hasattr(san_ext, 'value'):
-                raise x509.ExtensionNotFound(
+                raise x509.ExtensionNotFound(  # type: ignore
                     "Malformed or missing extension value",
-                    x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME,
+                    x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME,  # type: ignore
                 )
             sans = [
-                str(san.value) for san in san_ext.value if isinstance(san, x509.DNSName)
+                str(san.value)
+                for san in san_ext.value
+                if isinstance(san, x509.DNSName)  # type: ignore
             ]
             result["details"]["subject_alt_names"] = sans
             log.debug("Extracted SANs: %s", sans)
-        except (x509.ExtensionNotFound, AttributeError):
+        except (x509.ExtensionNotFound, AttributeError):  # type: ignore
             log.debug("No Subject Alternative Name extension found")
             result["details"]["subject_alt_names"] = []
         except Exception as e:
@@ -1067,38 +1226,39 @@ def main():
             result["details"]["subject_alt_names"] = []
 
         # Determine key algorithm and size
-        if isinstance(public_key, rsa.RSAPublicKey):
+        if isinstance(public_key, rsa.RSAPublicKey):  # type: ignore
             result["details"]["key_type"] = "rsa"
             result["details"]["key_size"] = public_key.key_size
-        elif isinstance(public_key, ec.EllipticCurvePublicKey):
+        elif isinstance(public_key, ec.EllipticCurvePublicKey):  # type: ignore
             result["details"]["key_type"] = "ec"
             result["details"]["key_size"] = public_key.curve.key_size
-        elif isinstance(public_key, dsa.DSAPublicKey):
+        elif isinstance(public_key, dsa.DSAPublicKey):  # type: ignore
             result["details"]["key_type"] = "dsa"
             result["details"]["key_size"] = public_key.key_size
-        elif isinstance(public_key, ed25519.Ed25519PublicKey):
+        elif isinstance(public_key, ed25519.Ed25519PublicKey):  # type: ignore
             result["details"]["key_type"] = "ed25519"
             result["details"]["key_size"] = None
 
         actual_key_usages = set()
-        has_key_usage_ext = False
+        # has_key_usage_ext = False
 
         try:
             ku_ext = cert.extensions.get_extension_for_oid(
-                x509.oid.ExtensionOID.KEY_USAGE
+                x509.oid.ExtensionOID.KEY_USAGE  # type: ignore
             )
             if not hasattr(ku_ext, 'value'):
-                raise x509.ExtensionNotFound(
+                raise x509.ExtensionNotFound(  # type: ignore
                     "Malformed or missing extension value",
-                    x509.oid.ExtensionOID.KEY_USAGE,
+                    x509.oid.ExtensionOID.KEY_USAGE,  # type: ignore
                 )
-            has_key_usage_ext = True
+            # has_key_usage_ext = True
             log.debug("KeyUsage extension found: %s", ku_ext)
 
             # cryptography KeyUsage object has boolean attributes
             ku = ku_ext.value
             log.debug(
-                "KeyUsage object: digital_signature=%s, key_cert_sign=%s, crl_sign=%s, ...",
+                "KeyUsage object: digital_signature=%s, "
+                "key_cert_sign=%s, crl_sign=%s, ...",
                 ku.digital_signature,
                 ku.key_cert_sign,
                 ku.crl_sign,
@@ -1132,7 +1292,7 @@ def main():
 
             # Fill in details
             result["details"]["key_usage"] = sorted(list(actual_key_usages))
-        except (x509.ExtensionNotFound, AttributeError):
+        except (x509.ExtensionNotFound, AttributeError):  # type: ignore
             result["details"]["key_usage"] = []
             if module.params.get("key_usage"):
                 verify_results["key_usage"] = False
@@ -1147,12 +1307,12 @@ def main():
         actual_ekus = set()
         try:
             eku_ext = cert.extensions.get_extension_for_oid(
-                x509.oid.ExtensionOID.EXTENDED_KEY_USAGE
+                x509.oid.ExtensionOID.EXTENDED_KEY_USAGE  # type: ignore
             )
             if not hasattr(eku_ext, 'value'):
-                raise x509.ExtensionNotFound(
+                raise x509.ExtensionNotFound(  # type: ignore
                     "Malformed or missing extension value",
-                    x509.oid.ExtensionOID.EXTENDED_KEY_USAGE,
+                    x509.oid.ExtensionOID.EXTENDED_KEY_USAGE,  # type: ignore
                 )
             for usage in eku_ext.value:
                 oid = usage.dotted_string
@@ -1172,7 +1332,7 @@ def main():
                 actual_ekus.add(name)
 
             result["details"]["extended_key_usage"] = sorted(list(actual_ekus))
-        except (x509.ExtensionNotFound, AttributeError):
+        except (x509.ExtensionNotFound, AttributeError):  # type: ignore
             result["details"]["extended_key_usage"] = []
             if module.params.get("extended_key_usage"):
                 verify_results["extended_key_usage"] = False
@@ -1252,7 +1412,9 @@ def main():
             verify_results["extended_key_usage"] = len(missing) == 0
 
             if not verify_results["extended_key_usage"]:
-                log.info("Missing Extended Key Usage values: %s", ", ".join(missing))
+                log.info(
+                    "Missing Extended Key Usage values: %s", ", ".join(missing)
+                )
 
         if module.params.get("serial_number"):
             try:
@@ -1278,12 +1440,17 @@ def main():
                             expected_serial_int = int(expected_serial)
                         except ValueError:
                             module.fail_json(
-                                msg="serial_number must be a valid integer (decimal) or hex string (with or without 0x/colons)"
+                                msg="serial_number must be a valid integer "
+                                "(decimal) or hex string (with or without "
+                                "0x/colons)"
                             )
 
                     cert_serial = cert.serial_number  # integer
-                    verify_results["serial_number"] = cert_serial == expected_serial_int
-                    # result["details"]["serial_number_match"] = verify_results["serial_number"]
+                    verify_results["serial_number"] = (
+                        cert_serial == expected_serial_int
+                    )
+                    # result["details"]["serial_number_match"]
+                    # = verify_results["serial_number"]
                     if not verify_results["serial_number"]:
                         log.info(
                             "Serial number mismatch: expected %s, got %s",
@@ -1295,14 +1462,16 @@ def main():
                 #     expected_serial = str(int(expected_serial, 16))
                 # elif not expected_serial.isdigit():
                 #     raise ValueError(
-                #         "Serial number must be a valid decimal or hexadecimal number"
+                #         "Serial number must be a valid decimal or
+                #         "hexadecimal number"
                 #     )
                 # verify_results["serial_number"] = (
                 #     result["details"]["serial_number"] == expected_serial
                 # )
             except ValueError:
                 module.fail_json(
-                    msg="Invalid serial number: {}. Must be a valid decimal or hexadecimal number.".format(
+                    msg="Invalid serial number: {}. Must be a valid decimal "
+                    "or hexadecimal number.".format(
                         module.params.get("serial_number")
                     )
                 )
@@ -1318,12 +1487,16 @@ def main():
             verify_results["key_type"] = result["details"][
                 "key_type"
             ] == module.params.get("key_type")
-        if module.params.get("key_size") and result["details"]["key_type"] != "ed25519":
+        if (
+            module.params.get("key_size")
+            and result["details"]["key_type"] != "ed25519"
+        ):
             verify_results["key_size"] = result["details"][
                 "key_size"
             ] == module.params.get("key_size")
         elif (
-            module.params.get("key_size") and result["details"]["key_type"] == "ed25519"
+            module.params.get("key_size")
+            and result["details"]["key_type"] == "ed25519"
         ):
             # Ed25519 has no key size
             verify_results["key_size"] = True
@@ -1332,19 +1505,19 @@ def main():
         # Is a CA certificate Verification
         # ──────────────────────────────────────────────────────────────
         if module.params.get("validate_is_ca"):
-            is_ca = False
+            # is_ca = False
             try:
                 bc_ext = cert.extensions.get_extension_for_oid(
-                    x509.oid.ExtensionOID.BASIC_CONSTRAINTS
+                    x509.oid.ExtensionOID.BASIC_CONSTRAINTS  # type: ignore
                 )
                 if not hasattr(bc_ext, 'value'):
-                    raise x509.ExtensionNotFound(
+                    raise x509.ExtensionNotFound(  # type: ignore
                         "Malformed or missing extension value",
-                        x509.oid.ExtensionOID.BASIC_CONSTRAINTS,
+                        x509.oid.ExtensionOID.BASIC_CONSTRAINTS,  # type: ignore
                     )
                 is_ca = bc_ext.value.ca
                 log.debug("basicConstraints CA: %s", is_ca)
-            except (x509.ExtensionNotFound, AttributeError):
+            except (x509.ExtensionNotFound, AttributeError):  # type: ignore
                 log.warning("basicConstraints extension not found; not a CA")
                 is_ca = False
             except Exception as e:
@@ -1357,22 +1530,30 @@ def main():
         try:
             not_valid_after = getattr(cert, "not_valid_after_utc", None)
 
-            # If it's a MagicMock (common in tests), it won't be a datetime instance
+            # If it's a MagicMock (common in tests), it won't be a
+            # datetime instance
             if not isinstance(not_valid_after, datetime):
                 not_valid_after = getattr(cert, "not_valid_after", None)
 
             if isinstance(not_valid_after, datetime):
                 if not_valid_after.tzinfo is None:
-                    not_valid_after = not_valid_after.replace(tzinfo=timezone.utc)
+                    not_valid_after = not_valid_after.replace(
+                        tzinfo=timezone.utc
+                    )
             log.debug("Using extracted validity date for expiration check")
         except AttributeError as e:
+            log.warning("handle fallback for exception: %s", to_native(e))
             if version_parts < [41, 0, 0]:
                 log.warning(
-                    "not_valid_after_utc not available in cryptography %s, falling back to not_valid_after",
+                    "not_valid_after_utc not available in cryptography "
+                    "%s, falling back to not_valid_after",
                     cryptography_version,
                 )
             not_valid_after = getattr(cert, "not_valid_after", None)
-            if isinstance(not_valid_after, datetime) and not_valid_after.tzinfo is None:
+            if (
+                isinstance(not_valid_after, datetime)
+                and not_valid_after.tzinfo is None
+            ):
                 not_valid_after = not_valid_after.replace(tzinfo=timezone.utc)
             log.debug("Fallback not_valid_after: %s", not_valid_after)
             # Log additional diagnostics when falling back
@@ -1381,21 +1562,24 @@ def main():
 
         if isinstance(not_valid_after, datetime):
             if module.params.get("validate_expired"):
-                verify_results["expiry_valid"] = not_valid_after >= datetime.now(
-                    timezone.utc
+                verify_results["expiry_valid"] = (
+                    not_valid_after >= datetime.now(timezone.utc)
                 )
             else:
                 verify_results["expiry_valid"] = True
 
             # Check impending expiration
             if module.params.get("validate_checkend"):
-                verify_results["checkend_valid"] = not_valid_after >= datetime.now(
-                    timezone.utc
-                ) + timedelta(seconds=module.params.get("checkend_value"))
+                verify_results["checkend_valid"] = (
+                    not_valid_after
+                    >= datetime.now(timezone.utc)
+                    + timedelta(seconds=module.params.get("checkend_value"))
+                )
             else:
                 verify_results["checkend_valid"] = True
         else:
-            # Fallback for mock objects in tests that don't define expiration dates
+            # Fallback for mock objects in tests that don't define
+            # expiration dates
             verify_results["expiry_valid"] = True
             verify_results["checkend_valid"] = True
 
@@ -1411,10 +1595,11 @@ def main():
                 cert, ca_certs, chain_certs
             )
             # 2. Modulus check logic
-            if isinstance(public_key, rsa.RSAPublicKey) and ca_certs:
+            if isinstance(public_key, rsa.RSAPublicKey) and ca_certs:  # type: ignore
                 cert_modulus = _get_modulus(cert.public_key())
                 result["cert_modulus"] = cert_modulus
-                # result["issuer_modulus"] = _get_modulus(ca_certs[0].public_key())
+                # result["issuer_modulus"] = _get_modulus(
+                #   ca_certs[0].public_key())
                 # verify_results["modulus_match"] = (
                 #     result["cert_modulus"] == result["issuer_modulus"]
                 # )
@@ -1423,14 +1608,16 @@ def main():
 
             # Modulus Match Logic
             if validate_modulus_match and isinstance(
-                cert.public_key(), rsa.RSAPublicKey
+                cert.public_key(),
+                rsa.RSAPublicKey,  # type: ignore
             ):
                 modulus_match = False
-                # cert_modulus = hex(cert.public_key().public_numbers().n)[2:].upper()
+                # cert_modulus = hex(
+                #   cert.public_key().public_numbers().n)[2:].upper()
 
                 # Traverse CA bundle to find the direct issuer by modulus
-                issuer_cert = None
-                issuer_modulus = None
+                # issuer_cert = None
+                # issuer_modulus = None
                 all_trust_certs = ca_certs + chain_certs
                 for ca in all_trust_certs:
                     # Match by Subject DN (Issuer of cert == Subject of CA)
@@ -1439,29 +1626,37 @@ def main():
                     #    modulus_match = (cert_modulus == issuer_modulus)
                     if cert_modulus == issuer_modulus:
                         result["issuer_modulus"] = issuer_modulus
-                        issuer_cert = ca
+                        # issuer_cert = ca
                         modulus_match = True
                         break
 
                 # if issuer_cert:
-                #     if isinstance(issuer_cert.public_key(), rsa.RSAPublicKey):
-                #         issuer_modulus = hex(issuer_cert.public_key().public_numbers().n)[2:].upper()
+                #     if isinstance(issuer_cert.public_key(),
+                #       rsa.RSAPublicKey):
+                #         issuer_modulus = hex(
+                #               issuer_cert.public_key().public_numbers().n
+                #           )[2:].upper()
                 #         modulus_match = (cert_modulus == issuer_modulus)
                 #         if not modulus_match:
-                #             log.error("Modulus mismatch between leaf and direct issuer")
+                #             log.error("Modulus mismatch between leaf "
+                #               "and direct issuer")
                 #     else:
-                #         log.info("Direct issuer found but does not use RSA; skipping modulus match")
+                #         log.info("Direct issuer found but does not use RSA; "
+                #           "skipping modulus match")
                 #         modulus_match = True  # Skip if not RSA
                 # else:
-                #     log.warning("Direct issuer not found in ca_path; skipping modulus match")
-                #     modulus_match = True  # Skip if direct issuer not in bundle
+                #     log.warning("Direct issuer not found in ca_path; "
+                #       "skipping modulus match")
+                #     # Skip if direct issuer not in bundle
+                #     modulus_match = True
 
                 verify_results['modulus_match'] = modulus_match
         # else:
         #     verify_results["signature_valid"] = True
         #     # verify_results["modulus_match"] = True
 
-        # Verify private key match if private_key_path or private_key_content provided
+        # Verify private key match if private_key_path
+        # or private_key_content provided
         if private_key_path or private_key_content:
             private_key_match = False
             private_key_verify_msg = None
@@ -1484,14 +1679,16 @@ def main():
                     key_data = _read_cert_file(private_key_path)
             if key_data is not None:
                 try:
-                    priv_key = serialization.load_pem_private_key(
+                    priv_key = serialization.load_pem_private_key(  # type: ignore
                         key_data,
                         password=private_key_password.encode()
                         if private_key_password
                         else None,
                         backend=default_backend(),
                     )
-                    private_key_match = verify_private_key_match(cert, priv_key)
+                    private_key_match = verify_private_key_match(
+                        cert, priv_key
+                    )
                     if not private_key_match:
                         private_key_verify_msg = (
                             "Private key does not match certificate public key"
@@ -1504,8 +1701,10 @@ def main():
             if private_key_verify_msg:
                 log.info(private_key_verify_msg)
     except (ValueError, CertificateVerifyError) as e:
-        # Handles user argument validations AND our known/wrapped helper exceptions.
-        # These exit cleanly without dumping a noisy stack trace to pytest logs!
+        # Handles user argument validations AND our known/wrapped
+        # helper exceptions.
+        # These exit cleanly without dumping a noisy stack trace to
+        # pytest logs!
         module.fail_json(msg=str(e), failed=True)
     except Exception as e:
         # Avoid logging tracebacks for mock exit exceptions during unit tests

@@ -1,22 +1,19 @@
 
-
 ```shell
 $ ansible --version
-ansible [core 2.20.1]
+ansible [core 2.21.2]
   config file = None
-  configured module search path = [/Users/ljohnson/.ansible/plugins/modules, /usr/share/ansible/plugins/modules]
+  configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/.ansible/collections:/usr/share/ansible/collections
+  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
-  pyyaml version = 6.0.2 (with libyaml v0.2.5)
-$
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
 $ cd ${REPO_DIR}
-$
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.debug_sanitized | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/debug_sanitized.md
-> MODULE dettonville.utils.debug_sanitized (/Users/ljohnson/tmp/_8dDQgK/ansible_collections/dettonville/utils/plugins/modules/debug_sanitized.py)
+> MODULE dettonville.utils.debug_sanitized (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/debug_sanitized.py)
 
   Extends the core behavior of the standard `ansible.builtin.debug'
   module by applying automated sanitization filters prior to
@@ -60,16 +57,24 @@ OPTIONS (= indicates it is required):
 AUTHOR: Lee Johnson (@lj020326)
 
 EXAMPLES:
-- name: Only display this sanitized payload when running with -vv or higher
+- name: >-
+    Only display this sanitized payload when
+    running with -vv or higher
   dettonville.utils.debug_sanitized:
     var: sensitive_service_payload
     verbosity: 2
 
-- name: Print a sanitized message block containing text strings
+- name: >-
+    Print a sanitized message block containing
+    text strings
   dettonville.utils.debug_sanitized:
-    msg: "System connection established with password hidden inside payload"
+    msg: >-
+      System connection established with
+      password hidden inside payload
 
-- name: Render an entire complex dictionary with keys securely hidden
+- name: >-
+    Render an entire complex dictionary with
+    keys securely hidden
   dettonville.utils.debug_sanitized:
     var: my_database_connection_dict
   vars:
@@ -79,7 +84,9 @@ EXAMPLES:
       password: "SuperSecretPassword123!"
       api_key: "am49gnsk301nasd"
 
-- name: Apply additional custom pattern match fields to the debug output
+- name: >-
+    Apply additional custom pattern match
+    fields to the debug output
   dettonville.utils.debug_sanitized:
     var: dynamic_inventory_payload
     additional_key_patterns:

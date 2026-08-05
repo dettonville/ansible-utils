@@ -7,7 +7,7 @@ Please enhance the module to:
     The `fail_json` should NOT occur upon cert property `verification` failures.
 (2) The cert `verification` failures should set `result['valid'] = False` and `result['verify_failed'] = True`.
     Additionally, each `verification` should have a specific key with boolean return value set in a `verify_results` dictionary when tested.
-    E.g., 
+    E.g.,
     `results['failed'] = False`
     `results['valid'] = False`
     `results['verify_failed'] = True`
@@ -19,7 +19,7 @@ Please enhance the module to:
     `results['valid'] = True`
     `results['verify_failed'] = False`
     `verify_results['common_name'] = True`
-    
+
 (3) The module should only set `result['failed'] = True` whenever an unexpected logic exception occurs apart from the `verification` tests in the testing workflow.
 
 
@@ -29,12 +29,12 @@ Please enhance the module to:
 - Only incrementally enhance the unit test file logic in order to achieve the highest test pass rate with lowest regression fail rate
 - Use a `test-driven-development` (`TDD`) approach
 - Use `don't-repeat-yourself` (`DRY`) methods whenever possible
-- The enhancement(s) should pass all existing unit tests to `validate regression feature success`. 
+- The enhancement(s) should pass all existing unit tests to `validate regression feature success`.
 - The enhancement(s) should pass all new feature tests to `validate new feature success`.
 - Only remove test cases if they are acceptably deemed functionally redundant
 - Maintain all unit test functions in alphanumeric sort order facilitating ease of code-difference comparison between versions
-- When enhancing `module_utils` class methods, maintain all class methods in alphanumeric sort order facilitating ease of diff comparison between versions 
+- When enhancing `module_utils` class methods, maintain all class methods in alphanumeric sort order facilitating ease of diff comparison between versions
 - ONLY make minimal/incremental changes made to the existing regression unit tests.
-- In most cases for minor enhancements, it is expected that there should be no or minimal changes to the existing unit tests. 
-- Make the necessary updates to the module README.md to reflect the new argument(s) and feature(s). 
+- In most cases for minor enhancements, it is expected that there should be no or minimal changes to the existing unit tests.
+- Make the necessary updates to the module README.md to reflect the new argument(s) and feature(s).
 - Make sure all module source and unit test file changes sanity-test acceptable.

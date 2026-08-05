@@ -1,16 +1,25 @@
 # -*- coding: utf-8 -*-
 
-import pytest
 from unittest.mock import MagicMock
-from ansible_collections.dettonville.utils.plugins.action.debug_sanitized import (
+
+# noinspection PyPackageRequirements
+import pytest
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from ansible_collections.dettonville.utils.plugins.action.debug_sanitized import (  # noqa: E501
     ActionModule,
 )
 
 
 class MockTemplar:
     def template(self, data):
-        # Simplistic templar mock helper that returns data directly or unpacks mock variables
-        if isinstance(data, str) and data.startswith("{{ ") and data.endswith(" }}"):
+        # Simplistic templar mock helper that returns data
+        # directly or unpacks mock variables
+        if (
+            isinstance(data, str)
+            and data.startswith("{{ ")
+            and data.endswith(" }}")
+        ):
             var_name = data[3:-3].strip()
             if var_name == "my_secret_dict":
                 return {"username": "lee", "password": "dont-log-me"}
@@ -19,7 +28,8 @@ class MockTemplar:
 
 @pytest.fixture
 def action_module():
-    # Construct a flexible MockTask using MagicMock so it satisfies internal Ansible base attribute checks
+    # Construct a flexible MockTask using MagicMock so it satisfies
+    # internal Ansible base attribute checks
     task = MagicMock()
     task.args = {}
     task.async_val = None
@@ -30,7 +40,8 @@ def action_module():
     templar = MockTemplar()
     shared_loader_obj = MagicMock()
 
-    # ActionModule constructor syntax: (task, connection, play_context, loader, templar, shared_loader_obj)
+    # ActionModule constructor syntax:
+    # (task, connection, play_context, loader, templar, shared_loader_obj)
     plugin = ActionModule(
         task, connection, play_context, loader, templar, shared_loader_obj
     )
@@ -38,14 +49,14 @@ def action_module():
 
 
 def test_debug_sanitized_msg_default(action_module):
-    """Verify that default messages fall back to empty string cleanly when no options exist."""
+    """Verify default messages fall back to empty string cleanly."""
     action_module._task.args = {}
     result = action_module.run(task_vars={})
     assert result['msg'] == ""
 
 
 def test_debug_sanitized_mutually_exclusive(action_module):
-    """Verify that passing both msg and var breaks early with a failed status message."""
+    """Verify passing both msg and var breaks early with failure."""
     action_module._task.args = {"msg": "test", "var": "some_var"}
     result = action_module.run(task_vars={})
     assert result['failed'] is True
@@ -53,7 +64,7 @@ def test_debug_sanitized_mutually_exclusive(action_module):
 
 
 def test_debug_sanitized_var_resolution(action_module):
-    """Verify that dynamic complex dictionary lookups get completely redacted via key lookups."""
+    """Verify dynamic complex dictionary lookups get redacted."""
     action_module._task.args = {"var": "my_secret_dict"}
 
     result = action_module.run(task_vars={})
@@ -65,7 +76,7 @@ def test_debug_sanitized_var_resolution(action_module):
 
 
 def test_debug_sanitized_with_custom_additional_patterns(action_module):
-    """Verify that specifying additional key patterns redacts unexpected custom domain metadata."""
+    """Verify specifying additional key patterns redacts metadata."""
     secret_payload = {
         "account_identifier": "id-1",
         "custom_secret_field": "sensitive-data",
@@ -79,4 +90,7 @@ def test_debug_sanitized_with_custom_additional_patterns(action_module):
     result = action_module.run(task_vars={})
     sanitized_output = result["var"]
     assert sanitized_output["account_identifier"] == "id-1"
-    assert sanitized_output["custom_secret_field"] == "<redacted_custom_secret_field>"
+    assert (
+        sanitized_output["custom_secret_field"]
+        == "<redacted_custom_secret_field>"
+    )

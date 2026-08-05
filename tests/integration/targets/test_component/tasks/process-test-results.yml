@@ -159,11 +159,11 @@
   when: not __test_data.test_expected.failed|d(False)|bool
   block:
 
-    - name: "{{ __test_component__log_process_test_results }} Read content from expected test results at {{ 
+    - name: "{{ __test_component__log_process_test_results }} Read content from expected test results at {{
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_expected }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_path }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_expected }}"
       register: __test_expected_results_content
 
@@ -172,11 +172,11 @@
         var: __test_expected_results_content.content | b64decode
         verbosity: 1
 
-    - name: "{{ __test_component__log_process_test_results }} Read content from actual test results at {{ 
+    - name: "{{ __test_component__log_process_test_results }} Read content from actual test results at {{
         __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       no_log: true
       ansible.builtin.slurp:
-        src: "{{ __test_component__test_base_path }}/{{ 
+        src: "{{ __test_component__test_base_path }}/{{
           __test_component__test_file_results_dir }}/{{ __test_component__test_file_results }}"
       register: __test_actual_results_content
 
