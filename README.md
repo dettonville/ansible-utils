@@ -2,22 +2,33 @@
 
 # Dettonville Ansible Utilities Collection
 
+## Table of Contents
+
+* [Summary](#summary)
+* [CI Status](#ci-status)
+* [Requirements](#requirements)
+* [Ansible Version Compatibility](#ansible-version-compatibility)
+* [Included Content](#included-content)
+* [Installing This Collection](#installing-this-collection)
+* [Using This Collection](#using-this-collection)
+* [Contributing to This Collection](#contributing-to-this-collection)
+* [Testing](#testing)
+* [Code of Conduct](#code-of-conduct)
+* [🛡Identity & Maintainer](#-identity--maintainer)
+* [More Information](#more-information)
+
+---
+
+## Summary
+
 The Ansible `dettonville.utils` collection includes plugins and modules that aid management, manipulation, and visibility of data for Ansible playbooks. This collection provides tools to streamline complex workflows, such as certificate validation, data export, and git operations, with a focus on simplicity and reliability.
+
+---
 
 ## CI Status
 
 [![🧪 GitHub Actions CI/CD workflow tests badge]][GHA workflow runs list]
 [![pre-commit.ci status badge]][pre-commit.ci results page]
-
-## Detailed Test / Use Case Examples
-
-The integration tests performed regularly on the main branch **demonstrate use case examples supported by plugins**.
-
-A short/brief description overview of the [tested use cases can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
-
-A summary table of test results for [each module/filter can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/test-results.md).
-
-The [`x509_certificate_verify` module README.md](docs/readme.x509_certificate_verify.md) can be found at [docs/readme.x509_certificate_verify.md](docs/readme.x509_certificate_verify.md).
 
 ## Requirements
 
@@ -80,8 +91,18 @@ collections:
 
 ## Using This Collection
 
-A comprehensive set
-of [tested use cases/examples can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
+A comprehensive set of [tested use cases/examples can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
+
+### Detailed Test / Use Case Examples
+
+The integration tests performed regularly on the main branch **demonstrate use case examples supported by plugins**.
+
+A short/brief description overview of the [tested use cases can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/README.md#testuse-case-example-index).
+
+A summary table of test results for [each module/filter can be found here](https://github.com/dettonville/ansible-test-automation/blob/main/tests/dettonville/utils/main/test-results.md).
+
+The [`x509_certificate_verify` module README.md](docs/readme.x509_certificate_verify.md) can be found at [docs/readme.x509_certificate_verify.md](docs/readme.x509_certificate_verify.md).
+
 
 ### See Also:
 
@@ -102,9 +123,8 @@ See the [Ansible Community Guide](https://docs.ansible.com/ansible/latest/commun
 All releases will meet the following test criteria:
 
 * 100% success for [Unit](https://github.com/dettonville/ansible-utils/blob/main/tests/unit) tests.
-* 100% success for [Sanity](https://docs.ansible.com/ansible/latest/dev_guide/testing/sanity/index.html#all-sanity-tests) tests as
-  part of [ansible-test](https://docs.ansible.com/ansible/latest/dev_guide/testing.html#run-sanity-tests).
-* 100% success for [ansible-lint](https://ansible.readthedocs.io/projects/lint/) allowing only false positives.
+* 100% success for [Sanity](https://docs.ansible.com/ansible/latest/dev_guide/testing/sanity/index.html#all-sanity-tests) tests as part of [ansible-test](https://docs.ansible.com/ansible/latest/dev_guide/testing.html#run-sanity-tests).
+* 100% success for [ansible-lint](https://ansible.readthedocs.io/projects/lint/).
 
 ### Developer Notes
 
@@ -138,9 +158,7 @@ Please read and familiarize yourself with this document.
 - [Dettonville Cloud Infrastructure Services](https://dettonville.org)
 - [Dettonville Git Inventory Collection](https://github.com/dettonville/ansible-git-inventory)
 - [Dettonville LLM Collection](https://github.com/dettonville/ansible-llm)
-- [**Ansible Datacenter Site Example**](https://github.com/lj020326/ansible-datacenter) - An actual datacenter site.yml
-  repository featuring roles that demonstrate
-  practical usage of the collection modules.
+- [**Ansible Datacenter Site Example**](https://github.com/lj020326/ansible-datacenter) - An actual datacenter site.yml repository featuring roles that demonstrate practical usage of the collection modules.
 - [Ansible Collection Overview](https://github.com/ansible-collections/overview)
 - [Ansible User Guide](https://docs.ansible.com/ansible/latest/user_guide/index.html)
 - [Ansible Developer Guide](https://docs.ansible.com/ansible/latest/dev_guide/index.html)
