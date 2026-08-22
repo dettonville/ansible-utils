@@ -1,3 +1,106 @@
+## module > htpasswd
+
+Manage user credentials in an htpasswd file with backup and overwrite support
+
+- [Synopsis](#synopsis)
+- [Parameters](#parameters)
+- [Examples](#examples)
+- [Return Values](#return-values)
+- [CLI Reproducibility & Environment](#cli-reproducibility--environment)
+
+## Synopsis
+
+- Add and remove username/password entries in a password file using htpasswd.
+- Supports managing a single user or a list of users in a single task execution.
+- Supports adding, updating, and removing users using different password encryption algorithms.
+- Adds C(backup) capability before modifying target htpasswd files.
+- Adds C(overwrite) capability to remove residue/unmanaged entries left over from prior runs.
+- Supports standard file attribute management (owner, group, mode, secontext).
+
+## Parameters
+
+| Parameter | Choices / Defaults | Comments |
+| :--- | :--- | :--- |
+| **attributes**<br>`str` |  | The attributes the resulting filesystem object should have. To get supported flags look at the man page for C(chattr) on the target system. This string should contain the attributes in the same order as the one displayed by C(lsattr). The C(=) operator is assumed as default, otherwise C(+) or C(-) operators need to be included in the string.<br><br>*aliases:* `attr` |
+| **backup**<br>`bool` | Default: `false` | Create a backup file including timestamp information before modifying. |
+| **create**<br>`bool` | Default: `true` | Used with C(state=present). If C(true), the file is created if it does not exist. |
+| **group**<br>`str` |  | Name of the group that should own the filesystem object, as would be fed to C(chown). When left unspecified, it uses the current group of the current user unless you are root, in which case it can preserve the previous ownership. Specifying a numeric group name (for example, "1000") will be assumed to be a group ID (GID) and not a group name. To prevent confusion, avoid using purely numeric group names. |
+| **hash_scheme**<br>`str` | Default: `"apr_md5_crypt"` | Encryption algorithm scheme to use when hashing passwords.<br><br>*aliases:* `crypt_scheme` |
+| **mode**<br>`raw` |  | The permissions the resulting filesystem object should have. For those used to C(/usr/bin/chmod) remember that modes are actually octal numbers. You must give Ansible enough information to parse them correctly. For consistent results, quote octal numbers (for example, V('644') or V('1777')) so Ansible receives a string and can do its own conversion from string into number. Adding a leading zero (for example, V(0755)) works sometimes, but can fail in loops and some other circumstances. Giving Ansible a number without following either of these rules will end up with a decimal number which will have unexpected results. As of Ansible 1.8, the mode may be specified as a symbolic mode (for example, V(u+rwx) or V(u=rw,g=r,o=r)). If O(mode) is not specified and the destination filesystem object B(does not) exist, the default C(umask) on the system will be used when setting the mode for the newly created filesystem object. If O(mode) is not specified and the destination filesystem object B(does) exist, the mode of the existing filesystem object will be used. Specifying O(mode) is the best way to ensure filesystem objects are created with the correct permissions. See CVE-2020-1736 for further details. |
+| **name**<br>`str` |  | User name to add, update, or remove. Mutually exclusive with C(user_list). Required when C(user_list) is not provided and C(state=absent) or when adding/updating a single user.<br><br>*aliases:* `username` |
+| **overwrite**<br>`bool` | Default: `false` | When C(true) and C(state=present), purges any entries from the htpasswd file that are not explicitly defined in the task execution. |
+| **owner**<br>`str` |  | Name of the user that should own the filesystem object, as would be fed to C(chown). When left unspecified, it uses the current user unless you are root, in which case it can preserve the previous ownership. Specifying a numeric username (for example, "1000") will be assumed to be a user ID (UID) and not a username. To prevent confusion, avoid using purely numeric usernames. |
+| **password**<br>`str` |  | Password associated with C(name). Required when C(state=present), C(name) is provided, and C(user_list) is not used. |
+| **path**<br>`path / **required**` |  | Path to the htpasswd file.<br><br>*aliases:* `dest, destfile` |
+| **selevel**<br>`str` |  | The level part of the SELinux filesystem object context. This is the MLS/MCS attribute, sometimes known as the C(range). When set to V(_default), it will use the C(level) portion of the policy if available. |
+| **serole**<br>`str` |  | The role part of the SELinux filesystem object context. When set to V(_default), it will use the C(role) portion of the policy if available. |
+| **setype**<br>`str` |  | The type part of the SELinux filesystem object context. When set to V(_default), it will use the C(type) portion of the policy if available. |
+| **seuser**<br>`str` |  | The user part of the SELinux filesystem object context. By default it uses the V(system) policy, where applicable. When set to V(_default), it will use the C(user) portion of the policy if available. |
+| **state**<br>`str` | Default: `"present"`<br>Choices:<br>- `present`<br>- `absent` | Whether the specified entry or entries should be present or absent. |
+| **unsafe_writes**<br>`bool` | Default: `false` | Influence when to use atomic operation to prevent data corruption or inconsistent reads from the target filesystem object. By default this module uses atomic operations to prevent data corruption or inconsistent reads from the target filesystem objects, but sometimes systems are configured or just broken in ways that prevent this. One example is docker mounted filesystem objects, which cannot be updated atomically from inside the container and can only be written in an unsafe manner. This option allows Ansible to fall back to unsafe methods of updating filesystem objects when atomic operations fail (however, it doesn't force Ansible to perform unsafe writes). IMPORTANT! Unsafe writes are subject to race conditions and can lead to data corruption. |
+| **user_list**<br>`list / elements=dict` |  | A list of user dictionaries to manage. Each dictionary in the list must contain C(username) and C(password) keys. Mutually exclusive with C(name) and C(password). |
+
+## Examples
+
+```yaml
+- name: Add a single user to an htpasswd file
+  dettonville.utils.htpasswd:
+    path: /etc/nginx/.htpasswd
+    name: admin
+    password: SuperSecretPassword123!
+    hash_scheme: apr_md5_crypt
+    owner: root
+    group: www-data
+    mode: '0640'
+
+- name: Add user and backup existing file before making changes
+  dettonville.utils.htpasswd:
+    path: /etc/nginx/.htpasswd
+    name: devuser
+    password: Password456!
+    backup: true
+
+- name: Enforce strict file contents by overwriting residue from prior runs
+  dettonville.utils.htpasswd:
+    path: /etc/nginx/.htpasswd
+    name: sole_user
+    password: Password789!
+    overwrite: true
+
+- name: Remove a user from htpasswd file
+  dettonville.utils.htpasswd:
+    path: /etc/nginx/.htpasswd
+    name: devuser
+    state: absent
+
+- name: Populate multiple users from a list with overwrite enabled
+  dettonville.utils.htpasswd:
+    path: /etc/nginx/.htpasswd
+    user_list:
+      - username: alice
+        password: AlicePassword123!
+      - username: bob
+        password: BobPassword456!
+    crypt_scheme: bcrypt
+    overwrite: true
+    backup: true
+
+- name: Remove a single user from htpasswd file
+  dettonville.utils.htpasswd:
+    path: /etc/nginx/.htpasswd
+    name: devuser
+    state: absent
+```
+
+## Return Values
+
+| Key | Returned | Description |
+| :--- | :--- | :--- |
+| **backup_file**<br>`(str)` | when backup=true and changes were made | Name of the backup file created.<br><br>*sample:* `/etc/nginx/.htpasswd.2026-07-23@15:00:00~` |
+
+## CLI Reproducibility & Environment
+
+To view this module documentation directly in your terminal or replicate the output:
 
 ```shell
 $ ansible --version
@@ -5,15 +108,15 @@ ansible [core 2.21.2]
   config file = None
   configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
+  ansible collection location = /var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_cowvjbd9
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
   pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
-$ cd ${REPO_DIR}
+cd ${REPO_DIR}
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.htpasswd | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/htpasswd.md
-> MODULE dettonville.utils.htpasswd (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/htpasswd.py)
+> MODULE dettonville.utils.htpasswd (/var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_cowvjbd9/ansible_collections/dettonville/utils/plugins/modules/htpasswd.py)
 
   Add and remove username/password entries in a password file using
   htpasswd.
@@ -252,5 +355,4 @@ RETURN VALUES:
         returned: when backup=true and changes were made
         sample: /etc/nginx/.htpasswd.2026-07-23@15:00:00~
         type: str
-
 ```

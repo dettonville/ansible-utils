@@ -1,10 +1,14 @@
 
 # Ansible Utils Collection Release Notes
 
-
-## v1.0.0
+## v2026.7.1
 
 ### New Plugins
 
+- Add debug_sanitized module
 - Add export_dicts module
-- Added sort_dict_list filter
+- Add git_pacp module
+- Add htpasswd module
+- Add ntlm_uri module
+- Add test_results_logger module
+- Add x509_certificate_verify module

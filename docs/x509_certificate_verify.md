@@ -1,3 +1,147 @@
+## module > x509_certificate_verify
+
+Verify X.509 certificates
+
+- [Synopsis](#synopsis)
+- [Parameters](#parameters)
+- [Examples](#examples)
+- [Return Values](#return-values)
+- [CLI Reproducibility & Environment](#cli-reproducibility--environment)
+
+## Synopsis
+
+- This module is intended for idempotent verification of certificates in playbooks.
+- This module verifies properties of an X.509 certificate, such as common name, organization, serial number, signature algorithm, key algorithm, and expiration status.
+- This module also can verify the certificate's signature against an issuer CA certificate, chain or CA bundle.
+- This module also can verify the certificate's private key matches the CA certificate.
+
+## Parameters
+
+| Parameter | Choices / Defaults | Comments |
+| :--- | :--- | :--- |
+| **ca_path**<br>`path` |  | Path to the issuer CA certificate, chain file (PEM or DER format), or bundle for signature verification. |
+| **checkend_value**<br>`int` | Default: `86400` | Number of seconds to check for impending expiration used with validate_checkend. |
+| **common_name**<br>`str` |  | Expected Common Name (CN) of the certificate subject. |
+| **content**<br>`str` |  | Certificate content to verify. Can be provided as **base64-encoded string** or as **raw PEM/DER text**. If provided, this takes precedence over C(path). When providing raw PEM, it should include the C(-----BEGIN CERTIFICATE-----) and C(-----END CERTIFICATE-----) markers. |
+| **country**<br>`str` |  | Expected Country (C) of the certificate subject. |
+| **email_address**<br>`str` |  | Expected Email Address of the certificate subject. |
+| **extended_key_usage**<br>`list / elements=str` | Choices:<br>- `serverAuth`<br>- `clientAuth`<br>- `codeSigning`<br>- `emailProtection`<br>- `timeStamping`<br>- `OCSPSigning`<br>- `ipsecEndSystem`<br>- `ipsecTunnel`<br>- `ipsecUser`<br>- `anyExtendedKeyUsage` | List of Extended Key Usage (EKU) purpose OIDs / names that MUST all be present. Validation fails if the EKU extension is missing or any requested value is absent. Use the short names as commonly displayed E.g., serverAuth, clientAuth, etc.. |
+| **issuer_ca_path**<br>`path` |  | Deprecated. Use C(ca_path) instead. Path to the issuer CA certificate. |
+| **key_size**<br>`int` |  | Expected key size in bits (e.g., 2048 for RSA/DSA, 256 for EC). Not applicable for Ed25519. |
+| **key_type**<br>`str` | Choices:<br>- `rsa`<br>- `ec`<br>- `dsa`<br>- `ed25519` | Expected public key algorithm (e.g., 'rsa', 'ec', 'dsa', 'ed25519'). Aliased to C(key_algo) for backward compatibility.<br><br>*aliases:* `key_algo` |
+| **key_usage**<br>`list / elements=str` | Choices:<br>- `DigitalSignature`<br>- `NonRepudiation`<br>- `KeyEncipherment`<br>- `DataEncipherment`<br>- `KeyAgreement`<br>- `KeyCertSign`<br>- `CRLSign`<br>- `EncipherOnly`<br>- `DecipherOnly` | List of expected Key Usage values that **must all** be present in the certificate. Validation fails if any value from this list is missing. Case sensitive — use exact names as defined in RFC 5280 / cryptography library. |
+| **locality**<br>`str` |  | Expected Locality (L) of the certificate subject. |
+| **logging_level**<br>`str` | Default: `"INFO"`<br>Choices:<br>- `DEBUG`<br>- `INFO`<br>- `WARNING`<br>- `ERROR`<br>- `CRITICAL` | Parameter used to define the level of troubleshooting output. |
+| **organization**<br>`str` |  | Expected Organization (O) of the certificate subject. |
+| **organizational_unit**<br>`str` |  | Expected Organizational Unit (OU) of the certificate subject. |
+| **path**<br>`path` |  | Path to the certificate file to verify (PEM or DER format). |
+| **private_key_content**<br>`str` |  | Private key content to verify against the certificate's public key. Can be provided as **base64-encoded string** or as **raw PEM text**. If provided, this takes precedence over C(private_key_path). When providing raw PEM, it should include the C(-----BEGIN PRIVATE KEY-----) / C(-----BEGIN RSA PRIVATE KEY-----) markers. |
+| **private_key_password**<br>`str` |  | Private key password. |
+| **private_key_path**<br>`path` |  | Path to the private key file to verify against the certificate's public key. If specified, performs a match test between the certificate's public key and the private key. |
+| **serial_number**<br>`str` |  | Expected serial number of the certificate to verify against. Can be provided in **decimal** (e.g. '12345') or **hexadecimal** format. Hex format supports optional C(0x) prefix and colon separators E.g., '0x3039', '01:23:45:67', '01234567' The comparison is case-insensitive and ignores colons/spaces. Returned in C(details.serial_number) as lowercase hex with colon separators. E.g., '01:23:45:67:89:ab:cd:ef'), matching C(openssl x509 -serial) and C(community.crypto.x509_certificate_info) |
+| **signature_algorithm**<br>`str` |  | Expected signature algorithm (e.g., 'sha256WithRSAEncryption'). |
+| **state_or_province**<br>`str` |  | Expected State or Province (ST) of the certificate subject. |
+| **subject_alt_names**<br>`list / elements=str` |  | List of expected Subject Alternative Names (SANs) to verify (DNS names only). |
+| **validate_checkend**<br>`bool` | Default: `true` | Whether to check if the certificate expires within a specified time (seconds). |
+| **validate_expired**<br>`bool` | Default: `true` | Whether to check if the certificate is expired. |
+| **validate_is_ca**<br>`bool` | Default: `false` | Verify that the certificate is a CA certificate by checking basicConstraints for CA=TRUE. |
+| **validate_modulus_match**<br>`bool` |  | Verify if the certificate's modulus matches the direct
+    issuer's modulus. Only applies to RSA keys. Logic will handle setting this to True if ca_path is present default is true if ca_path is provided |
+| **version**<br>`int` | Choices:<br>- `1`<br>- `3` | Expected certificate version (1 or 3). |
+
+## Examples
+
+```yaml
+- name: Verify certificate chain
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    ca_path: /path/to/ca-bundle.pem
+
+- name: Verify certificate with private key match
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    private_key_path: /path/to/key.pem
+
+- name: Verify certificate from base64 content
+  dettonville.utils.x509_certificate_verify:
+    content: "{{ cert_b64_content }}"
+    common_name: test.example.com
+    validate_expired: true
+
+- name: Verify certificate with private key from content
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    private_key_content: "{{ key_b64_content }}"
+    private_key_password: "{{ key_pass }}"
+    validate_expired: true
+
+- name: Verify a root CA certificate
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/root-ca.pem
+    validate_is_ca: true
+    validate_checkend: true
+    checkend_value: 2592000  # 30 days
+
+- name: Verify a certificate's properties
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    common_name: test.example.com
+    organization: TestOrg
+    validate_expired: true
+    validate_checkend: true
+    checkend_value: 86400
+
+- name: Verify a certificate with CA signature
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    ca_path: /path/to/ca.pem
+    common_name: test.example.com
+    serial_number: '12345'
+    signature_algorithm: sha256WithRSAEncryption
+    key_type: rsa
+    key_size: 2048
+
+- name: Verify that a certificate will not expire in the next 30 days
+  dettonville.utils.x509_certificate_verify:
+    path: /etc/pki/certs/mycert.pem
+    validate_checkend: true
+    checkend_value: 2592000
+    logging_level: DEBUG
+  register: verify_result
+
+- name: Validate public key details
+  dettonville.utils.x509_certificate_verify:
+    path: /etc/ssl/certs/service.pem
+    key_type: ec
+    key_size: 256
+  register: key_validation
+
+- name: Verify Subject Alternative Names
+  dettonville.utils.x509_certificate_verify:
+    path: /path/to/cert.pem
+    subject_alt_names:
+      - "*.admin.johnson.int"
+      - "admin.johnson.int"
+    validate_expired: true
+```
+
+## Return Values
+
+| Key | Returned | Description |
+| :--- | :--- | :--- |
+| **cert_modulus**<br>`(str)` | when ca_path is provided and the certificate has an RSA key | Modulus of the certificate's public key (hexadecimal, if applicable).<br><br>*sample:* `a1b2c3...` |
+| **details**<br>`(dict)` | always | Details about the certificate's properties.<br><br>*sample:* `{'common_name': 'my.example.com', 'key_size': 2048, 'key_type': 'rsa', 'organization': 'My Company', 'subject_alt_names': ['example.com', '*.example.com']}` |
+| **failed**<br>`(bool)` | always | Indicates if the module failed. |
+| **issuer_modulus**<br>`(str)` | when ca_path is provided and the issuer certificate has an RSA key | Modulus of the issuer CA's public key (hexadecimal, if applicable).<br><br>*sample:* `a1b2c3...` |
+| **item**<br>`(dict)` | always | The input parameters provided to the module.<br><br>*sample:* `{'...': None, 'common_name': 'test.example.com', 'path': '/path/to/cert.pem'}` |
+| **msg**<br>`(str)` | always | A message describing the result of the verification.<br><br>*sample:* `All certificate validations passed successfully` |
+| **valid**<br>`(bool)` | always | Whether all specified validations passed. |
+| **verify_failed**<br>`(bool)` | always | Whether any validation checks failed. |
+| **verify_results**<br>`(dict)` | always | Results of individual verification checks.<br><br>*sample:* `{'common_name': 'my.example.com', 'key_size': 2048, 'key_type': 'rsa', 'organization': 'My Company', 'subject_alt_names': ['example.com', '*.example.com']}` |
+
+## CLI Reproducibility & Environment
+
+To view this module documentation directly in your terminal or replicate the output:
 
 ```shell
 $ ansible --version
@@ -5,15 +149,15 @@ ansible [core 2.21.2]
   config file = None
   configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
+  ansible collection location = /var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_cowvjbd9
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
   pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
-$ cd ${REPO_DIR}
+cd ${REPO_DIR}
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.x509_certificate_verify | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/x509_certificate_verify.md
-> MODULE dettonville.utils.x509_certificate_verify (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
+> MODULE dettonville.utils.x509_certificate_verify (/var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_cowvjbd9/ansible_collections/dettonville/utils/plugins/modules/x509_certificate_verify.py)
 
   This module is intended for idempotent verification of certificates
   in playbooks.
@@ -438,13 +582,13 @@ RETURN VALUES:
 - verify_results  Results of individual verification checks.
         returned: always
         sample:
-          checkend_valid: true
-          common_name: true
-          expiry_valid: true
-          key_size: false
-          modulus_match: true
-          signature_valid: true
-          subject_alt_names: true
+          common_name: my.example.com
+          key_size: 2048
+          key_type: rsa
+          organization: My Company
+          subject_alt_names:
+          - example.com
+          - '*.example.com'
         type: dict
         contains:
 
@@ -516,5 +660,4 @@ RETURN VALUES:
 
         - version  Whether the version matched.
           type: bool
-
 ```
