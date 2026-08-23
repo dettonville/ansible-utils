@@ -1,3 +1,152 @@
+## module > sort_dict_list
+
+Sort list of dictionaries by specified key(s)
+
+- [Synopsis](#synopsis)
+- [Parameters](#parameters)
+- [Examples](#examples)
+- [Return Values](#return-values)
+- [CLI Reproducibility & Environment](#cli-reproducibility--environment)
+
+## Synopsis
+
+- Sort list of dictionaries by a specified key(s).
+
+## Parameters
+
+| Parameter | Choices / Defaults | Comments |
+| :--- | :--- | :--- |
+| **_input**<br>`list / elements=dictionary / **required**` |  | A list of dictionaries |
+| **sort_keys**<br>`list / **required**` |  | The attributes to use as the sort keys. |
+
+## Examples
+
+```yaml
+- name: Sort a list of dictionaries based on single key sort
+  ansible.builtin.debug:
+    msg: "{{ my_list | dettonville.utils.sort_dict_list('name') }}"
+  vars:
+    my_list:
+      - name: value
+        foo: bar
+      - name: other_value
+        baz: bar
+  # Produces the sorted list:
+  #
+  #  my_list:
+  #    - name: other_value
+  #      baz: bar
+  #    - name: value
+  #      foo: bar
+
+- name: Sort a list of dictionaries based on multiple key sort
+  ansible.builtin.debug:
+    msg: "{{ my_list | dettonville.utils.sort_dict_list(
+        ['platform_id','address','username']) }}"
+  vars:
+    my_list:
+      - address: 10.31.25.54
+        automatic_management_enabled: true
+        domain_type: local
+        platform_account_type: recon
+        platform_id: WND-Local-Managed-DMZ
+        platform_logon_domain: 10.31.25.54
+        platform_notes: WINANSD1S4.example.int
+        safe: A-T-careconlocal
+        username: careconlocal
+      - address: 10.31.25.54
+        automatic_management_enabled: true
+        domain_type: local
+        groups:
+          - Administrators
+        local_admin_username: administrator
+        managed: true
+        platform_account_type: platform
+        platform_id: WND-Local-Managed-DMZ
+        platform_logon_domain: 10.31.25.54
+        platform_notes: WINANSD1S4.example.int
+        safe: Windows-Server-Local-Admin
+        username: administrator
+      - address: 10.21.33.8
+        automatic_management_enabled: true
+        domain_type: local
+        platform_account_type: recon
+        platform_id: WND-Local-Managed-DMZ
+        platform_logon_domain: 10.21.33.8
+        platform_notes: WINANSD1S1.example.int
+        safe: A-T-careconlocal
+        username: careconlocal
+      - address: 10.21.33.8
+        automatic_management_enabled: true
+        domain_type: local
+        groups:
+          - Administrators
+        local_admin_username: administrator
+        managed: true
+        platform_account_type: platform
+        platform_id: WND-Local-Managed-DMZ
+        platform_logon_domain: 10.21.33.8
+        platform_notes: WINANSD1S1.example.int
+        safe: Windows-Server-Local-Admin
+        username: administrator
+  # Produces the sorted list:
+  #
+  #  my_list:
+  #   - address: 10.21.33.8
+  #     automatic_management_enabled: true
+  #     domain_type: local
+  #     groups:
+  #     - Administrators
+  #     local_admin_username: administrator
+  #     managed: true
+  #     platform_account_type: platform
+  #     platform_id: WND-Local-Managed-DMZ
+  #     platform_logon_domain: 10.21.33.8
+  #     platform_notes: WINANSD1S1.example.int
+  #     safe: Windows-Server-Local-Admin
+  #     username: administrator
+  #   - address: 10.21.33.8
+  #     automatic_management_enabled: true
+  #     domain_type: local
+  #     platform_account_type: recon
+  #     platform_id: WND-Local-Managed-DMZ
+  #     platform_logon_domain: 10.21.33.8
+  #     platform_notes: WINANSD1S1.example.int
+  #     safe: A-T-careconlocal
+  #     username: careconlocal
+  #   - address: 10.31.25.54
+  #     automatic_management_enabled: true
+  #     domain_type: local
+  #     groups:
+  #     - Administrators
+  #     local_admin_username: administrator
+  #     managed: true
+  #     platform_account_type: platform
+  #     platform_id: WND-Local-Managed-DMZ
+  #     platform_logon_domain: 10.31.25.54
+  #     platform_notes: WINANSD1S4.example.int
+  #     safe: Windows-Server-Local-Admin
+  #     username: administrator
+  #   - address: 10.31.25.54
+  #     automatic_management_enabled: true
+  #     domain_type: local
+  #     platform_account_type: recon
+  #     platform_id: WND-Local-Managed-DMZ
+  #     platform_logon_domain: 10.31.25.54
+  #     platform_notes: WINANSD1S4.example.int
+  #     safe: A-T-careconlocal
+  #     username: careconlocal
+```
+
+## Return Values
+
+| Key | Returned | Description |
+| :--- | :--- | :--- |
+| **_value**<br>`(list)` | always | A sorted list containing the dictionaries from the original list. |
+
+## CLI Reproducibility & Environment
+
+To view this module documentation directly in your terminal or replicate the output:
 
 ```shell
 $ ansible --version
@@ -5,15 +154,15 @@ ansible [core 2.21.2]
   config file = None
   configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
+  ansible collection location = /var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_v8vnagfk
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
   pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
-$ cd ${REPO_DIR}
+cd ${REPO_DIR}
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t filter dettonville.utils.sort_dict_list | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/sort_dict_list.md
-> FILTER dettonville.utils.sort_dict_list (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/filter/sort_dict_list.py)
+> FILTER dettonville.utils.sort_dict_list (/var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_v8vnagfk/ansible_collections/dettonville/utils/plugins/filter/sort_dict_list.py)
 
   Sort list of dictionaries by a specified key(s).
 
@@ -153,5 +302,4 @@ RETURN VALUES:
 - _value  A sorted list containing the dictionaries from the original
            list.
         type: list
-
 ```

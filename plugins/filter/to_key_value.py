@@ -41,7 +41,7 @@ DOCUMENTATION = """
       default: false
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 - name: 1. Basic usage (default options)
   ansible.builtin.debug:
     msg: "{{ my_dict | dettonville.utils.to_key_value }}"
@@ -74,7 +74,7 @@ EXAMPLES = """
 - name: 4. Quoted values (Single quotes)
   ansible.builtin.debug:
     msg: "{{ my_dict | dettonville.utils.to_key_value(
-        quote=True, quote_char=\\"'\\") }}"
+        quote=True, quote_char='''') }}"
   vars:
     my_dict:
       API_KEY: secret123

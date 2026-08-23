@@ -13,10 +13,15 @@ module: export_dicts
 version_added: "2.20.0"
 author:
     - "Lee Johnson (@lj020326)"
-short_description: Write a list of flat dictionaries to a file with either csv or markdown format.
+short_description: >-
+    Write a list of flat dictionaries to a file with either csv or markdown
+    table format.
 description:
-    - Write a list of flat dictionaries (a dictionary mapping fieldnames to strings or numbers) to a flat file using a
-      specified format choice (csv or markdown) from a list of provided column names, headers and column list order.
+    - >-
+        Write a list of flat dictionaries (a dictionary mapping fieldnames
+        to strings or numbers) to a flat file using a specified format choice
+        (csv or markdown table) from a list of provided column names, headers
+        and column list order.
 options:
     file:
         required: true
@@ -166,7 +171,7 @@ argument_spec = dict(
 
 
 def get_file_format(file):
-    # type: (str) -> [str]
+    # type: (str) -> str
     file_format = "csv"
     if "." in file:
         file_format = file.split(".")[-1].lower()
