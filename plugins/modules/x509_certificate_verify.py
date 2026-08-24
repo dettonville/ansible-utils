@@ -400,11 +400,14 @@ details:
     key_size:
       description: Key size in bits (if applicable).
       type: int
-  sample: {
-        "common_name": "my.example.com", "organization": "My Company",
-        "key_type": "rsa", "key_size": 2048,
-        "subject_alt_names": ["example.com", "*.example.com"]
-  }
+  sample:
+    common_name: my.example.com
+    organization: My Company
+    key_type: rsa
+    key_size: 2048
+    subject_alt_names:
+      - example.com
+      - "*.example.com"
 verify_results:
   description: Results of individual verification checks.
   type: dict
@@ -476,11 +479,14 @@ verify_results:
         Whether the private key matches the certificate (only if
         private_key_path or private_key_content provided).
       type: bool
-  sample: {
-        "common_name": true, "key_size": false, "expiry_valid": true,
-        "checkend_valid": true, "signature_valid": true,
-        "modulus_match": true, "subject_alt_names": true
-  }
+  sample:
+    common_name: my.example.com
+    organization: My Company
+    key_type: rsa
+    key_size: 2048
+    subject_alt_names:
+      - example.com
+      - "*.example.com"
 cert_modulus:
   description: >-
     Modulus of the certificate's public key (hexadecimal, if applicable).

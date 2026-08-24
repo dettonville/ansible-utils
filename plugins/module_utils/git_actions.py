@@ -23,6 +23,7 @@ import os
 import pprint
 import re
 import sys
+import tempfile
 import traceback
 
 # ref: https://discuss.python.org/t/pep-632-deprecate-distutils-module/5134/130?page=7
@@ -114,7 +115,26 @@ class Git:
 
         ssh_params = repo_config.get("ssh_params")
         if ssh_params:
-            self.ssh_key_file = ssh_params.get("key_file")
+            ssh_key = ssh_params.get("key")
+            ssh_key_file = ssh_params.get("key_file")
+
+            if ssh_key:
+                try:
+                    # Create a secure temporary key file
+                    key_fd, key_path = tempfile.mkstemp(prefix="git_key_")
+                    with os.fdopen(key_fd, "w") as f:
+                        f.write(ssh_key)
+                    os.chmod(key_path, 0o600)
+                    self.ssh_key_file = key_path
+                    # Register for cleanup at module execution end
+                    self.module.add_cleanup_file(key_path)
+                except Exception as e:
+                    self.module.fail_json(
+                        msg=f"Failed to create temporary SSH key file: {e}"
+                    )
+            elif ssh_key_file:
+                self.ssh_key_file = ssh_key_file
+
             self.ssh_opts = ssh_params.get("ssh_opts") or ""
             self.ssh_accept_hostkey = ssh_params.get("accept_hostkey", False)
             if self.ssh_accept_hostkey:

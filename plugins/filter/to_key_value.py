@@ -30,7 +30,7 @@ DOCUMENTATION = """
       default: false
     quote_char:
       description: >-
-        The character used for quoting values when M(quote) is enabled.
+        The character used for quoting values when O(quote) is enabled.
       type: str
       default: '"'
     sort_keys:
@@ -41,7 +41,7 @@ DOCUMENTATION = """
       default: false
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 - name: 1. Basic usage (default options)
   ansible.builtin.debug:
     msg: "{{ my_dict | dettonville.utils.to_key_value }}"
@@ -73,9 +73,10 @@ EXAMPLES = """
 
 - name: 4. Quoted values (Single quotes)
   ansible.builtin.debug:
-    msg: "{{ my_dict | dettonville.utils.to_key_value(
-        quote=True, quote_char=\\"'\\") }}"
+    msg: "{{ my_dict
+        | dettonville.utils.to_key_value(quote=True, quote_char=quote_char) }}"
   vars:
+    quote_char: "'"
     my_dict:
       API_KEY: secret123
   # Output:

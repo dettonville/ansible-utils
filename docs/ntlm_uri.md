@@ -1,3 +1,78 @@
+## module > ntlm_uri
+
+> **Note:** The compiled HTML documentation for this module is available at: [https://dettonville.github.io/ansible-utils/ntlm_uri_module.html](https://dettonville.github.io/ansible-utils/ntlm_uri_module.html)
+
+Interacts with webservices via NTLM
+
+- [Synopsis](#synopsis)
+- [Parameters](#parameters)
+- [Examples](#examples)
+- [Return Values](#return-values)
+- [CLI Reproducibility & Environment](#cli-reproducibility--environment)
+
+## Synopsis
+
+- Interacts with HTTP and HTTPS web services with NTLM authentication.
+
+## Parameters
+
+| Parameter | Choices / Defaults | Comments |
+| :--- | :--- | :--- |
+| **body**<br>`raw` |  | The body of the http request/response to the web service. If O(body_format) is set to V(json) it will take an already formatted JSON string or convert a data structure into JSON. |
+| **body_format**<br>`str` | Default: `"raw"`<br>Choices:<br>&bull; `raw`<br>&bull; `json` | The serialization format of the body. When set to V(json), encodes the body argument, if needed, and automatically sets the Content-Type header accordingly. |
+| **headers**<br>`dict` | Default: `{}` | Add custom HTTP headers to a request in the format of a YAML hash. |
+| **method**<br>`str` | Default: `"GET"` | The HTTP method of the request or response. |
+| **password**<br>`str / **required**` |  | A password for the module to use for NTLM authentication.<br><br>*aliases:* `url_password` |
+| **return_content**<br>`bool` | Default: `false` | Whether or not to return the body of the response as a "content" key in the dictionary result no matter it succeeded or failed. |
+| **status_code**<br>`list / elements=int` | Default: `[200]` | A list of valid, numeric, HTTP status codes that signifies success of the request. |
+| **url**<br>`str / **required**` |  | HTTP or HTTPS URL in the form (http|https)://host.domain[:port]/path |
+| **user**<br>`str / **required**` |  | A username for the module to use for NTLM authentication.<br><br>*aliases:* `url_username` |
+| **validate_certs**<br>`bool` | Default: `true` | If V(false), SSL certificates will not be validated.<br>This should only set to V(false) used on personally controlled sites using self-signed certificates. |
+
+## Examples
+
+```yaml
+- name: Check that you can connect (GET) to a page and it returns a status 200
+  dettonville.utils.ntlm_uri:
+    url: http://www.example.com
+    user: your_username
+    password: p@ssw0rd
+
+- name: >-
+    Check that a page returns successfully but fail if the word AWESOME
+    is not in the page contents
+  dettonville.utils.ntlm_uri:
+    url: http://www.example.com
+    return_content: true
+    user: your_username
+    password: your_pass
+  register: __response
+  failed_when: __response is failed or "'AWESOME' not in __response.content"
+
+- name: Create a JIRA issue
+  dettonville.utils.ntlm_uri:
+    url: https://your.jira.example.com/rest/api/2/issue/
+    user: your_username
+    password: your_pass
+    method: POST
+    body: "{{ lookup('ansible.builtin.file','issue.json') }}"
+    status_code: 201
+    body_format: json
+```
+
+## Return Values
+
+| Key | Returned | Description |
+| :--- | :--- | :--- |
+| **headers**<br>`(dict)` | on success | The headers used in the request.<br><br>*sample:* `{'Content-Type': 'application/json; charset=utf-8', 'Server': 'Microsoft-HTTPAPI/2.0'}` |
+| **json**<br>`(dict)` | return_content set to true | The json response from the request. |
+| **msg**<br>`(str)` | always | Generic message from the request.<br><br>*sample:* `OK` |
+| **status**<br>`(int)` | always | The HTTP status code from the request.<br><br>*sample:* `200` |
+| **url**<br>`(str)` | always | The actual URL used for the request.<br><br>*sample:* `https://www.ansible.com/` |
+
+## CLI Reproducibility & Environment
+
+To view this module documentation directly in your terminal or replicate the output:
 
 ```shell
 $ ansible --version
@@ -5,15 +80,15 @@ ansible [core 2.21.2]
   config file = None
   configured module search path = ['/Users/ljohnson/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
   ansible python module location = /Users/ljohnson/.pyenv/versions/3.13.5/lib/python3.13/site-packages/ansible
-  ansible collection location = /Users/ljohnson/tmp/_2CyVPv:/Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils
+  ansible collection location = /var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_5lnnyiz3
   executable location = /Users/ljohnson/.pyenv/versions/3.13.5/bin/ansible
   python version = 3.13.5 (main, Sep 18 2025, 19:11:35) [Clang 16.0.0 (clang-1600.0.26.6)] (/Users/ljohnson/.pyenv/versions/3.13.5/bin/python3.13)
   jinja version = 3.1.6
   pyyaml version = 6.0.3 (with libyaml v0.2.5)
 $ REPO_DIR="$( git rev-parse --show-toplevel )"
-$ cd ${REPO_DIR}
+cd ${REPO_DIR}
 $ env ANSIBLE_NOCOLOR=True ansible-doc -t module dettonville.utils.ntlm_uri | tee /Users/ljohnson/repos/ansible/ansible_collections/dettonville/utils/docs/ntlm_uri.md
-> MODULE dettonville.utils.ntlm_uri (/Users/ljohnson/tmp/_2CyVPv/ansible_collections/dettonville/utils/plugins/modules/ntlm_uri.py)
+> MODULE dettonville.utils.ntlm_uri (/var/folders/w6/3rcdpp211v5cxml6vg45ww3r0000gn/T/ansible_doc_5lnnyiz3/ansible_collections/dettonville/utils/plugins/modules/ntlm_uri.py)
 
   Interacts with HTTP and HTTPS web services with NTLM authentication.
 
@@ -134,5 +209,4 @@ RETURN VALUES:
         returned: always
         sample: https://www.ansible.com/
         type: str
-
 ```

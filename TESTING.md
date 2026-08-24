@@ -148,8 +148,10 @@ cd path/to/dettonville.utils
 Run the following command to register pre-commit into your local `.git/hooks/` directory:
 ```bash
 pre-commit install
+## or specify hook types
+pre-commit install --hook-type pre-commit
+pre-commit install --hook-type pre-push
 ```
-
 
 3. **Verify it works**:
 You can manually test that the hooks fire across all files without needing to make a commit:

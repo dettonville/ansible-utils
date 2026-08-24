@@ -21,7 +21,7 @@ tags:
   - tools
   - utilities
   - x509_certificate_verify
-version: 2026.7.1
+version: 2026.8.1
 # https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_distributing.html#ignoring-files-and-folders
 manifest:
   directives:

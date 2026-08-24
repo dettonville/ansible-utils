@@ -48,6 +48,7 @@ from ansible_collections.dettonville.utils.tests.unit.plugins.modules.utils impo
 )
 
 
+# noinspection PyPep8Naming
 class TestGitPacpModule(ModuleTestCase):
     """Test cases for the git_pacp ansible module"""
 
@@ -331,6 +332,45 @@ class TestGitPacpModule(ModuleTestCase):
             'not starting with "git" or "ssh://git"',
         )
 
+    @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.AnsibleModule"))
+    def test_setup_module_object_ssh_params_keys(self, mock_ansible_module):
+        """Test ssh_params option definition for key and key_file."""
+        mock_module = Mock()
+        mock_ansible_module.return_value = mock_module
+
+        # noinspection PyUnresolvedReferences
+        self.setup_module_object()
+        _args, kwargs = mock_ansible_module.call_args
+        ssh_options = kwargs["argument_spec"]["ssh_params"]["options"]
+
+        self.assertIn("key", ssh_options)
+        self.assertIn("key_file", ssh_options)
+        self.assertEqual(ssh_options["key"]["type"], "str")
+        self.assertEqual(ssh_options["key_file"]["type"], "path")
+
+    @patch(make_absolute(MODULES_IMPORT_PATH, "git_pacp.Git"))
+    def test_main_validation_mutually_exclusive_ssh_keys(self, mock_git_class):
+        """Test that supplying both key and key_file fails validation."""
+        module_args = self.mock_module.params.copy()
+        module_args.update(
+            {
+                "mode": "ssh",
+                "url": "git@github.com:test/repo.git",
+                "ssh_params": {
+                    "key": "-----BEGIN OPENSSH PRIVATE KEY-----\ntest",
+                    "key_file": "/path/to/id_rsa",
+                },
+            }
+        )
+
+        with set_module_args(module_args):
+            with self.assertRaises(AnsibleFailJson) as exc:
+                self.main()
+
+        result = exc.exception.args[0]
+        self.assertTrue(result["failed"])
+        self.assertIn("mutually exclusive", result["msg"].lower())
+
 
 class TestGitActions(unittest.TestCase):
     """Test cases for the Git class in git_actions module"""
@@ -436,6 +476,7 @@ class TestGitActions(unittest.TestCase):
 
         repo_config = self.repo_config
 
+        # noinspection PyTypeChecker
         repo_config.update(
             {
                 "repo_url": "git@github.com:test/repo.git",
@@ -495,3 +536,41 @@ class TestGitActions(unittest.TestCase):
 
         # Clean up mock environment after the test
         mock_environ.clear()
+
+    @patch(
+        make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.tempfile.mkstemp")
+    )
+    @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.fdopen"))
+    @patch(make_absolute(MODULE_UTILS_IMPORT_PATH, "git_actions.os.chmod"))
+    def test_ssh_key_value_creates_tempfile(
+        self, mock_chmod, mock_fdopen, mock_mkstemp
+    ):
+        """Test handling of raw private key string parameter."""
+        mock_mkstemp.return_value = (10, "/tmp/git_key_12345")
+        mock_file = Mock()
+        mock_fdopen.return_value.__enter__.return_value = mock_file
+
+        repo_config = self.repo_config.copy()
+        # noinspection PyTypeChecker
+        repo_config.update(
+            {
+                "repo_scheme": "ssh",
+                "ssh_params": {
+                    "key": "-----BEGIN OPENSSH PRIVATE KEY-----\ntest\n-----END OPENSSH PRIVATE KEY-----",  # noqa: E501
+                    "accept_hostkey": True,
+                },
+            }
+        )
+
+        git = Git(self.mock_module, repo_config)
+
+        mock_mkstemp.assert_called_once()
+        mock_file.write.assert_called_once_with(
+            "-----BEGIN OPENSSH PRIVATE KEY-----\ntest\n-----END OPENSSH PRIVATE KEY-----"  # noqa: E501
+        )  # noqa: E501
+        mock_chmod.assert_called_once_with("/tmp/git_key_12345", 0o600)
+        self.mock_module.add_cleanup_file.assert_called_once_with(
+            "/tmp/git_key_12345"
+        )
+        # noinspection PyTypeChecker
+        self.assertIn("/tmp/git_key_12345", git.git_ssh_command)

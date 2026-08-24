@@ -1,0 +1,99 @@
+---
+name: Ansible Docs
+
+on:
+  workflow_call:
+    inputs:
+      collection_name:
+        description: Fully-qualified collection name (namespace.name)
+        type: string
+        required: true
+      collection_path:
+        description: Path used by ansible-test style layouts (optional)
+        type: string
+        required: false
+        default: ""
+      init_project:
+        description: Sphinx project name
+        type: string
+        required: false
+        default: ""
+      init_copyright:
+        description: Copyright string
+        type: string
+        required: false
+        default: ""
+      init_title:
+        description: Documentation title
+        type: string
+        required: false
+        default: ""
+      init_html_short_title:
+        description: Short HTML title
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-docs:
+    name: Build Ansible Docs
+    permissions:
+      contents: read
+    uses: ansible-community/github-docs-build/.github/workflows/_shared-docs-build-push.yml@main
+    with:
+      collection-name: ${{ inputs.collection_name }}
+      ansible-ref: stable-2.20
+      squash-hierarchy: true
+      init-lenient: false
+      init-fail-on-error: true
+      init-project: >-
+        ${{ inputs.init_project != '' && inputs.init_project || format('{0} Collection', inputs.collection_name) }}
+      init-copyright: >-
+        ${{ inputs.init_copyright != '' && inputs.init_copyright || inputs.collection_name }}
+      init-title: >-
+        ${{ inputs.init_title != '' && inputs.init_title || format('{0} Collection Documentation', inputs.collection_name) }}
+      init-html-short-title: >-
+        ${{ inputs.init_html_short_title != '' && inputs.init_html_short_title || format('{0} Docs', inputs.collection_name) }}
+      init-extra-html-theme-options: |
+        documentation_home_url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+
+  publish-docs:
+    name: Publish Ansible Docs
+    needs: [build-docs]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-docs.outputs.artifact-name }}
+          path: _site
+
+      - name: Prepare clean site
+        run: |
+          if [ -d _site/html ]; then
+            mv _site/html/* _site/ 2>/dev/null || true
+            rm -rf _site/html
+          fi
+          find _site -type l -delete
+          ls -la _site
+          test -f _site/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

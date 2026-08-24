@@ -75,9 +75,15 @@ options:
             - Dictionary containing SSH parameters.
         type: dict
         suboptions:
+            key:
+                description:
+                    - Specify an optional private key raw string content.
+                    - Mutually exclusive with 'ssh_params.key_file'
+                type: str
             key_file:
                 description:
-                    - Specify an optional private key file path, on the target host, to use for the checkout.
+                    - Specify an optional private key file path.
+                    - Mutually exclusive with 'ssh_params.key'
                 type: path
             accept_hostkey:
                 description:
@@ -139,6 +145,17 @@ EXAMPLES = """
       key_file: /tmp/.ansible_test_jobs_qhg_dmhp/ansible_repo.key
   register: git_pacp_result
 
+- name: "Perform git action using ssh private key value"
+  dettonville.utils.git_pacp:
+    url: ssh://git@bitbucket.example.org:2222/test/repo.git
+    path: /usr/local/src
+    branch: develop
+    comment: "PR-123"
+    ssh_params:
+      accept_hostkey: true
+      key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
+  register: git_pacp_result
+
 - name: "Perform git pull/add/commit/push"
   dettonville.utils.git_pacp:
     action: pacp
@@ -169,7 +186,7 @@ EXAMPLES = """
     comment: "{{ __git_comment }}"
     ssh_params:
       accept_hostkey: true
-      key_file: /tmp/.ansible_test_jobs_qhg_dmhp/ansible_repo.key
+      key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
       # avoid changing the test environment
       ssh_opts: "-o UserKnownHostsFile=/dev/null"
   register: git_pacp_result
@@ -269,6 +286,7 @@ argument_spec = dict(
         type="dict",
         required=False,
         options=dict(
+            key=dict(type="str", no_log=True),
             key_file=dict(type="path"),
             accept_hostkey=dict(type="bool", default=False),
             ssh_opts=dict(type="str", default=None),
@@ -321,9 +339,15 @@ def run_module():
     action = module.params.get("action")
     mode = module.params.get("mode")
     push_option = module.params.get("push_option")
-    ssh_params = module.params.get("ssh_params")
     user_name = module.params.get("user_name")
     user_email = module.params.get("user_email")
+    ssh_params = module.params.get("ssh_params") or {}
+
+    if ssh_params.get("key") and ssh_params.get("key_file"):
+        module.fail_json(
+            msg="Parameters ssh_params.key and ssh_params.key_file are "
+            "mutually exclusive"
+        )
 
     repo_config = {
         "repo_url": url,
