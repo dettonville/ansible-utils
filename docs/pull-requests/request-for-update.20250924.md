@@ -37,6 +37,7 @@ from OpenSSL import crypto
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
+
 def load_ca_certs(ca_path):
     if not ca_path:
         return []
@@ -47,11 +48,14 @@ def load_ca_certs(ca_path):
     for block in cert_blocks:
         block = '-----BEGIN CERTIFICATE-----' + block
         try:
-            cert = x509.load_pem_x509_certificate(block.encode(), default_backend())
+            cert = x509.load_pem_x509_certificate(
+                block.encode(), default_backend()
+            )
             certs.append(cert)
         except ValueError:
             continue  # Skip invalid certificates
     return certs
+
 
 def main():
     module = AnsibleModule(
@@ -67,17 +71,21 @@ def main():
     # Build X509Store
     store = crypto.X509Store()
     for ca_cert in ca_certs:
-        store.add_cert(crypto.load_certificate(crypto.FILETYPE_PEM, ca_cert.public_bytes()))
+        store.add_cert(
+            crypto.load_certificate(
+                crypto.FILETYPE_PEM, ca_cert.public_bytes()
+            )
+        )
 
     store_ctx = crypto.X509StoreContext(
-        store, crypto.load_certificate(crypto.FILETYPE_PEM, cert.public_bytes())
+        store,
+        crypto.load_certificate(crypto.FILETYPE_PEM, cert.public_bytes()),
     )
     try:
         store_ctx.verify_certificate()
         verify_results['signature_valid'] = True
     except crypto.Error:
         verify_results['signature_valid'] = False
-
 ```
 
 ### Update Tests
