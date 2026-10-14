@@ -10,3 +10,4 @@ exclude_paths:
   - "**/tests/"
   - changelogs/
   - CHANGELOG.rst
+  - .package_dir.*.yml

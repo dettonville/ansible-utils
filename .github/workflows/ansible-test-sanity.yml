@@ -3,6 +3,8 @@ name: Ansible Test Sanity
 permissions:
   contents: read
   checks: write
+  pull-requests: write
+  issues: write
 
 on:
   workflow_call:

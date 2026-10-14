@@ -32,20 +32,20 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1-1
     hooks:
       - id: shellcheck
         types: [shell]
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
 
   # Ruff = modern, extremely fast replacement for flake8 + isort + black + many pylint rules
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.1
+    rev: v0.16.10
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -53,7 +53,7 @@ repos:
 
   # Pylint for deeper static analysis (complements Ruff)
   - repo: https://github.com/pylint-dev/pylint
-    rev: v4.0.6
+    rev: v4.1.2
     hooks:
       - id: pylint
         args:
