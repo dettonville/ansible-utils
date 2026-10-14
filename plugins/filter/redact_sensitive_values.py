@@ -33,131 +33,56 @@ DOCUMENTATION = """
       description: List of key patterns to use to redact values.
       type: list
       default:
-        - '(?i).*vault.*'
-        - '(?i).*token.*'
-        - '(?i).*password.*'
-        - '(?i).*key.*'
-        - '(?i).*ssh.*'
+        - key
+        - password
+        - passwd
+        - pwd
+        - secret
+        - token
       required: false
     additional_key_patterns:
       description: List of additional key patterns to use to redact values.
       type: list
       required: false
+    match_type:
+      description: >-
+        Type of key matching algorithm to use ('boundary', 'exact',
+        or 'substring').
+      type: str
+      default: boundary
+      required: false
+    case_sensitive:
+      description: Enable case-sensitive key matching evaluation.
+      type: bool
+      default: false
+      required: false
+    peek:
+      description: >-
+        Enable peeking at the first and last N characters of sensitive values.
+      type: bool
+      default: false
+      required: false
+    peek_chars:
+      description: >-
+        Number of prefix and suffix characters to display when peek is enabled.
+      type: int
+      default: 2
+      required: false
 """
 
 EXAMPLES = """
-- name: Redact sensitive values from dictionaries
+- name: >-
+    Redact sensitive values from dictionaries using default boundary matching
   ansible.builtin.debug:
     msg: "{{ my_dict | dettonville.utils.redact_sensitive_values }}"
   vars:
     my_dict:
-      administrator-10.21.33.8:
-        address: 10.21.33.8
-        automatic_management_enabled: true
-        domain_type: local
-        groups:
-          - Administrators
-        local_admin_username: administrator
-        managed: true
-        platform_account_type: platform
-        platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 10.21.33.8
-        platform_notes: WINANSD1S1.example.int
-        safe: Windows-Server-Local-Admin
-        username: administrator
-        password: passw0rd
-      administrator-10.31.25.54:
-        address: 10.31.25.54
-        automatic_management_enabled: true
-        domain_type: local
-        groups:
-          - Administrators
-        local_admin_username: administrator
-        managed: true
-        platform_account_type: platform
-        platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 10.31.25.54
-        platform_notes: WINANSD1S4.example.int
-        safe: Windows-Server-Local-Admin
-        username: administrator
-        password: passw0rd
-      careconlocal-10.21.33.8:
-        address: 10.21.33.8
-        automatic_management_enabled: true
-        domain_type: local
-        platform_account_type: recon
-        platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 10.21.33.8
-        platform_notes: WINANSD1S1.example.int
-        safe: A-T-careconlocal
-        username: careconlocal
-        password: passw0rd
-      careconlocal-10.31.25.54:
-        address: 10.31.25.54
-        automatic_management_enabled: true
-        domain_type: local
-        platform_account_type: recon
-        platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 10.31.25.54
-        platform_notes: WINANSD1S4.example.int
-        safe: A-T-careconlocal
-        username: careconlocal
-        password: passw0rd
-  # Produces the dict:
-  #
+      api_key: "secret-token-123"
+      keycloak_user: "admin"
+  # Produces:
   #  my_dict:
-  #    administrator-10.21.33.8:
-  #      address: 10.21.33.8
-  #      automatic_management_enabled: true
-  #      domain_type: local
-  #      groups:
-  #      - Administrators
-  #      local_admin_username: administrator
-  #      managed: true
-  #      platform_account_type: platform
-  #      platform_id: WND-Local-Managed-DMZ
-  #      platform_logon_domain: 10.21.33.8
-  #      platform_notes: WINANSD1S1.example.int
-  #      safe: Windows-Server-Local-Admin
-  #      username: administrator
-  #      password: <redacted_password>
-  #    administrator-10.31.25.54:
-  #      address: 10.31.25.54
-  #      automatic_management_enabled: true
-  #      domain_type: local
-  #      groups:
-  #      - Administrators
-  #      local_admin_username: administrator
-  #      managed: true
-  #      platform_account_type: platform
-  #      platform_id: WND-Local-Managed-DMZ
-  #      platform_logon_domain: 10.31.25.54
-  #      platform_notes: WINANSD1S4.example.int
-  #      safe: Windows-Server-Local-Admin
-  #      username: administrator
-  #      password: <redacted_password>
-  #    careconlocal-10.21.33.8:
-  #      address: 10.21.33.8
-  #      automatic_management_enabled: true
-  #      domain_type: local
-  #      platform_account_type: recon
-  #      platform_id: WND-Local-Managed-DMZ
-  #      platform_logon_domain: 10.21.33.8
-  #      platform_notes: WINANSD1S1.example.int
-  #      safe: A-T-careconlocal
-  #      username: careconlocal
-  #      password: <redacted_password>
-  #    careconlocal-10.31.25.54:
-  #      address: 10.31.25.54
-  #      automatic_management_enabled: true
-  #      domain_type: local
-  #      platform_account_type: recon
-  #      platform_id: WND-Local-Managed-DMZ
-  #      platform_logon_domain: 10.31.25.54
-  #      platform_notes: WINANSD1S4.example.int
-  #      safe: A-T-careconlocal
-  #      username: careconlocal
-  #      password: <redacted_password>
+  #    api_key: "<redacted>"
+  #    keycloak_user: "admin"
 
 - name: Redact sensitive values from list of dictionaries
   ansible.builtin.debug:
@@ -188,82 +113,33 @@ EXAMPLES = """
         safe: Windows-Server-Local-Admin
         username: administrator
         password: passw0rd
-      - address: 10.21.33.8
-        automatic_management_enabled: true
-        domain_type: local
-        platform_account_type: recon
-        platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 10.21.33.8
-        platform_notes: WINANSD1S1.example.int
-        safe: A-T-careconlocal
-        username: careconlocal
-        password: passw0rd
-      - address: 10.21.33.8
-        automatic_management_enabled: true
-        domain_type: local
-        groups:
-          - Administrators
-        local_admin_username: administrator
-        managed: true
-        platform_account_type: platform
-        platform_id: WND-Local-Managed-DMZ
-        platform_logon_domain: 10.21.33.8
-        platform_notes: WINANSD1S1.example.int
-        safe: Windows-Server-Local-Admin
-        username: administrator
-        password: passw0rd
-  # Produces the list:
-  #
-  #  my_list:
-  #  - address: 10.31.25.54
-  #    automatic_management_enabled: true
-  #    domain_type: local
-  #    platform_account_type: recon
-  #    platform_id: WND-Local-Managed-DMZ
-  #    platform_logon_domain: 10.31.25.54
-  #    platform_notes: WINANSD1S4.example.int
-  #    safe: A-T-careconlocal
-  #    username: careconlocal
-  #    password: <redacted_password>
-  #  - address: 10.31.25.54
-  #    automatic_management_enabled: true
-  #    domain_type: local
-  #    groups:
-  #    - Administrators
-  #    local_admin_username: administrator
-  #    managed: true
-  #    platform_account_type: platform
-  #    platform_id: WND-Local-Managed-DMZ
-  #    platform_logon_domain: 10.31.25.54
-  #    platform_notes: WINANSD1S4.example.int
-  #    safe: Windows-Server-Local-Admin
-  #    username: administrator
-  #    password: <redacted_password>
-  #  - address: 10.21.33.8
-  #    automatic_management_enabled: true
-  #    domain_type: local
-  #    platform_account_type: recon
-  #    platform_id: WND-Local-Managed-DMZ
-  #    platform_logon_domain: 10.21.33.8
-  #    platform_notes: WINANSD1S1.example.int
-  #    safe: A-T-careconlocal
-  #    username: careconlocal
-  #    password: <redacted_password>
-  #  - address: 10.21.33.8
-  #    automatic_management_enabled: true
-  #    domain_type: local
-  #    groups:
-  #    - Administrators
-  #    local_admin_username: administrator
-  #    managed: true
-  #    platform_account_type: platform
-  #    platform_id: WND-Local-Managed-DMZ
-  #    platform_logon_domain: 10.21.33.8
-  #    platform_notes: WINANSD1S1.example.int
-  #    safe: Windows-Server-Local-Admin
-  #    username: administrator
-  #    password: <redacted_password>
-  #
+
+- name: Redact sensitive values using exact match type
+  ansible.builtin.debug:
+    msg: "{{ my_dict | dettonville.utils.redact_sensitive_values(
+        key_patterns=['password'], match_type='exact') }}"
+  vars:
+    my_dict:
+      password: "SuperSecretPassword123!"
+      user_password: "not_matched_with_exact"
+
+- name: Redact sensitive values using case-sensitive matching
+  ansible.builtin.debug:
+    msg: "{{ my_dict | dettonville.utils.redact_sensitive_values(
+        key_patterns=['Password'], case_sensitive=True) }}"
+  vars:
+    my_dict:
+      Password: "SecretValue"
+      password: "LeftAlone"
+
+- name: Redact sensitive values using custom regular expression patterns
+  ansible.builtin.debug:
+    msg: "{{ my_dict | dettonville.utils.redact_sensitive_values(
+        key_patterns=[r'.*secret.*']) }}"
+  vars:
+    my_dict:
+      db_secret_key: "value123"
+      public_info: "visible"
 """
 
 RETURN = """
@@ -275,11 +151,12 @@ RETURN = """
 """
 
 _SENSITIVE_KEYS_DEFAULT: list = [
-    "(?i).*vault.*",
-    "(?i).*token.*",
-    "(?i).*password.*",
-    "(?i).*key.*",
-    "(?i).*ssh.*",
+    "key",
+    "password",
+    "passwd",
+    "pwd",
+    "secret",
+    "token",
 ]
 
 
@@ -292,6 +169,10 @@ class FilterModule(object):
         input_object: Any,
         key_patterns: list = None,
         additional_key_patterns: list = None,
+        match_type: str = "boundary",
+        case_sensitive: bool = False,
+        peek: bool = False,
+        peek_chars: int = 2,
         log_level: str = "INFO",
     ) -> Any:
         if key_patterns is None:
@@ -307,6 +188,12 @@ class FilterModule(object):
             key_patterns.extend(additional_key_patterns)
 
         redact_sensitive_values_from_object(
-            input_object, key_patterns, log_level
+            input_object,
+            key_patterns,
+            log_level,
+            match_type=match_type,
+            case_sensitive=case_sensitive,
+            peek=peek,
+            peek_chars=peek_chars,
         )
         return input_object
