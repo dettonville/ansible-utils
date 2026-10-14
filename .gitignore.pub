@@ -61,6 +61,7 @@ coverage.xml
 /test/cache/*
 
 # test stuff
+.ansible/
 ansible_collections/
 /test/integration/cloud-config-*.*
 !/test/integration/cloud-config-*.*.template
@@ -108,24 +109,56 @@ changelogs/.plugin-cache.yaml
 .test-results/
 test-results/
 
+#collections/ansible_collections
+
+# ---------------------------------------------------------------------------
+# CrewAI / LanceDB agent state (ephemeral CI + local runs)
+# ---------------------------------------------------------------------------
+.agent_state/
+.crewai/
+**/crewai/memory/
+**/.lancedb/
+**/*.lance
+**/memories.lance/
+
+# Legacy / alternate CrewAI storage layouts
+chroma.sqlite3
+chromadb-*.lock
+**/short_term_memory/
+**/long_term_memory/
+**/entities/
+**/long_term_memory_storage.db
+
+# Packaged LLM context (regenerated each run; large)
+.package_dir.context.yml
+.package_dir.*.yml
+**/index_package.tar.gz
+
+.code_index/
 .rsync/
 .idea/
+.vscode/
 venv/
 save/
-
 .DS_Store
+*~
 *.retry
 *.log
 .vault_pass
 
+# ---------------------------------------------------------------------------
+# avoid push to public
+# ---------------------------------------------------------------------------
+archive/
+.wiki/
+raw/
 id_rsa
-
 private/
 files/private/
-files/scripts/bashenv/.bash_env
-releases
+vars/vault.yml
 vars/secrets.yml
+vault.yml
+vaulted-credentials.yml
+*.vault.yml
 secrets.yml
 *.secrets.yml
-
-archive/

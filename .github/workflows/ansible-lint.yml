@@ -3,7 +3,7 @@ name: Ansible Lint
 permissions:
   contents: read
   checks: write
-  pull-requests: read
+  pull-requests: write
   issues: write
 
 on:
