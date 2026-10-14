@@ -7,7 +7,6 @@ import binascii
 import logging
 import pprint
 from collections import OrderedDict
-from collections.abc import Mapping, Sequence
 from functools import cmp_to_key
 from importlib import import_module
 from operator import itemgetter as i
@@ -18,7 +17,7 @@ import json
 import os
 import re
 import traceback
-from typing import Any, List, Union
+from typing import Any, List, Mapping, Sequence, Union
 
 YAML_IMPORT_ERROR = None
 
@@ -30,7 +29,6 @@ except ImportError:
     YAML_IMPORT_ERROR = traceback.format_exc()
 else:
     YAML_IMPORT_ERROR = None
-
 
 FQCN_RE = re.compile(r"^[A-Za-z0-9_]+\.[A-Za-z0-9_]+$")
 
@@ -63,6 +61,7 @@ def load_collection_meta_galaxy(galaxy_path, no_version="*"):
         raise UtilsModuleException("PyYAML is not available")
 
     with open(galaxy_path, "rb") as f:
+        # noinspection unresolved-references
         meta = yaml.safe_load(f)
     return {
         "version": meta.get("version") or no_version,
@@ -114,17 +113,12 @@ def get_collection_version(fqcn, not_found=None, no_version="*"):
     return data.get("version", no_version)
 
 
-# ref: https://stackoverflow.com/questions/20692710/python-recursively-deleting-dict-keys#20692955
-# ref:
-# https://stackoverflow.com/questions/13183501/staticmethod-and-recursion#13183523
-# -*- coding: utf-8 -*-
-"""
-Utility functions for dettonville.utils collection.
-"""
-
-
 def remove_keys_from_object(
-    obj: Any, key_patterns: List[str], log_level: str = "INFO"
+    obj: Any,
+    key_patterns: List[str],
+    log_level: str = "INFO",
+    match_type: str = "boundary",
+    case_sensitive: bool = False,
 ) -> Any:
     """
     Recursively traverse the object and remove keys matching the patterns.
@@ -137,76 +131,208 @@ def remove_keys_from_object(
         # Use a copy of items to avoid modification during iteration
         items_to_process = list(obj.items())
         for key, value in items_to_process:
-            if any(re.match(pattern, key) for pattern in key_patterns):
+            if isinstance(key, str) and matches_key(
+                key,
+                key_patterns,
+                match_type=match_type,
+                case_sensitive=case_sensitive,
+            ):
                 del obj[key]
-                if log_level == "INFO":
-                    # Optional logging; adjust as needed
-                    pass
-            if isinstance(value, (Mapping, Sequence)) and not isinstance(
+            elif isinstance(value, (Mapping, Sequence)) and not isinstance(
                 value, (str, bytes)
             ):
-                remove_keys_from_object(value, key_patterns, log_level)
+                remove_keys_from_object(
+                    value,
+                    key_patterns,
+                    log_level,
+                    match_type=match_type,
+                    case_sensitive=case_sensitive,
+                )
     elif isinstance(obj, Mapping):
         # Fallback for generic Mappings that do not support item
         # deletion (__delitem__)
         new_obj = dict(obj)
         items_to_process = list(new_obj.items())
         for key, value in items_to_process:
-            if any(re.match(pattern, key) for pattern in key_patterns):
+            if isinstance(key, str) and matches_key(
+                key,
+                key_patterns,
+                match_type=match_type,
+                case_sensitive=case_sensitive,
+            ):
                 del new_obj[key]
-            if isinstance(value, (Mapping, Sequence)) and not isinstance(
+            elif isinstance(value, (Mapping, Sequence)) and not isinstance(
                 value, (str, bytes)
             ):
-                remove_keys_from_object(value, key_patterns, log_level)
+                remove_keys_from_object(
+                    value,
+                    key_patterns,
+                    log_level,
+                    match_type=match_type,
+                    case_sensitive=case_sensitive,
+                )
         return new_obj
     elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
-            remove_keys_from_object(item, key_patterns, log_level)
+            remove_keys_from_object(
+                item,
+                key_patterns,
+                log_level,
+                match_type=match_type,
+                case_sensitive=case_sensitive,
+            )
     return obj
 
 
+def matches_key(
+    key: str,
+    patterns: Any,
+    match_type: str = "boundary",
+    case_sensitive: bool = False,
+) -> bool:
+    """
+    Check if a key matches any of the given patterns using robust matching
+    logic supporting 'exact', 'boundary', and 'substring' match types.
+    """
+    if isinstance(patterns, (list, tuple, set)):
+        return any(
+            matches_key(
+                key, p, match_type=match_type, case_sensitive=case_sensitive
+            )
+            for p in patterns
+        )
+
+    if isinstance(patterns, re.Pattern):
+        return bool(patterns.search(key))
+
+    pattern_str = str(patterns)
+    if not case_sensitive:
+        key = key.lower()
+        pattern_str = pattern_str.lower()
+
+    if match_type == "exact":
+        return key == pattern_str
+    elif match_type == "substring":
+        return pattern_str in key
+    elif match_type == "boundary":
+        # Check if pattern contains regex metacharacters and test directly
+        has_regex_chars = any(
+            m in pattern_str
+            for m in ['.*', '^', '$', '[', ']', '(', ')', '+', '?', '{', '}']
+        )
+        if has_regex_chars:
+            try:
+                if re.search(pattern_str, key):
+                    return True
+            except re.error:
+                pass
+
+        # Fallback to strict boundary matching for literal strings
+        try:
+            pattern = (
+                r"(?:^|[_\b.-]|\b)"
+                + re.escape(pattern_str)
+                + r"(?:[_\b.-]|\b|$)"
+            )
+            if re.search(pattern, key):
+                return True
+        except (re.error, TypeError):
+            pass
+        return False
+    else:
+        raise ValueError(f"Got an invalid match_type ({match_type}).")
+
+
 def redact_sensitive_values_from_object(
-    obj: Any, key_patterns: list, log_level: str = "INFO"
+    obj: Any,
+    key_patterns: list,
+    log_level: str = "INFO",
+    match_type: str = "boundary",
+    case_sensitive: bool = False,
+    peek: bool = False,
+    peek_chars: int = 2,
 ) -> Any:
     """
-    Recursively traverse the object and redact values for matching keys.
+    Recursively traverse the object and redact values for matching keys
+    using specified match_type, case_sensitive, and optional
+    peek configurations.
     """
     if isinstance(obj, dict):
         items_to_process = list(obj.items())
         for key, value in items_to_process:
-            if any(re.match(pattern, key) for pattern in key_patterns):
-                obj[key] = f"<redacted_{key}>"
-                if log_level == "INFO":
-                    # Optional logging; adjust as needed
-                    pass
+            if isinstance(key, str) and matches_key(
+                key,
+                key_patterns,
+                match_type=match_type,
+                case_sensitive=case_sensitive,
+            ):
+                if isinstance(value, (int, float)):
+                    value = str(value)
+                if isinstance(value, str) and value.strip():
+                    if peek and len(value) > (peek_chars * 2):
+                        prefix = value[:peek_chars]
+                        suffix = value[-peek_chars:]
+                        obj[key] = f"<redacted:{prefix}...{suffix}>"
+                    else:
+                        obj[key] = "<redacted>"
             if isinstance(value, (Mapping, Sequence)) and not isinstance(
                 value, (str, bytes)
             ):
                 redact_sensitive_values_from_object(
-                    value, key_patterns, log_level
+                    value,
+                    key_patterns,
+                    log_level,
+                    match_type=match_type,
+                    case_sensitive=case_sensitive,
+                    peek=peek,
+                    peek_chars=peek_chars,
                 )
     elif isinstance(obj, Mapping):
         new_obj = dict(obj)
         items_to_process = list(new_obj.items())
         for key, value in items_to_process:
-            if any(re.match(pattern, key) for pattern in key_patterns):
-                new_obj[key] = f"<redacted_{key}>"
+            if isinstance(key, str) and matches_key(
+                key,
+                key_patterns,
+                match_type=match_type,
+                case_sensitive=case_sensitive,
+            ):
+                if isinstance(value, (int, float)):
+                    value = str(value)
+                if isinstance(value, str) and value.strip():
+                    if peek and len(value) > (peek_chars * 2):
+                        prefix = value[:peek_chars]
+                        suffix = value[-peek_chars:]
+                        new_obj[key] = f"<redacted:{prefix}...{suffix}>"
+                    else:
+                        new_obj[key] = "<redacted>"
             if isinstance(value, (Mapping, Sequence)) and not isinstance(
                 value, (str, bytes)
             ):
                 redact_sensitive_values_from_object(
-                    value, key_patterns, log_level
+                    value,
+                    key_patterns,
+                    log_level,
+                    match_type=match_type,
+                    case_sensitive=case_sensitive,
+                    peek=peek,
+                    peek_chars=peek_chars,
                 )
         return new_obj
     elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
-            redact_sensitive_values_from_object(item, key_patterns, log_level)
+            redact_sensitive_values_from_object(
+                item,
+                key_patterns,
+                log_level,
+                match_type=match_type,
+                case_sensitive=case_sensitive,
+                peek=peek,
+                peek_chars=peek_chars,
+            )
     return obj
 
 
-# ref: https://stackoverflow.com/questions/9001509/how-do-i-sort-a-dictionary-by-key
-# ref:
-# https://stackoverflow.com/questions/72899/how-to-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
 def sort_dict_keys(obj: Any, reverse: bool = False) -> Any:
     """
     Recursively sort dictionary keys in the object.
@@ -560,9 +686,6 @@ class PrettyLog:
         self.obj = obj
 
     def __repr__(self):
-        # ref: https://stackoverflow.com/questions/21420243/pretty-printing-ordereddicts-using-pprint
-        # ref:
-        # https://stackoverflow.com/questions/4301069/any-way-to-properly-pretty-print-ordereddict
         if isinstance(object, OrderedDict):
             return pprint.pformat(dict(self.obj))
         return pprint.pformat(self.obj)

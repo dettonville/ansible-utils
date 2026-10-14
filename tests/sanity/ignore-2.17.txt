@@ -1,3 +1,4 @@
+plugins/modules/debug_sanitized.py validate-modules:missing-gplv3-license
 plugins/modules/export_dicts.py validate-modules:missing-gplv3-license
 plugins/modules/git_pacp.py validate-modules:missing-gplv3-license
 plugins/modules/ntlm_uri.py validate-modules:missing-gplv3-license
