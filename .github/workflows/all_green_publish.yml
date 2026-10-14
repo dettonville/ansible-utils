@@ -76,12 +76,22 @@ jobs:
     uses: ./.github/workflows/ansible-test-sanity.yml
     with:
       collection_path: ${{ needs.extract-metadata.outputs.collection_path }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      issues: write
 
   units:
     needs: [ extract-metadata ]
     uses: ./.github/workflows/ansible-test-units.yml
     with:
       collection_path: ${{ needs.extract-metadata.outputs.collection_path }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      issues: write
 
   docs:
     needs: [ extract-metadata ]
