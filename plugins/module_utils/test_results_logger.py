@@ -863,7 +863,7 @@ def xml_get_node_key(node: eTree.Element, attr: str = None):
 def xml_sort_children(node: eTree.Element, attr: str = None):
     """Sort children along tag and given attribute.
     if attr is None, sort along all attributes"""
-    if not isinstance(node.tag, str):  # PYTHON 2: use basestring instead
+    if not isinstance(node.tag, str):  # Python 3 string type check
         # not a TAG, it is comment or DATA
         # no need to sort
         return
