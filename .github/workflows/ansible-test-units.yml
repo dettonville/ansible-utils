@@ -3,6 +3,8 @@ name: Ansible Test Units
 permissions:
   contents: read
   checks: write
+  pull-requests: write
+  issues: write
 
 on:
   workflow_call:
@@ -88,9 +90,9 @@ jobs:
 
       - name: Archive Test Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: test-results-${{ matrix.versions.ansible }}-python-${{ matrix.versions.python }}
+          name: test-results-units-${{ matrix.versions.ansible }}-python-${{ matrix.versions.python }}
           path: |
             ${{ env.COLLECTION_PATH }}/tests/output/junit/
             ${{ env.COLLECTION_PATH }}/tests/output/coverage/

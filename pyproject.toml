@@ -25,6 +25,7 @@ select = [
 # 2. Global Ignores that commonly clash with Ansible's patterns
 ignore = [
     "E402",  # Module level import not at top of file (essential for some module_utils patterns)
+    "E501",  # line-too-long (delegated to ruff-format for code)
 ]
 
 # 3. Path-specific overrides to safeguard modules and module_utils

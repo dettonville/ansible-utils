@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: htpasswd
 short_description: >-
   Manage user credentials in an htpasswd file with backup and overwrite support
-version_added: "2.20.0"
+version_added: "2026.8.0"
 author:
   - Lee Johnson (@lj020326)
 description:

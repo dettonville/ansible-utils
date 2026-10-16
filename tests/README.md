@@ -21,6 +21,25 @@ ansible-test sanity --python ${TEST_PYTHON_VERSION} --test validate-modules
 ansible-test sanity -v --docker --python ${TEST_PYTHON_VERSION} export_dicts
 ```
 
+To run using pytest directly:
+```shell
+pytest tests/unit/plugins/modules/test_git_update_content.py
+## run with verbosity
+pytest tests/unit/plugins/modules/test_git_update_content.py -v
+```
+
+To view live debug output in pytest, pass the -s flag (disable stdout capturing) and --log-cli-level=DEBUG:
+
+```shell
+pytest tests/unit/plugins/modules/test_git_update_content.py -s --log-cli-level=DEBUG
+```
+
+To run through Python directly with output capture disabled:
+
+```python
+python3 -m pytest tests/unit/plugins/modules/test_git_update_content.py -s
+```
+
 * Note: MacOS Issues
 
 If running on MacOS may get the following error:

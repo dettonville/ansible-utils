@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: export_dicts
-version_added: "2.20.0"
+version_added: "2025.7.0"
 author:
     - "Lee Johnson (@lj020326)"
 short_description: >-

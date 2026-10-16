@@ -1,5 +1,5 @@
 ---
-name: Python Module Standards
+name: Python Module Standards (dettonville.utils)
 globs: ["plugins/modules/**/*.py"]
 alwaysApply: true
 description: Standards for Python modules in this collection

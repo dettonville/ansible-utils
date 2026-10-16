@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright: (c) 2026, Lee Johnson (@lj020326)
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Copyright: (c) 2025, Lee Johnson (ljohnson@dettonville.com)
+# MIT license (https://opensource.org/license/mit/)
 
 from __future__ import absolute_import, division, print_function
 
@@ -13,7 +13,7 @@ module: debug_sanitized
 short_description: >-
   Print sanitized debug statements with
   automated regex redactions
-version_added: "2.20.0"
+version_added: "2026.8.0"
 author: Lee Johnson (@lj020326)
 description:
   - Extends the core behavior of the standard
@@ -60,6 +60,19 @@ options:
       to append to the default evaluation arrays.
     type: list
     elements: str
+  match_type:
+    description: >-
+      Type of key matching algorithm to use ('boundary', 'exact',
+      or 'substring').
+    required: false
+    choices: [boundary, exact, substring]
+    default: "boundary"
+    type: str
+  case_sensitive:
+    description: >-
+      Enable case-sensitive key matching evaluation.
+    type: bool
+    default: false
 """
 
 EXAMPLES = """
@@ -98,6 +111,16 @@ EXAMPLES = """
     additional_key_patterns:
       - '(?i).*secret.*'
       - '(?i).*credit.*'
+
+- name: Print sanitized debug with exact match type and case sensitivity
+  dettonville.utils.debug_sanitized:
+    var: secure_payload
+    match_type: "exact"
+    case_sensitive: true
+  vars:
+    secure_payload:
+      SecretKey: "RedactedValue"
+      secretkey: "NotRedacted"
 """
 
 RETURN = """
@@ -148,6 +171,12 @@ def main():
             additional_key_patterns=dict(
                 type='list', elements='str', no_log=True
             ),
+            match_type=dict(
+                type="str",
+                choices=["boundary", "exact", "substring"],
+                default="boundary",
+            ),
+            case_sensitive=dict(type="bool", default=False),
         ),
         mutually_exclusive=[['msg', 'var']],
         supports_check_mode=True,

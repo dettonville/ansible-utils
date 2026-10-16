@@ -13,7 +13,7 @@ module: x509_certificate_verify
 short_description: Verify X.509 certificates
 author:
   - "Lee Johnson (@lj020326)"
-version_added: "2.20.0"
+version_added: "2026.1.0"
 description:
   - >-
     This module is intended for idempotent verification of certificates

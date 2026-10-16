@@ -3,6 +3,8 @@ name: Ansible Test Sanity
 permissions:
   contents: read
   checks: write
+  pull-requests: write
+  issues: write
 
 on:
   workflow_call:
@@ -57,6 +59,15 @@ jobs:
           coverage: never # coverage is always very low for sanity tests, and doesn't make much sense
           pre-test-cmd: >-
             ansible-test --version
+
+      - name: Archive Test Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-sanity-${{ matrix.versions.ansible }}-python-${{ matrix.versions.python }}
+          path: |
+            ${{ env.COLLECTION_PATH }}/tests/output/junit/
+          retention-days: 7
 
       - name: Publish Unit Test Results
         if: always()

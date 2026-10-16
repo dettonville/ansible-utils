@@ -72,7 +72,7 @@ def test_debug_sanitized_var_resolution(action_module):
     assert "my_secret_dict" in result
     sanitized_output = result["my_secret_dict"]
     assert sanitized_output["username"] == "lee"
-    assert sanitized_output["password"] == "<redacted_password>"
+    assert sanitized_output["password"] == "<redacted>"
 
 
 def test_debug_sanitized_with_custom_additional_patterns(action_module):
@@ -90,7 +90,4 @@ def test_debug_sanitized_with_custom_additional_patterns(action_module):
     result = action_module.run(task_vars={})
     sanitized_output = result["var"]
     assert sanitized_output["account_identifier"] == "id-1"
-    assert (
-        sanitized_output["custom_secret_field"]
-        == "<redacted_custom_secret_field>"
-    )
+    assert sanitized_output["custom_secret_field"] == "<redacted>"
