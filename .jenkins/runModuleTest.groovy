@@ -1,11 +1,6 @@
 
-import jenkins.branch.*
-import jenkins.model.Jenkins
-
 import com.dettonville.pipeline.utils.logging.LogLevel
 import com.dettonville.pipeline.utils.logging.Logger
-
-import com.dettonville.pipeline.utils.JsonUtils
 
 Logger log = new Logger(this)
 

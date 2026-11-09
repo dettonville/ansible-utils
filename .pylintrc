@@ -1,6 +1,6 @@
 [pylint]
 
-max-line-length=160
+max-line-length=100
 
 disable=
     abstract-method,

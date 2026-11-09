@@ -75,6 +75,7 @@ ansible_collections/
 /hacking/tests/selinux/*.pp
 
 # Release directory
+releases
 packaging/release/ansible_release
 collections/ansible_collections
 /.cache/

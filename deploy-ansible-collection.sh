@@ -2,15 +2,20 @@
 
 #set -x
 
-VERSION="2025.6.12"
+VERSION="2026.10.2"
 
-#PROJECT_DIR=$( git rev-parse --show-toplevel )
-PROJECT_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! PROJECT_DIR="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+  PROJECT_DIR="${SCRIPT_DIR}"
+fi
 
-#SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_DIR="$(dirname "$0")"
 SCRIPT_NAME="$(basename "$0")"
-SCRIPT_NAME_PREFIX="${SCRIPT_NAME%.*}"
+
+# Deployment target configuration (default to local pulp)
+DEPLOY_TARGET="pulp" # options: pulp, galaxy
+PULP_URL="${PULP_URL:-https://pulp.example.int/pulp_ansible/galaxy/internal/}"
+PULP_USERNAME="${PULP_USERNAME:-}"
+PULP_PASSWORD="${PULP_PASSWORD:-}"
 
 GALAXY_API_KEY="${ANSIBLE_GALAXY_TOKEN}"
 GALAXY_BUILD_PATH="./releases"
@@ -55,11 +60,8 @@ tty_reset="$(tty_escape 0)"
 function reverse_array() {
   local -n ARRAY_SOURCE_REF=$1
   local -n REVERSED_ARRAY_REF=$2
-  # Iterate over the keys of the LOGLEVEL_TO_STR array
   for KEY in "${!ARRAY_SOURCE_REF[@]}"; do
-    # Get the value associated with the current key
     VALUE="${ARRAY_SOURCE_REF[$KEY]}"
-    # Add the reversed key-value pair to the REVERSED_ARRAY_REF array
     REVERSED_ARRAY_REF["$VALUE"]="$KEY"
   done
 }
@@ -67,7 +69,6 @@ function reverse_array() {
 declare -A LOGLEVELSTR_TO_LEVEL
 reverse_array LOGLEVEL_TO_STR LOGLEVELSTR_TO_LEVEL
 
-#LOG_LEVEL=${LOG_DEBUG}
 LOG_LEVEL=${LOG_INFO}
 
 function log_error() {
@@ -115,10 +116,6 @@ function chomp() {
   printf "%s" "${1/"$'\n'"/}"
 }
 
-function ohai() {
-  printf "${tty_blue}==>${tty_bold} %s${tty_reset}\n" "$(shell_join "$@")"
-}
-
 function abort() {
   log_error "$@"
   exit 1
@@ -126,19 +123,10 @@ function abort() {
 
 function warn() {
   log_warn "$@"
-#  log_warn "$(chomp "$1")"
-#  printf "${tty_red}Warning${tty_reset}: %s\n" "$(chomp "$1")" >&2
 }
-
-#function abort() {
-#  printf "%s\n" "$@" >&2
-#  exit 1
-#}
 
 function error() {
   log_error "$@"
-#  printf "%s\n" "$@" >&2
-##  echo "$@" 1>&2;
 }
 
 function fail() {
@@ -149,28 +137,20 @@ function fail() {
 function log_message() {
   local LOG_MESSAGE_LEVEL="${1}"
   local LOG_MESSAGE="${2}"
-  ## remove first item from FUNCNAME array
-#  local CALLING_FUNCTION_ARRAY=("${FUNCNAME[@]:2}")
-  ## Get the length of the array
   local CALLING_FUNCTION_ARRAY_LENGTH=${#FUNCNAME[@]}
   local CALLING_FUNCTION_ARRAY=("${FUNCNAME[@]:2:$((CALLING_FUNCTION_ARRAY_LENGTH - 3))}")
-#  echo "CALLING_FUNCTION_ARRAY[@]=${CALLING_FUNCTION_ARRAY[@]}"
 
   local CALL_ARRAY_LENGTH=${#CALLING_FUNCTION_ARRAY[@]}
   local REVERSED_CALL_ARRAY=()
   for (( i = CALL_ARRAY_LENGTH - 1; i >= 0; i-- )); do
     REVERSED_CALL_ARRAY+=( "${CALLING_FUNCTION_ARRAY[i]}" )
   done
-#  echo "REVERSED_CALL_ARRAY[@]=${REVERSED_CALL_ARRAY[@]}"
 
-#  local CALLING_FUNCTION_STR="${CALLING_FUNCTION_ARRAY[*]}"
-  ## ref: https://stackoverflow.com/questions/1527049/how-can-i-join-elements-of-a-bash-array-into-a-delimited-string#17841619
   local SEPARATOR=":"
   local CALLING_FUNCTION_STR
   CALLING_FUNCTION_STR=$(printf "${SEPARATOR}%s" "${REVERSED_CALL_ARRAY[@]}")
   CALLING_FUNCTION_STR=${CALLING_FUNCTION_STR:${#SEPARATOR}}
 
-  ## ref: https://stackoverflow.com/a/13221491
   if [ "${LOGLEVEL_TO_STR[${LOG_MESSAGE_LEVEL}]+abc}" ]; then
     LOG_LEVEL_STR="${LOGLEVEL_TO_STR[${LOG_MESSAGE_LEVEL}]}"
   else
@@ -178,41 +158,28 @@ function log_message() {
   fi
 
   local LOG_LEVEL_PADDING_LENGTH=5
-
   local PADDED_LOG_LEVEL
   PADDED_LOG_LEVEL=$(printf "%-${LOG_LEVEL_PADDING_LENGTH}s" "${LOG_LEVEL_STR}")
 
   local LOG_PREFIX="${CALLING_FUNCTION_STR}():"
-  local __LOG_MESSAGE="${LOG_PREFIX} ${LOG_MESSAGE}"
-#  echo -e "[${PADDED_LOG_LEVEL}]: ==> ${__LOG_MESSAGE}"
   if [ "${LOG_MESSAGE_LEVEL}" -eq $LOG_INFO ]; then
     printf "${tty_blue}[${PADDED_LOG_LEVEL}]: ==> ${LOG_PREFIX}${tty_reset} %s\n" "${LOG_MESSAGE}" >&2
-#    printf "${tty_blue}[${PADDED_LOG_LEVEL}]: ==>${tty_reset} %s\n" "${__LOG_MESSAGE}" >&2
-#    printf "${tty_blue}[${PADDED_LOG_LEVEL}]: ==>${tty_bold} %s${tty_reset}\n" "${__LOG_MESSAGE}"
   elif [ "${LOG_MESSAGE_LEVEL}" -eq $LOG_WARN ]; then
     printf "${tty_orange}[${PADDED_LOG_LEVEL}]: ==> ${LOG_PREFIX}${tty_bold} %s${tty_reset}\n" "${LOG_MESSAGE}" >&2
-#    printf "${tty_orange}[${PADDED_LOG_LEVEL}]: ==>${tty_bold} %s${tty_reset}\n" "${__LOG_MESSAGE}" >&2
-#    printf "${tty_red}Warning${tty_reset}: %s\n" "$(chomp "$1")" >&2
   elif [ "${LOG_MESSAGE_LEVEL}" -le $LOG_ERROR ]; then
     printf "${tty_red}[${PADDED_LOG_LEVEL}]: ==> ${LOG_PREFIX}${tty_bold} %s${tty_reset}\n" "${LOG_MESSAGE}" >&2
-#    printf "${tty_red}[${PADDED_LOG_LEVEL}]: ==>${tty_bold} %s${tty_reset}\n" "${__LOG_MESSAGE}" >&2
-#    printf "${tty_red}Warning${tty_reset}: %s\n" "$(chomp "$1")" >&2
   else
     printf "${tty_bold}[${PADDED_LOG_LEVEL}]: ==> ${LOG_PREFIX}${tty_reset} %s\n" "${LOG_MESSAGE}" >&2
-#    printf "[${PADDED_LOG_LEVEL}]: ==> %s\n" "${LOG_PREFIX} ${LOG_MESSAGE}"
   fi
 }
 
 function set_log_level() {
   LOG_LEVEL_STR=$1
-
-  ## ref: https://stackoverflow.com/a/13221491
   if [ "${LOGLEVELSTR_TO_LEVEL[${LOG_LEVEL_STR}]+abc}" ]; then
     LOG_LEVEL="${LOGLEVELSTR_TO_LEVEL[${LOG_LEVEL_STR}]}"
   else
     abort "Unknown log level of [${LOG_LEVEL_STR}]"
   fi
-
 }
 
 function execute() {
@@ -225,10 +192,8 @@ function execute() {
 
 function execute_eval_command() {
   local RUN_COMMAND="${*}"
-
   log_debug "${RUN_COMMAND}"
   COMMAND_RESULT=$(eval "${RUN_COMMAND}")
-#  COMMAND_RESULT=$(eval "${RUN_COMMAND} > /dev/null 2>&1")
   local RETURN_STATUS=$?
 
   if [[ $RETURN_STATUS -eq 0 ]]; then
@@ -238,10 +203,8 @@ function execute_eval_command() {
     log_debug "SUCCESS!"
   else
     log_error "ERROR (${RETURN_STATUS})"
-#    echo "${COMMAND_RESULT}"
     abort "$(printf "Failed during: %s" "${COMMAND_RESULT}")"
   fi
-
 }
 
 function is_installed() {
@@ -291,8 +254,6 @@ function deploy_ansible_collection() {
   # Find the generated tarball file name.
   # The format is typically <namespace>-<collection_name>-<version>.tar.gz.
   COLLECTION_TARBALL=$(find . -type f -name "${COLLECTION_NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}.tar.gz" 2>/dev/null)
-#  COLLECTION_TARBALL=$(find . -type f -name "${COLLECTION_NAMESPACE}-${COLLECTION_NAME}-${COLLECTION_VERSION}.tar.gz" -exec realpath {} \; 2>/dev/null)
-
   log_info "COLLECTION_TARBALL=${COLLECTION_TARBALL}"
 
   if [ ! -e "${COLLECTION_TARBALL}" ]; then
@@ -308,20 +269,26 @@ function deploy_ansible_collection() {
   fi
 
   if [ "${DEPLOY_GALAXY_COLLECTION}" -eq 1 ]; then
-    log_info "Publishing collection artifact: ${COLLECTION_TARBALL} to Ansible Galaxy..."
+    if [ "${DEPLOY_TARGET}" == "pulp" ]; then
+      log_info "Publishing collection artifact: ${COLLECTION_TARBALL} to local Pulp registry (${PULP_URL})..."
 
-    # Publish the collection to Ansible Galaxy.
-    # Note: It's more secure to configure your API token as ANSIBLE_GALAXY_TOKEN environment variable or in ansible.cfg.
-    # If using environment variable ANSIBLE_GALAXY_TOKEN, no --api-key is needed here.
-    DEPLOY_GALAXY_CMD_ARRAY=()
-    if [ -n "$GALAXY_API_KEY" ]; then
-      DEPLOY_GALAXY_CMD_ARRAY=("ansible-galaxy collection publish $COLLECTION_TARBALL --api-key=$GALAXY_API_KEY")
+      export ANSIBLE_GALAXY_SERVER_LIST="pulp"
+      export ANSIBLE_GALAXY_SERVER_PULP_URL="${PULP_URL}"
+      export ANSIBLE_GALAXY_SERVER_PULP_USERNAME="${PULP_USERNAME}"
+      export ANSIBLE_GALAXY_SERVER_PULP_PASSWORD="${PULP_PASSWORD}"
+#      export ANSIBLE_GALAXY_SERVER_PULP_TOKEN="${PULP_PASSWORD}"
+
+      DEPLOY_CMD_ARRAY=("ansible-galaxy collection publish ${COLLECTION_TARBALL} --server pulp")
     else
-      # Assuming token is configured in ansible.cfg or environment variable.
-      DEPLOY_GALAXY_CMD_ARRAY=("ansible-galaxy collection publish $COLLECTION_TARBALL")
+      log_info "Publishing collection artifact: ${COLLECTION_TARBALL} to Ansible Galaxy..."
+      if [ -n "$GALAXY_API_KEY" ]; then
+        DEPLOY_CMD_ARRAY=("ansible-galaxy collection publish ${COLLECTION_TARBALL} --api-key=${GALAXY_API_KEY}")
+      else
+        DEPLOY_CMD_ARRAY=("ansible-galaxy collection publish ${COLLECTION_TARBALL}")
+      fi
     fi
-    execute_eval_command "${DEPLOY_GALAXY_CMD_ARRAY[*]}"
 
+    execute_eval_command "${DEPLOY_CMD_ARRAY[*]}"
     log_debug "Collection published successfully."
 
     if [ "${VERIFY_GALAXY_COLLECTION}" -eq 1 ]; then
@@ -347,41 +314,47 @@ function usage() {
   echo ""
   echo "  Options:"
   echo "       -L [ERROR|WARN|INFO|TRACE|DEBUG] : run with specified log level (default: '${LOGLEVEL_TO_STR[${LOG_LEVEL}]}')"
-  echo "       -b : specify GALAXY_BUILD_PATH where the tar.gz is created (default: ./releases)"
-  echo "       -g : specify GALAXY_API_KEY (default sourced from 'ANSIBLE_GALAXY_TOKEN' environment variable if set)"
+  echo "       -P : deploy to local Pulp registry (default)"
+  echo "       -G : deploy to remote Ansible Galaxy"
+  echo "       -u URL : specify Pulp URL (default: ${PULP_URL})"
+  echo "       -U user : specify Pulp username (default: ${PULP_USERNAME})"
+  echo "       -W pass : specify Pulp password"
+  echo "       -g key : specify Ansible Galaxy API key"
   echo "       -b : build collection only and skip deploy"
   echo "       -f : force build to re-create the collection artifact if necessary"
   echo "       -l : install collection locally"
-  echo "       -p : local collection install path (default: ${HOME}/.ansible/collections)"
+  echo "       -p path : local collection install path (default: ${INSTALL_COLLECTION_PATH})"
   echo "       -s : skip collection deployment"
   echo "       -t : verify installed collection matches server deployment"
   echo "       -v : show script version"
   echo "       -h : help"
   echo ""
   echo "  Examples:"
-	echo "       ${SCRIPT_NAME} /home/user123/repos/ansible_collections/test-namespace/test-collection"
-  echo "       ${SCRIPT_NAME} -v"
-	echo "       ${SCRIPT_NAME} -L DEBUG"
-	echo "       ${SCRIPT_NAME} -g <galaxy_api_token> ~/repos/ansible_collections/demo-ns/utils"
-	echo "       ${SCRIPT_NAME} ~/repos/ansible_collections/test-namespace/test-collection"
-	echo "       ${SCRIPT_NAME} -s ~/repos/ansible_collections/demo-ns/utils"
-	echo "       ${SCRIPT_NAME} -l -s ~/repos/ansible_collections/demo-ns/utils"
+  echo "       # Deploy to local Pulp (default):"
+  echo "       export PULP_PASSWORD='your_password'"
+  echo "       ${SCRIPT_NAME}"
+  echo "       ${SCRIPT_NAME} /home/user123/repos/ansible_collections/test-namespace/test-collection"
   echo "    Perform local install only:"
-	echo "       ${SCRIPT_NAME} -fls -p ~/.ansible/collections ~/repos/ansible_collections/demo-ns/utils"
-  echo "    Force local install and publish collection:"
-	echo "       ${SCRIPT_NAME} -L DEBUG -flt -p ~/.ansible/collections ~/repos/ansible/ansible_collections/dettonville.utils"
-	[ -z "$1" ] || exit "$1"
+  echo "       ${SCRIPT_NAME} -fls -p ~/.ansible/collections ~/repos/ansible_collections/demo-ns/utils"
+  echo ""
+  echo "       # Deploy to Ansible Galaxy:"
+  echo "       ${SCRIPT_NAME} -G -g <galaxy_api_token>"
+  [ -z "$1" ] || exit "$1"
 }
 
 function main() {
-
   check_required_commands ansible-galaxy yq
 
-  while getopts "L:g:p:bflsthv" opt; do
+  while getopts "L:g:p:u:U:W:bflstGPvh" opt; do
       case "${opt}" in
           L) set_log_level "${OPTARG}" ;;
           g) GALAXY_API_KEY="${OPTARG}" ;;
           p) INSTALL_COLLECTION_PATH="${OPTARG}" ;;
+          u) PULP_URL="${OPTARG}" ;;
+          U) PULP_USERNAME="${OPTARG}" ;;
+          W) PULP_PASSWORD="${OPTARG}" ;;
+          P) DEPLOY_TARGET="pulp" ;;
+          G) DEPLOY_TARGET="galaxy" ;;
           b) BUILD_ONLY=1 ;;
           f) FORCE_BUILD_COLLECTION=1 ;;
           l) INSTALL_COLLECTION_LOCALLY=1 ;;
@@ -395,13 +368,18 @@ function main() {
   done
   shift $((OPTIND-1))
 
+  log_info "PROJECT_DIR=${PROJECT_DIR}"
   local COLLECTION_PATH="${PROJECT_DIR}"
   if [ $# -eq 1 ]; then
     COLLECTION_PATH="${1}"
   fi
 
   log_info "COLLECTION_PATH=${COLLECTION_PATH}"
-  log_debug "GALAXY_API_KEY=${GALAXY_API_KEY}"
+  log_info "DEPLOY_TARGET=${DEPLOY_TARGET}"
+  if [ "${DEPLOY_TARGET}" == "pulp" ]; then
+    log_debug "PULP_URL=${PULP_URL}"
+    log_debug "PULP_USERNAME=${PULP_USERNAME}"
+  fi
 
   deploy_ansible_collection "${COLLECTION_PATH}"
 }

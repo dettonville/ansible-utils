@@ -16,6 +16,7 @@ strategy:
     versions:
       # Testing all ansible and python versions is impractical. Only test the newest and
       # oldest versions of each that we support
+      - {pythonVersion: '3.14', ansibleVersion: "2.22"}
       - {pythonVersion: '3.14', ansibleVersion: "2.21"}
 #      - {pythonVersion: '3.14', ansibleVersion: "devel"}
       - {pythonVersion: '3.13', ansibleVersion: "2.20"}

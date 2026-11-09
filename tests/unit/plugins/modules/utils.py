@@ -10,13 +10,13 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-# noinspection PyPackageRequirements
+# noinspection PyUnresolvedReferences
 import pytest
 
-# noinspection PyPackageRequirements
+# noinspection PyUnresolvedReferences
 from ansible.module_utils import basic
 
-# noinspection PyPackageRequirements
+# noinspection PyUnresolvedReferences
 from ansible.module_utils._text import to_bytes
 
 TEST_MODULES_IMPORT_PATH = "dettonville.utils"
@@ -31,16 +31,16 @@ def make_absolute(base_path, name):
 
 
 class AnsibleExitJson(Exception):
-    """Exception class to be raised by module.exit_json and caught
-    by the test case"""
+    """Exception class to be raised by module.exit_json and caught by the
+    test case"""
 
     def __init__(self, kwargs):
         self.kwargs = kwargs
 
 
 class AnsibleFailJson(Exception):
-    """Exception class to be raised by module.fail_json and caught
-    by the test case"""
+    """Exception class to be raised by module.fail_json and caught by the
+    test case"""
 
     def __init__(self, kwargs):
         self.kwargs = kwargs
@@ -104,8 +104,8 @@ def set_module_args(args):
         from ansible.module_utils.testing import patch_module_args
     except ImportError:
         # Fallback for older ansible-core versions
-        serialized_args = to_bytes(json.dumps({"ANSIBLE_MODULE_ARGS": args}))
-        with patch.object(basic, "_ANSIBLE_ARGS", serialized_args):
+        serialized_args = to_bytes(json.dumps({'ANSIBLE_MODULE_ARGS': args}))
+        with patch.object(basic, '_ANSIBLE_ARGS', serialized_args):
             yield
     else:
         # Modern ansible-core data tagging support
@@ -166,11 +166,12 @@ class ModuleTestCase(unittest.TestCase):
     """
     Provides some infrastructure for using unittest.TestCase.
 
-    Note that unittest.TestCase is not the recommended way of
-    writing Ansible unit tests, but there
-    still are a lot of existing tests in this form.
+    Note that unittest.TestCase is not the recommended way of writing
+    Ansible unit tests, but there still are a lot of existing tests
+    in this form.
     """
 
+    # noinspection PyPep8Naming
     def setUp(self):
         self.mock_module = patch.multiple(
             basic.AnsibleModule, exit_json=exit_json, fail_json=fail_json

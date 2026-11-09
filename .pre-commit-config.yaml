@@ -23,6 +23,8 @@ repos:
       - id: check-json
       - id: check-added-large-files
       - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
       - id: detect-private-key
         exclude: |
           (?x)^(
@@ -44,6 +46,7 @@ repos:
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
+        exclude: archive
 
   # Ruff = modern, extremely fast replacement for flake8 + isort + black + many pylint rules
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -138,7 +141,8 @@ repos:
         name: clean up test and build files
         entry: >-
           bash -c '
-          find . -type f \( -name ".package_dir.*.yml" -o -name "*.pyc" -o -name "*.pyo" \) -delete;
+          find . -type f \( -name ".package_dir.*.yml" \
+            -o -name "*.pyc" -o -name "*.pyo" -o -name "*.log" \) -delete;
           find . -type d \( -name "__pycache__" \
             -o -name ".pytest_cache" -o -name ".tox" \
             -o -name "build" -o -name "dist" -o -name "*.egg-info" \) \

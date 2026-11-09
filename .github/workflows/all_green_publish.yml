@@ -93,29 +93,12 @@ jobs:
       pull-requests: write
       issues: write
 
-  docs:
-    needs: [ extract-metadata ]
-    uses: ./.github/workflows/ansible-docs.yml
-    with:
-      collection_name: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }}
-      collection_path: ${{ needs.extract-metadata.outputs.collection_path }}
-      # Optional overrides – leave blank to use the defaults derived above
-      init_project: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }} Collection
-      init_copyright: ${{ needs.extract-metadata.outputs.namespace }}
-      init_title: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }} Collection Documentation
-      init_html_short_title: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }} Docs
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
   publish:
     needs:
       - extract-metadata
       - lint
       - sanity
       - units
-      - docs
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/release-collection.yml
     with:
@@ -130,3 +113,22 @@ jobs:
       checks: write
     secrets:
       ANSIBLE_GALAXY_API_KEY: ${{ secrets.ANSIBLE_GALAXY_API_KEY }}
+
+  docs:
+    needs:
+      - extract-metadata
+      - publish
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ansible-docs.yml
+    with:
+      collection_name: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }}
+      collection_path: ${{ needs.extract-metadata.outputs.collection_path }}
+      # Optional overrides – leave blank to use the defaults derived above
+      init_project: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }} Collection
+      init_copyright: ${{ needs.extract-metadata.outputs.namespace }}
+      init_title: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }} Collection Documentation
+      init_html_short_title: ${{ needs.extract-metadata.outputs.namespace }}.${{ needs.extract-metadata.outputs.name }} Docs
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
